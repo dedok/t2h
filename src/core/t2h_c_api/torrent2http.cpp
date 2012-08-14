@@ -2,7 +2,7 @@
 
 #include "syslogger.hpp"
 #include "services_manager.hpp"
-#include "t2h_torrent_client.hpp"
+#include "t2h_torrent_cntl.hpp"
 #include "t2h_http_server_cntl.hpp"
 
 #include <boost/thread.hpp>
@@ -20,18 +20,18 @@ struct t2h_handle {
 typedef t2h_handle * t2h_handle_ptr;
 
 namespace t2h_core {
-	inline bool init_shared_setting_manager(t2h_handle_ptr * handle, char const * config) 
+	inline bool init_shared_setting_manager(t2h_handle_ptr handle, char const * config) 
 	{
-		t2h_core::setting_manager_ptr smanager
-			= t2h_core::syslogger::setting_manager::shared_manager();	
-		if (smanager) {
-			smanager->load_config(boost::filesystem::path(config));
-			return (handle->sets_manager = smanager)->config_is_well();
+		t2h_core::setting_manager_ptr sets_manager
+			= t2h_core::setting_manager::shared_manager();	
+		if (sets_manager) {
+			sets_manager->load_config(boost::filesystem::path(config));
+			return (handle->sets_manager = sets_manager)->config_is_well();
 		}
 		return false;
 	}
 
-	inline bool init_syslogger(t2h_handle_ptr * handle) 
+	inline bool init_syslogger(t2h_handle_ptr handle) 
 	{
 		static syslogger_settings const log_settings = {
 			"com.t2h.HttpServer", 
@@ -44,15 +44,13 @@ namespace t2h_core {
 		return true;
 	}
 
-	inline bool init_and_run_services(t2h_handle_ptr * handle) 
+	inline bool init_and_run_services(t2h_handle_ptr handle) 
 	{
 		bool state = false;
 		common::services_manager & services_manager = handle->servs_manager;
-		common::base_service_ptr http_server(t2h_core::http_server_cntl("t2h_http_server", handle->smanager));
-		common::base_service_ptr torrent_client(t2h_core::torrent_client_cntl("t2h_torrent_client", handle->smanager))
-		state = (http_server->launch_service() & torrent_client->launch_service());
+		common::base_service_ptr http_server(new t2h_core::http_server_cntl("t2h_http_server", handle->sets_manager));
+		state = http_server->launch_service();
 		services_manager.registrate(http_server);
-		services_manager.registrate(torrent_client);
 		return state;
 	}
 
