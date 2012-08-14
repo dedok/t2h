@@ -1,5 +1,6 @@
 #include "t2h_settings_manager.hpp"
 
+#include <sstream>
 #include <boost/bind.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
@@ -19,6 +20,8 @@ ADD_KEY_TYPE(workers)
 ADD_KEY_TYPE(doc_root)
 ADD_KEY_TYPE(server_addr)
 ADD_KEY_TYPE(server_port)
+ADD_KEY_TYPE(port_start)
+ADD_KEY_TYPE(port_end)
 
 static inline void set_key(boost::property_tree::ptree & parser, 
 			setting_manager::key_base_ptr key) 
@@ -108,6 +111,8 @@ void setting_manager::init_keys_storage()
 	key_storage_->reg<key_doc_root>("doc_root");
 	key_storage_->reg<key_server_addr>("server_addr");
 	key_storage_->reg<key_server_port>("server_port");
+	key_storage_->reg<key_port_start>("port_start");
+	key_storage_->reg<key_port_end>("port_end");
 }
 
 } // namespace t2h_core

@@ -7,13 +7,16 @@ message(STATUS "Setup extra depends, for OSX platform.")
 include(${CMAKE_SOURCE_DIR}/cmake_extra/osx/lib_dir.cmake OPTIONAL)
 
 # Try to find the boost library
-add_definitions(-DBOOST_ALL_NO_LIB)
+add_definitions(-DTORRENT_USE_OPENSSL) 
+add_definitions(-DTORRENT_DISABLE_GEO_IP) 
+add_definitions(-DBOOST_ASIO_ENABLE_CANCELIO)
 
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_DATE_TIME ON)
 set(Boost_USE_STATIC_RUNTIME ${use_static_runtime})
 
+add_definitions(-DBOOST_ASIO_SEPARATE_COMPILATION)
 find_package(Boost 1.44.0 COMPONENTS
 	filesystem
 	program_options
@@ -28,5 +31,12 @@ find_package(Boost 1.44.0 COMPONENTS
 set(Boost_LIBRARIES ${Boost_LIBRARIES} pthread)
 set(Boost_THREAD_LIBRARY ${Boost_THREAD_LIBRARY} pthread)
 
+# OpenSSL
+set(OPENSSL_USE_STATIC_LIBS ON)
+set(OPENSSL_USE_STATIC_RUNTIME ${use_static_runtime})
+find_package(OpenSSL PATHS ${CMAKE_SOURCE_DIR}/cmake_extra REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
+
 include_directories(${Boost_INCLUDE_DIR})
+include_directories(${libtorrent_INCLUDE_DIR})
 

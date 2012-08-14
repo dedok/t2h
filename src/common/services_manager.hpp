@@ -33,7 +33,7 @@ private :
 	typedef services_list_type::const_iterator services_const_iterator_type;
 
 	services_list_type services_;
-	boost::mutex lock_;
+	boost::mutex mutable lock_;
 };
 
 } // namespace common
