@@ -2,7 +2,7 @@ set(TARGET core)
 
 # Adding common sublibraries
 add_subdirectory(t2h_c_api)
-add_dependencies(t2h_common)
+add_subdirectory(t2h_common)
 add_subdirectory(t2h_http_server)
 add_subdirectory(t2h_torrent_client)
 

@@ -4,12 +4,13 @@
 # Global vars
 
 BUILD_DIR=build_dir
+LOG_FILE=$(basename $0).log
 
 usage() { # print usage
 	cat << EOF
 
 $(basename $0) - prepares nDrive for building under iOS/MacOSX/BSD/Lunix/Unix-like platforms.
-            In case of succeed script return 0, in case of failure 1(for details see the build.log in $SVN_TRUNK)
+            In case of succeed script return 0, in case of failure 1(for details see the ${LOG_FILE})
 
 Usage: $(basename $0) [OPTIONS] ...
 
@@ -46,7 +47,7 @@ clear_build() { # clean-up prev build info
 
 abort() { # clean-up build, print error message and exit with code 1
 	clear_build
-	echo "Error occurred: $@, for detail see build.log" && exit 1
+	echo "Error occurred: $@, for detail see ${LOG_FILE}" && exit 1
 	}
 	#
 
@@ -55,7 +56,7 @@ eval_cmake() { # execute cmake command with situable args for macosx
 	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1"
 	local cmake_eval_cmd="cmake -H$SVN_TRUNK/src -B$SVN_TRUNK/$2 $cmake_basic_args"
 	echo  "Command: $cmake_eval_cmd" && {
-		(eval $cmake_eval_cmd >> $EXEC_DIR/build.log 2>&1) || abort "cmake command fail"
+		(eval $cmake_eval_cmd) || abort "cmake command fail"
 		}
 	}
 	#
@@ -76,8 +77,6 @@ BUILD_LIST=
 WANNA_CLEAR=
 IS_IPAD_BUILD=
 
-[ -e $EXEC_DIR/build.log ] && rm -f $EXEC_DIR/build.log
-
 for option ;do
 	case $option in
 		--help | -h ) 
@@ -85,7 +84,7 @@ for option ;do
 			;; 
 		--with-build=* | -with-build=* ) 
 			BUILD_LIST=$(echo `expr "x$option" : "x-*with-build=\(.*\)"` | sed "s/,/ /g")	
-			abort "the --with-build=* deprecatede"
+			abort "the --with-build=* command line option deprecated"
 			;;
 		--build-type=* )
 			BUILD_TYPE=`expr "x$option" : "x--build-type=\(.*\)"`
@@ -101,7 +100,7 @@ for option ;do
 
 [ ! -z $WANNA_CLEAR ] && clear_build
 
-create_build $BUILD_TYPE || abort "$(basename) falied for details see $(basename).log ."
+create_build $BUILD_TYPE || abort "$(basename) failed for details see ${LOG_FILE}."
 	
 echo "bootstrap is done."
 
