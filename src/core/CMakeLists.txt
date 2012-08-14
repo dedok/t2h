@@ -4,7 +4,7 @@ set(TARGET core)
 add_subdirectory(t2h_c_api)
 add_subdirectory(t2h_common)
 add_subdirectory(t2h_http_server)
-add_subdirectory(t2h_torrent_client)
+add_subdirectory(t2h_torrent_core)
 
 set(T2H_HEADERS ${T2H_HEADERS})
 set(T2H_SOURCES ${T2H_SOURCES})
