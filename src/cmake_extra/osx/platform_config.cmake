@@ -10,13 +10,14 @@ include(${CMAKE_SOURCE_DIR}/cmake_extra/osx/lib_dir.cmake OPTIONAL)
 add_definitions(-DTORRENT_USE_OPENSSL) 
 add_definitions(-DTORRENT_DISABLE_GEO_IP) 
 add_definitions(-DBOOST_ASIO_ENABLE_CANCELIO)
+add_definitions(-DBOOST_ASIO_SEPARATE_COMPILATION)
 
+set(T2H_CORE_LIB_TYPE shared)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_DATE_TIME ON)
 set(Boost_USE_STATIC_RUNTIME ${use_static_runtime})
 
-add_definitions(-DBOOST_ASIO_SEPARATE_COMPILATION)
 find_package(Boost 1.44.0 COMPONENTS
 	filesystem
 	program_options
