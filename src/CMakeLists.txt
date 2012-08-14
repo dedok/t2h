@@ -17,6 +17,9 @@ endif(CMAKE_CONFIGURATION_TYPES)
 
 project(torrent2http)
 
+# Add version to scope
+include(cmake_extra/version.cmake)
+
 # Set build option to default value(only if we does not set the build type early)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)

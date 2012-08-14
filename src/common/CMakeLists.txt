@@ -6,7 +6,6 @@ set(TARGET common)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/network)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utility)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/syslogger)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/event_queue)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/http_utility)
 
 set(COMMON_HEADERS ${COMMON_HEADERS} base_service.hpp services_manager.hpp)
