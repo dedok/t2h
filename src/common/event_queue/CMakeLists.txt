@@ -1,0 +1,9 @@
+set(COMMON_HEADERS
+	${COMMON_HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/events_policy.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/events.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/event_wrapper.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/basic_events.hpp
+	PARENT_SCOPE
+	)
+

@@ -1,0 +1,15 @@
+set(COMMON_HEADERS
+	${COMMON_HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/abstract_syslogger.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/syslogger.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/impl/${PLATFORM_TYPE}/syslogger_impl.hpp
+	PARENT_SCOPE
+	)
+
+set(COMMON_SOURCES 
+	${COMMON_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/abstract_syslogger.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/impl/${PLATFORM_TYPE}/syslogger_impl.cpp
+	PARENT_SCOPE
+	)
+

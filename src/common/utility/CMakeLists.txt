@@ -1,0 +1,9 @@
+set(COMMON_HEADERS
+	${COMMON_HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/factory.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/common_utility.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/misc_utility.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/thread_pool.hpp
+	PARENT_SCOPE
+	)
+

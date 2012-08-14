@@ -1,0 +1,13 @@
+set(T2H_HEADERS 
+	${T2H_HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/torrent2http_config.h
+	${CMAKE_CURRENT_SOURCE_DIR}/torrent2http.h
+	PARENT_SCOPE
+	)
+
+set(T2H_SOURCES 
+	${T2H_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/torrent2http.cpp
+	PARENT_SCOPE
+	)
+
