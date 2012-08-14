@@ -4,8 +4,8 @@
 #
 
 message(STATUS "Setup extra depends, for OSX platform.")
-include(${CMAKE_SOURCE_DIR}/cmake_extra/osx/lib_dir.cmake OPTIONAL)
-
+include(${CMAKE_SOURCE_DIR}/cmake_extra/win/lib_dir.cmake OPTIONAL)
+include(${CMAKE_SOURCE_DIR}/cmake_extra/win/compiler_flags_init.cmake)
 
 #set(T2H_CORE_SHARED TRUE)
 
