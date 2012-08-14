@@ -25,7 +25,17 @@ static std::string const server_port = "8080";
 static boost::filesystem::path const doc_root = "test/path";
 
 static boost::filesystem::path const path_to_config = boost::filesystem::current_path() / "test_config.json";
-static char const * json_config = "{\n \"workers\" : \"4\",""\n \"server_port\" : \"8080\",\n \"server_addr\" : \"127.0.0.1\",\n \"doc_root\" : \"test/path\"\n}";
+
+static char const * json_config = 
+"{\n"
+"\"workers\" : \"4\",\n"
+"\"server_port\" : \"8080\",\n"
+"\"server_addr\" : \"127.0.0.1\",\n" 
+"\"doc_root\" : \"test/path\",\n" 
+"\"port_start\" : \"6881\",\n"
+"\"port_end\" : \"6889\""
+"\n}";
+
 
 void prepare_test_envt(); 
 void clear_test_envt();

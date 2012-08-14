@@ -12,8 +12,6 @@ static char const * json_config =
 "\n}";
 
 
-using namespace t2h_core; 
-
 static inline void die(std::string const & message, int ec) 
 {
 	std::cerr << "Error : " << message << ", code " << ec << std::endl;
@@ -22,6 +20,7 @@ static inline void die(std::string const & message, int ec)
 
 int main(int argc, char ** argv) 
 {
+	using namespace t2h_core; 
 	setting_manager_ptr sm = setting_manager::shared_manager();
 	sm->init_config(json_config);
 	if (!sm->config_is_well())
@@ -32,7 +31,7 @@ int main(int argc, char ** argv)
 		die("launch services failed", -1);
 
 	core.add_torrent(argv[1]);
-	core.wait_service()
+	core.wait_service();
 	
 	return 0;
 }
