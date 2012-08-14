@@ -9,8 +9,8 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/syslogger)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/event_queue)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/http_utility)
 
-set(COMMON_HEADERS ${COMMON_HEADERS} base_service.hpp)
-set(COMMON_SOURCES ${COMMON_SOURCES} base_service.cpp)
+set(COMMON_HEADERS ${COMMON_HEADERS} base_service.hpp services_manager.hpp)
+set(COMMON_SOURCES ${COMMON_SOURCES} base_service.cpp services_manager.cpp)
 
 # Create static library 
 add_library(${TARGET} STATIC ${COMMON_SOURCES}) 
