@@ -2,7 +2,7 @@
 
 #include "syslogger.hpp"
 #include "services_manager.hpp"
-#include "t2h_torrent_cntl.hpp"
+#include "t2h_torrent_core.hpp"
 #include "t2h_http_server_cntl.hpp"
 
 #include <boost/thread.hpp>
@@ -47,10 +47,10 @@ namespace t2h_core {
 	inline bool init_and_run_services(t2h_handle_ptr handle) 
 	{
 		bool state = false;
-		common::services_manager & services_manager = handle->servs_manager;
-		common::base_service_ptr http_server(new t2h_core::http_server_cntl("t2h_http_server", handle->sets_manager));
-		state = http_server->launch_service();
-		services_manager.registrate(http_server);
+//		common::services_manager & services_manager = handle->servs_manager;
+//		common::base_service_ptr http_server(new t2h_core::http_server_cntl("t2h_http_server", handle->sets_manager));
+//		state = http_server->launch_service();
+//		services_manager.registrate(http_server);
 		return state;
 	}
 

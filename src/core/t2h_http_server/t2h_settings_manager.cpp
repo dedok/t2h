@@ -22,6 +22,7 @@ ADD_KEY_TYPE(server_addr)
 ADD_KEY_TYPE(server_port)
 ADD_KEY_TYPE(port_start)
 ADD_KEY_TYPE(port_end)
+ADD_KEY_TYPE(max_wait_time)
 
 static inline void set_key(boost::property_tree::ptree & parser, 
 			setting_manager::key_base_ptr key) 
@@ -113,6 +114,7 @@ void setting_manager::init_keys_storage()
 	key_storage_->reg<key_server_port>("server_port");
 	key_storage_->reg<key_port_start>("port_start");
 	key_storage_->reg<key_port_end>("port_end");
+	key_storage_->reg<key_max_wait_time>("max_wait_time");
 }
 
 } // namespace t2h_core

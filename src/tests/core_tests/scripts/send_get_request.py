@@ -33,7 +33,7 @@ def send_get_req(host, port, req):
 
 
 def main():
-	send_get_req("127.0.0.1", 80, "/system.log")
+	send_get_req("thepiratebay.se", 80, "torrent/7540111/The_Script_-_Hall_of_Fame_(feat._will.i.am)_[Single_-_2012].torrent")
 	sys.exit(0)
 #
 
