@@ -32,6 +32,7 @@ find_package(Boost 1.44.0 COMPONENTS
 	date_time
 	signals
 	iostreams
+	random
 	unit_test_framework
 	REQUIRED)
 

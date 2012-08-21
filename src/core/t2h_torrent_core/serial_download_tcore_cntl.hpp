@@ -25,8 +25,8 @@ struct extended_torrent_info
 	{
 	}
 
-	static int const max_prior = 7;
-	static int const min_prior = 0;
+	static int const max_prior = 5;
+	static int const min_prior = 1;
 
 	int pieces;	
 	int pieces_offset;
@@ -43,12 +43,18 @@ struct static_settings {
 
 } // namespace details
 
+/**
+ *
+ */
 class serial_download_tcore_cntl : public base_torrent_core_cntl {
 public :
+	serial_download_tcore_cntl();
 	explicit serial_download_tcore_cntl(setting_manager_ptr setting_manager);
 	virtual ~serial_download_tcore_cntl();
 	
 	virtual void set_core_session(libtorrent::session * session_ref);
+	virtual void on_setup_core_session(libtorrent::session_settings & settings);
+
 	virtual int availables_categories() const;
 	virtual void dispatch_alert(libtorrent::alert * alert);
 	
@@ -57,6 +63,7 @@ public :
 private :
 	typedef boost::unordered_map<std::string, details::extended_info_ptr> extended_info_map_type;
 	
+	/** Functions for dispatching notification from core_session */
 	void on_recv(libtorrent::metadata_received_alert * alert); 
 	void on_add(libtorrent::add_torrent_alert * alert);
 	void on_finished(libtorrent::torrent_finished_alert * alert); 
@@ -64,7 +71,9 @@ private :
 	void on_update(libtorrent::state_update_alert * alert);
 	void on_piece_finished(libtorrent::piece_finished_alert * alert);
 	void not_dispatched_alert_came(libtorrent::alert * alert);
+	void on_state_changed_alert(libtorrent::alert * alert);
 	
+	/** */
 	void start_download_next_pieces(libtorrent::torrent_handle & handle, details::extended_info_ptr & extended_info); 
 	void prioritize_pieces_at_start(libtorrent::torrent_handle & handle, details::extended_info_ptr & extended_info);
 

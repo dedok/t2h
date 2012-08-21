@@ -10,10 +10,11 @@ static char const * json_config =
 "\"server_port\" : \"8080\",\n"
 "\"server_addr\" : \"127.0.0.1\",\n" 
 "\"doc_root\" : \"test/path\",\n" 
-"\"port_start\" : \"6881\",\n"
-"\"port_end\" : \"6889\", \n"
-"\"max_wait_time\" : \"100\" \n"
-"\"max_async_download_size\" : \"5242880\" \n" // 5 mb 
+"\"tc_root\" : \"tc_root\", \n"
+"\"tc_port_start\" : \"6881\",\n"
+"\"tc_port_end\" : \"6889\", \n"
+"\"tc_max_alert_wait_time\" : \"15\", \n" // mseconds
+"\"tc_max_async_download_size\" : \"5242880\"" // 5 mb 
 "\n}";
 
 static syslogger_settings const log_settings = {
@@ -21,7 +22,6 @@ static syslogger_settings const log_settings = {
 	"application",
 	"application.log"
 };
-
 
 static inline void die(std::string const & message, int ec) 
 {

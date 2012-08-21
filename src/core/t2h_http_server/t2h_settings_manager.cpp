@@ -5,24 +5,29 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
-#define ADD_KEY_TYPE(x_)						\
+#define ADD_KEY_TYPE(x_, y_)					\
 struct key_##x_									\
 	: public t2h_core_details::base_key 		\
 {												\
-	key_##x_() : base_key(#x_) { }				\
+	key_##x_() : base_key(#x_, y_) { }			\
 };												\
 
 namespace t2h_core {
 
 namespace t2h_core_details {
 
-ADD_KEY_TYPE(workers)
-ADD_KEY_TYPE(doc_root)
-ADD_KEY_TYPE(server_addr)
-ADD_KEY_TYPE(server_port)
-ADD_KEY_TYPE(port_start)
-ADD_KEY_TYPE(port_end)
-ADD_KEY_TYPE(max_wait_time)
+// http server keys
+ADD_KEY_TYPE(workers, "4")
+ADD_KEY_TYPE(doc_root, "")
+ADD_KEY_TYPE(server_addr, "")
+ADD_KEY_TYPE(server_port, "80")
+
+// torrent core keys
+ADD_KEY_TYPE(tc_port_start, "")
+ADD_KEY_TYPE(tc_port_end, "")
+ADD_KEY_TYPE(tc_max_alert_wait_time, "15")
+ADD_KEY_TYPE(tc_max_async_download_size, "5242880")
+ADD_KEY_TYPE(tc_root, "")
 
 static inline void set_key(boost::property_tree::ptree & parser, 
 			setting_manager::key_base_ptr key) 
@@ -107,14 +112,17 @@ void setting_manager::reset_configurations()
 void setting_manager::init_keys_storage() 
 {
 	using namespace t2h_core_details;
-	/** Add key to http server setting key-value factory */
+	// http server settings
 	key_storage_->reg<key_workers>("workers");
 	key_storage_->reg<key_doc_root>("doc_root");
 	key_storage_->reg<key_server_addr>("server_addr");
 	key_storage_->reg<key_server_port>("server_port");
-	key_storage_->reg<key_port_start>("port_start");
-	key_storage_->reg<key_port_end>("port_end");
-	key_storage_->reg<key_max_wait_time>("max_wait_time");
+	// torrent core settings 
+	key_storage_->reg<key_tc_port_start>("tc_port_start");
+	key_storage_->reg<key_tc_port_end>("tc_port_end");
+	key_storage_->reg<key_tc_max_alert_wait_time>("tc_max_alert_wait_time");
+	key_storage_->reg<key_tc_max_async_download_size>("tc_max_async_download_size");
+	key_storage_->reg<key_tc_root>("tc_root");
 }
 
 } // namespace t2h_core

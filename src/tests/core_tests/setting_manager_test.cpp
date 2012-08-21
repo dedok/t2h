@@ -11,11 +11,16 @@ do {																				\
 	BOOST_CHECK(t x1);																\
 } while(0);
 
-#define DEFAULT_AFTER_INIT_TEST_CASES(x)													\
-CHECK_ENTITY(std::size_t, x->get_value<std::size_t>("workers"), == envt::workers_number)	\
-CHECK_ENTITY(std::string, x->get_value<std::string>("server_addr"), == envt::server_addr)	\
-CHECK_ENTITY(std::string, x->get_value<std::string>("server_port"), == envt::server_port)	\
-CHECK_ENTITY(std::string, x->get_value<std::string>("doc_root"), == envt::doc_root);		
+#define DEFAULT_AFTER_INIT_TEST_CASES(x)																				\
+CHECK_ENTITY(std::size_t, x->get_value<std::size_t>("workers"), == envt::workers_number)								\
+CHECK_ENTITY(std::string, x->get_value<std::string>("server_addr"), == envt::server_addr)								\
+CHECK_ENTITY(std::string, x->get_value<std::string>("server_port"), == envt::server_port)								\
+CHECK_ENTITY(std::string, x->get_value<std::string>("doc_root"), == envt::doc_root)										\
+CHECK_ENTITY(std::size_t, x->get_value<std::size_t>("tc_port_end"), == envt::tc_port_end)								\
+CHECK_ENTITY(std::size_t, x->get_value<std::size_t>("tc_port_start"), == envt::tc_port_start)							\
+CHECK_ENTITY(std::size_t, x->get_value<std::size_t>("tc_max_async_download_size"), == envt::tc_max_async_download_size)	\
+CHECK_ENTITY(std::size_t, x->get_value<std::size_t>("tc_max_alert_wait_time"), == envt::tc_max_alert_wait_time)			\
+CHECK_ENTITY(std::string, x->get_value<std::string>("tc_root"), == envt::tc_root)
 
 namespace envt {
 
@@ -23,6 +28,11 @@ static std::size_t const workers_number = 4;
 static std::string const server_addr = "127.0.0.1";
 static std::string const server_port = "8080";
 static boost::filesystem::path const doc_root = "test/path";
+static std::size_t const tc_port_start = 6881;
+static std::size_t const tc_port_end = 6889;
+static std::size_t const tc_max_alert_wait_time = 4;
+static std::size_t const tc_max_async_download_size = 5000000;
+static std::string const tc_root = "test/path";
 
 static boost::filesystem::path const path_to_config = boost::filesystem::current_path() / "test_config.json";
 
@@ -32,8 +42,11 @@ static char const * json_config =
 "\"server_port\" : \"8080\",\n"
 "\"server_addr\" : \"127.0.0.1\",\n" 
 "\"doc_root\" : \"test/path\",\n" 
-"\"port_start\" : \"6881\",\n"
-"\"port_end\" : \"6889\""
+"\"tc_port_start\" : \"6881\",\n"
+"\"tc_port_end\" : \"6889\", \n"
+"\"tc_max_alert_wait_time\" : \"4\", \n"
+"\"tc_max_async_download_size\" : \"5000000\", \n"
+"\"tc_root\" : \"test/path\" "
 "\n}";
 
 
