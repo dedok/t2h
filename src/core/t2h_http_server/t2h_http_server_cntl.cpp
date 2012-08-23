@@ -25,12 +25,14 @@ inline static common::transport_config from_setting_manager(
  * Public http_server_cntl api
  */
 
-http_server_cntl::http_server_cntl(
-	std::string const & service_name, setting_manager_ptr setting_manager) 
-	: base_service(service_name), 
+char const * http_server_cntl::http_core_service_name = "t2h_http_core";
+
+http_server_cntl::http_server_cntl(setting_manager_ptr setting_manager) 
+	: base_service(http_core_service_name), 
 	transport_(),
 	transport_ev_handler_(), 
-	setting_manager_(setting_manager) 
+	setting_manager_(setting_manager),
+	cur_state_()
 { 
 }  
 
@@ -41,11 +43,10 @@ http_server_cntl::~http_server_cntl()
 
 bool http_server_cntl::launch_service() 
 {
+	using namespace common;	
 	try 
 	{
-		using namespace common;
-		
-		if (transport_) 
+		if (cur_state_ == base_service::service_running) 
 			return false;
 		
 		transport_config const tr_config = from_setting_manager(setting_manager_);
@@ -55,23 +56,28 @@ bool http_server_cntl::launch_service()
 		
 		transport_->initialize();	
 		transport_->establish_connection();
+
+		cur_state_ = base_service::service_running;
 	} 
 	catch (common::transport_exception const & expt) 
 	{
 		LOG_ERROR("transport init/run failed, with message '%s'", expt.what())
 		return false;
 	}
-	return true;
+	return (cur_state_ == base_service::service_running);
 }
 
 void http_server_cntl::stop_service() 
 {
+	using namespace common;
 	try 
 	{
-		if (transport_)
+		if (cur_state_ == base_service::service_running) {
 			transport_->stop_connection();	
+			cur_state_ = base_service::service_stoped;
+		}
 	}
-	catch (common::transport_exception const & expt) 
+	catch (transport_exception const & expt) 
 	{
 		LOG_ERROR("transport stop failed, with message '%s'", expt.what())
 	}
@@ -79,12 +85,13 @@ void http_server_cntl::stop_service()
 
 void http_server_cntl::wait_service() 
 {
+	using namespace common;
 	try 
 	{
-		if (transport_)
+		if (cur_state_ == base_service::service_running)
 			transport_->stop_connection();
 	} 
-	catch (common::transport_exception const & expt) 
+	catch (transport_exception const & expt) 
 	{
 		LOG_ERROR("transport wait failed, with message '%s'", expt.what())
 	}
@@ -93,7 +100,12 @@ void http_server_cntl::wait_service()
 common::base_service_ptr http_server_cntl::clone() 
 {
 	return boost::shared_ptr<http_server_cntl>(
-		new http_server_cntl(service_name(), setting_manager_));
+		new http_server_cntl(setting_manager_));
+}
+
+common::base_service::service_state http_server_cntl::get_service_state() const 
+{
+	return cur_state_;
 }
 
 /**

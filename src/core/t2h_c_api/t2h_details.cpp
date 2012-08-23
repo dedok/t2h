@@ -8,14 +8,14 @@ namespace t2h_core {
 
 namespace details {
 
-const char const * core_handle_component_name = "com.t2h.core";
-const char const * bar_core = "t2h_api";
-const char const * syslog_path = "";
+char const * core_handle_component_name = "com.t2h.core";
+char const * core_api_id = "t2h_api_";
+char const * syslog_path = "";
 
 syslogger_settings const log_settings = {
-	details::core_handle_component_name, 
-	details::bar_core,
-	details::syslog_path
+	core_handle_component_name, 
+	core_api_id,
+	syslog_path
 };
 
 } // namespace details
@@ -29,12 +29,12 @@ core_handle::~core_handle()
 {
 }
 
-bool core_handle::initialization() 
+bool core_handle::initialize() 
 {
 	bool state = init_support_system();
-	if (sets_manager_ = t2h_core::setting_manager::shared_manager() && state) {	
-		sets_manager->load_config(boost::filesystem::path(settings_.config_path));
-		if (state = sets_manager->config_is_well())
+	if ((sets_manager_ = t2h_core::setting_manager::shared_manager()) && state) {	
+		sets_manager_->load_config(boost::filesystem::path(settings_.config_path));
+		if (sets_manager_->config_is_well())
 			state = init_core_services();
 	}
 	if (!state) destroy();

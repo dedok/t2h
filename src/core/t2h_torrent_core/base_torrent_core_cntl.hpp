@@ -1,18 +1,13 @@
 #ifndef BASE_TORRENT_CORE_CNTL_HPP_INCLUDED
 #define BASE_TORRENT_CORE_CNTL_HPP_INCLUDED
 
-#include <string>
-
-#include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
-
-#pragma warning (push, 0)
-
 #include <libtorrent/config.hpp>
 #include <libtorrent/session.hpp>
 #include <libtorrent/alert_types.hpp>
 
-#pragma warning (pop)
+#include <string>
+#include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace t2h_core {
 
@@ -31,6 +26,13 @@ public :
 	
 	virtual bool handle_with_critical_errors() { return false; }
 
+	virtual void post_pause_download(std::string const & torrent_name) = 0;
+	virtual void post_resume_download(std::string const & torrent_name) = 0;
+	virtual void post_stop_download(std::string const & torrent_name) = 0;
+	virtual void post_remove_torrent(std::string const & torrent_name) = 0;
+
+	virtual std::size_t decode_id(std::string const & torrent_name) = 0;
+	virtual std::string encode_id(std::size_t torrent_id) = 0;
 };
 
 typedef base_torrent_core_cntl::ptr_type base_torrent_core_cntl_ptr;

@@ -18,8 +18,8 @@ public :
 	explicit core_handle(core_handle_settings const & settings);
 	~core_handle();
 	
-	bool initialization();
-	bool destroy();
+	bool initialize();
+	void destroy();
 
 private :
 	bool init_support_system();

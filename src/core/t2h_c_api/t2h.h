@@ -1,7 +1,7 @@
 #ifndef T2H_H_INCLUDED
 #define T2H_H_INCLUDED
 
-#include "torrent2http_config.h"
+#include "t2h_config.h"
 
 /** Hidden t2h handle type */
 typedef void * t2h_handle_t;

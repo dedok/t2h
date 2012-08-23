@@ -7,7 +7,7 @@ namespace utility {
 
 static std::string const chars_set =  
 	"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	"1234567890!@#$%^&*()`~-_=+[{]{\\|;:'\",<.>/? ";
+	"1234567890 ";
 
 std::string get_random_string(std::size_t dist_max) 
 {
@@ -18,7 +18,7 @@ std::string get_random_string(std::size_t dist_max)
 	boost::random::random_device device;
 	boost::random::uniform_int_distribution<> index_dist(0, chars_set.size() - 1);
 	
-	random_string.reserve(dist_max);
+	random_string.resize(dist_max);
 	for (std::size_t it = 0; it < dist_max; ++it) 
 		random_string.at(it) = chars_set.at(index_dist(device));
 	

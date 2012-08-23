@@ -24,7 +24,7 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_DATE_TIME ON)
 set(Boost_USE_STATIC_RUNTIME ${use_static_runtime})
 
-find_package(Boost 1.44.0 COMPONENTS
+find_package(Boost 1.45.0 COMPONENTS
 	filesystem
 	program_options
 	thread

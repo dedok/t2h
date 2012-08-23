@@ -8,8 +8,14 @@
 namespace common { 
 
 class base_service : private boost::noncopyable {
-public :
+public :	
 	typedef boost::shared_ptr<base_service> ptr_type;
+
+	enum service_state {
+		service_running = 0x1,
+		service_stoped,
+		service_state_unknown = service_stoped + 0x1
+	};
 
 	explicit base_service(std::string const & name);
 	virtual ~base_service();
@@ -19,7 +25,9 @@ public :
 	virtual void wait_service() = 0;
 	
 	virtual ptr_type clone() = 0;
-
+	
+	virtual service_state get_service_state() const = 0;
+	
 	std::string service_name() const;
 
 private :

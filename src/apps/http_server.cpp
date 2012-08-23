@@ -28,8 +28,7 @@ int main(int argc, char* argv[])
 	{
 		t2h_core::setting_manager_ptr setting_manager = t2h_core::setting_manager::shared_manager();
 		setting_manager->load_config(argv[1]);
-		common::base_service_ptr http_server(
-			new t2h_core::http_server_cntl("t2h_http_server", setting_manager));
+		common::base_service_ptr http_server(new t2h_core::http_server_cntl(setting_manager));
 		
 		if (!http_server->launch_service())
 			die("launch failed", -1);

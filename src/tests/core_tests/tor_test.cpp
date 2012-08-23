@@ -13,7 +13,7 @@ static char const * json_config =
 "\"tc_root\" : \"tc_root\", \n"
 "\"tc_port_start\" : \"6881\",\n"
 "\"tc_port_end\" : \"6889\", \n"
-"\"tc_max_alert_wait_time\" : \"15\", \n" // mseconds
+"\"tc_max_alert_wait_time\" : \"10\", \n" // mseconds
 "\"tc_max_async_download_size\" : \"5242880\"" // 5 mb 
 "\n}";
 

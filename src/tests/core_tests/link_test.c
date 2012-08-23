@@ -1,12 +1,10 @@
-#define STREAMER_ASSERT_OFF
-
 #include <stdio.h>
 
-#include "torrent2http.h"
+#include "t2h.h"
 
 int main(char ** argv, int argc) 
 {
-	t2h_init(NULL, NULL);
+	t2h_init(NULL);
 	t2h_close(NULL);
 	t2h_add_torrent(NULL, NULL);
 	t2h_add_torrent_url(NULL, NULL);

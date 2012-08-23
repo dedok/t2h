@@ -10,13 +10,66 @@
 #include <libtorrent/session.hpp>
 
 #include <boost/thread.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/enable_shared_from_this.hpp>
 
 namespace t2h_core {
 
 namespace details {
+
+struct torrent_ex_info 
+	: public boost::enable_shared_from_this<torrent_ex_info> 
+{
+	enum init_state_ { not_valid = 0x0, not_init_by_core, valid };
+	
+	torrent_ex_info() 
+		: id(0), 
+		init_state(not_valid), 
+		save_path(), 
+		url_for_download(), 
+		torrent_params() 
+	{ 
+	}
+	
+	torrent_ex_info(int id_) 
+		: id(id_), init_state(not_valid) { }
+	
+	std::size_t id;
+	init_state_ init_state;
+	std::string save_path;	
+	std::string url_for_download;
+	libtorrent::add_torrent_params torrent_params;
+};
+
+static inline bool torrent_ex_info_less(torrent_ex_info const & a, torrent_ex_info const & b) 
+{
+	return (a.id < b.id);
+}
+
+static inline std::size_t torrent_ex_info_hash(torrent_ex_info const & a) 
+{
+	boost::hash<std::string> hasher;
+	return hasher(a.save_path);
+}
+
+struct torrent_ex_info_hash_adapter {
+	inline std::size_t operator()(torrent_ex_info const & a) const 
+	{ 
+		return torrent_ex_info_hash(a); 
+	}
+};
+
+struct torrent_ex_info_less_adapter { 
+	inline bool operator()(torrent_ex_info const & a, torrent_ex_info const & b) const 
+	{
+		return torrent_ex_info_less(a, b);
+	}
+};
+
+typedef boost::unordered_set<torrent_ex_info, 
+							torrent_ex_info_hash_adapter, 
+							torrent_ex_info_less_adapter> torrents_info_set_type; 
 
 /** torrent_core_settings is main settings for the t2h_core::torrent_core,
  	for better abstraction this object is hidden and for public access, 
@@ -28,32 +81,6 @@ struct torrent_core_settings {
 	int port_end;
 	int max_alert_wait_time;
 };
-
-enum torrent_status {
-	in_process = 0x1,
-	request_to_stop,
-	request_to_pause,
-	request_to_resume,
-	unknown_request = request_to_resume + 1
-};
-
-struct torrent_handle_ex {
-	typedef boost::hash<std::string> hash_func_type;
-	std::string path;
-	torrent_status status;
-	libtorrent::torrent_handle lt_handle;
-	std::size_t hash_path;
-};
-
-typedef std::map<std::size_t, torrent_handle_ex> torrents_list_type;
-typedef torrents_list_type::const_iterator tl_const_iteretator;
-typedef torrents_list_type::iterator tl_iterator;
-
-struct torrents_list_ex {
-	torrents_list_type list;
-	boost::mutex lock;
-};
-
 
 } // namespace details
 
@@ -82,28 +109,22 @@ public :
 		
 	virtual ptr_type clone();
 	
+	virtual common::base_service::service_state get_service_state() const;	
+	
 	/** Outside control interface, not thread safe */
 	
 	void set_controller(base_torrent_core_cntl_ptr controller);
 	
-	boost::tuple<int, boost::filesystem::path> add_torrent(boost::filesystem::path const & path);
-	void pause_torrent(std::size_t torrent_id);
+	int add_torrent(boost::filesystem::path const & path);
+	int add_torrent_url(std::string const & url);
+	std::string start_torrent_download(int id);
+
+	void pause_download(std::size_t torrent_id);
 	void resume_download(std::size_t torrent_id);	
 	void remove_torrent(std::size_t torrent_id);
 	void stop_download(std::size_t torrent_id);
 	
-	inline details::torrents_list_ex & get_torrents_list() 
-	{ 
-		return torrents_list_; 
-	}
-	
-	inline details::torrents_list_ex const & get_torrents_list() const 
-	{ 
-		return torrents_list_; 
-	}
-
 private :
-
 	bool init_core_session();
 	void setup_core_session();
 	bool init_torrent_core_settings();
@@ -113,16 +134,17 @@ private :
 	bool is_critical_error(libtorrent::alert * alert);
 	void handle_critical_error_notification(libtorrent::alert * alert);
 	
-	bool prepare_torrent_params(
+	bool prepare_torrent_params_for_file(
 		libtorrent::add_torrent_params & torrent_params, boost::filesystem::path const & path);
+	void prepare_torrent_params_for_url(
+		libtorrent::add_torrent_params & torrent_params, std::string const & path);
 	bool prepare_torrent_sandbox(libtorrent::add_torrent_params & torrent_params);
-	void stop_download_unsafe(std::size_t torrent_id);
 	
 	torrent_core_params mutable params_;			
-	bool volatile is_running_;						
+	base_service::service_state volatile mutable cur_state_;
 	details::torrent_core_settings settings_;		
 	boost::scoped_ptr<boost::thread> thread_loop_;
-	details::torrents_list_ex torrents_list_;
+	details::torrents_info_set_type torrents_info_set_;
 	libtorrent::session core_session_;
 
 };
