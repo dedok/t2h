@@ -18,9 +18,10 @@ static inline std::string create_random_path(std::string const & root_path)
  * Public torrent_core api
  */
 
-torrent_core::torrent_core(
-	torrent_core_params const & params, std::string const & name) 
-		: common::base_service(name), 
+char const * torrent_core::this_service_name = "torrent_core";
+
+torrent_core::torrent_core(torrent_core_params const & params) 
+		: common::base_service(this_service_name), 
 		params_(params),
 		cur_state_(base_service::service_state_unknown),
 		settings_(),
@@ -78,7 +79,7 @@ void torrent_core::wait_service()
 
 torrent_core::ptr_type torrent_core::clone() 
 { 
-	return ptr_type(new torrent_core(params_, base_service::service_name())); 
+	return ptr_type(new torrent_core(params_)); 
 }
 
 common::base_service::service_state torrent_core::get_service_state() const 

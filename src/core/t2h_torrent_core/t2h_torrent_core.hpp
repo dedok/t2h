@@ -97,8 +97,9 @@ struct torrent_core_params {
 class torrent_core : public common::base_service {
 public :
 	enum { invalid_torrent_id = -1 };
+	static const char * this_service_name;
 
-	torrent_core(torrent_core_params const & params, std::string const & name);
+	torrent_core(torrent_core_params const & params);
 	~torrent_core();
 		
 	/** Outside & manadgable via service_manager interface, not thread safe */
@@ -148,6 +149,8 @@ private :
 	libtorrent::session core_session_;
 
 };
+
+typedef boost::shared_ptr<torrent_core> torrent_core_ptr;
 
 } // namespace t2h_core
 

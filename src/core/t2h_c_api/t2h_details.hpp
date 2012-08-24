@@ -3,6 +3,8 @@
 
 #include "services_manager.hpp"
 #include "t2h_settings_manager.hpp"
+#include "t2h_torrent_core.hpp"
+#include "t2h_http_server_cntl.hpp"
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>
@@ -18,8 +20,15 @@ public :
 	explicit core_handle(core_handle_settings const & settings);
 	~core_handle();
 	
-	bool initialize();
+	bool initialize();	
 	void destroy();
+	void wait();
+	
+	inline torrent_core_ptr get_torrent_core() 
+	{ 
+		return boost::static_pointer_cast<torrent_core>(
+				servs_manager_.get_service(torrent_core::this_service_name));
+	} 
 
 private :
 	bool init_support_system();
