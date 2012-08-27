@@ -1,4 +1,4 @@
-#include "t2h_settings_manager.hpp"
+#include "setting_manager.hpp"
 
 #include <sstream>
 #include <boost/bind.hpp>

@@ -1,10 +1,10 @@
-#ifndef T2H_DETAILS_HPP_INCLUDED
-#define T2H_DETAILS_HPP_INCLUDED
+#ifndef EXTERNAL_API_DETAILS_HPP_INCLUDED
+#define EXTERNAL_API_DETAILS_HPP_INCLUDED
 
 #include "services_manager.hpp"
-#include "t2h_settings_manager.hpp"
-#include "t2h_torrent_core.hpp"
-#include "t2h_http_server_cntl.hpp"
+#include "setting_manager.hpp"
+#include "torrent_core.hpp"
+#include "http_server_core.hpp"
 
 #include <boost/scoped_ptr.hpp>
 #include <boost/noncopyable.hpp>

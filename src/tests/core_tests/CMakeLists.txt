@@ -12,6 +12,6 @@ add_executable(link_test_cpp EXCLUDE_FROM_ALL link_test.cpp)
 target_link_libraries(link_test_cpp common core ${link_depends})
 
 # t2h_torrent_core_test
-add_executable(tor_test tor_test.cpp)
-target_link_libraries(tor_test common core ${link_depends})
+add_executable(torrent_core_test torrent_core_test.cpp)
+target_link_libraries(torrent_core_test common core ${link_depends})
 

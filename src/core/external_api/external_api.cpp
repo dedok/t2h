@@ -1,5 +1,5 @@
 #include "t2h.h"
-#include "t2h_details.hpp"
+#include "external_api_details.hpp"
 
 #include <boost/thread.hpp>
 
@@ -83,7 +83,7 @@ T2H_STD_API_(char *) t2h_start_download(t2h_handle_t handle, int torrent_id, int
 	boost::lock_guard<boost::mutex> guard(un_handle->lock);
 	if (un_handle) {
 		t2h_core::torrent_core_ptr tcore = un_handle->core_handle->get_torrent_core();
-		tcore->start_torrent_download(torrent_id);
+		std::string const path_to_file = tcore->start_torrent_download(torrent_id, file_id);
 		return NULL; 
 	}
 	return NULL;

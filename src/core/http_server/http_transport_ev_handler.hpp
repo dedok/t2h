@@ -1,10 +1,9 @@
-#ifndef T2H_TRANSPORT_EV_HANDLER_HPP_INCLUDED
-#define T2H_TRANSPORT_EV_HANDLER_HPP_INCLUDED
-
-#include "base_transport_ev_handler.hpp"
-#include "t2h_settings_manager.hpp"
+#ifndef HTTP_TRANSPORT_EV_HANDLER_HPP_INCLUDED
+#define HTTP_TRANSPORT_EV_HANDLER_HPP_INCLUDED
 
 #include "http_utility.hpp"
+#include "setting_manager.hpp"
+#include "base_transport_ev_handler.hpp"
 
 #include <boost/tuple/tuple.hpp>
 #include <boost/logic/tribool.hpp>

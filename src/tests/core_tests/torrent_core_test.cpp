@@ -1,5 +1,5 @@
 #include "syslogger.hpp"
-#include "t2h_torrent_core.hpp"
+#include "torrent_core.hpp"
 #include "serial_download_tcore_cntl.hpp"
 
 #include <iostream>
@@ -46,11 +46,18 @@ int main(int argc, char ** argv)
 	if (!sm->config_is_well())
 		die(sm->get_last_error(), -1);
 
-	torrent_core core(params, "torrent_core");
+	torrent_core core(params);
 	if (!core.launch_service())
 		die("launch torrent core services failed", -1);
 
-	core.add_torrent(argv[1]);
+	int const torrent_id = core.add_torrent(argv[1]);
+	if (torrent_id == -1) 
+		die("add torrent failed", -2);
+	else {
+		std::cout << "trying to start download torrent by id : " << torrent_id << std::endl;
+		std::cout << "url for download : " << core.start_torrent_download(torrent_id, 0) << std::endl;
+	}
+
 	core.wait_service();
 	
 	return 0;

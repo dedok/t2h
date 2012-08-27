@@ -1,7 +1,7 @@
-#ifndef T2H_HTTP_SERVER_CNTL_HPP_INCLUDED
-#define T2H_HTTP_SERVER_CNTL_HPP_INCLUDED
+#ifndef HTTP_SERVER_CORE_HPP_INCLUDED
+#define HTTP_SERVER_CORE_HPP_INCLUDED
 
-#include "t2h_settings_manager.hpp"
+#include "setting_manager.hpp"
 #include "base_transport.hpp"
 #include "base_transport_ev_handler.hpp"
 
@@ -9,13 +9,12 @@
 
 namespace t2h_core {
 
-
-class http_server_cntl : public common::base_service {
+class http_server_core : public common::base_service {
 public :
 	static char const * http_core_service_name;
 	
-	explicit http_server_cntl(setting_manager_ptr setting_manager);
-	~http_server_cntl();
+	explicit http_server_core(setting_manager_ptr setting_manager);
+	~http_server_core();
 	
 	virtual bool launch_service();
 	virtual void stop_service();

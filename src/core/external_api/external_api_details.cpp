@@ -1,4 +1,4 @@
-#include "t2h_details.hpp"
+#include "external_api_details.hpp"
 
 #include "serial_download_tcore_cntl.hpp"
 #include "syslogger.hpp"

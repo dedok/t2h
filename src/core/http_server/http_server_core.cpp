@@ -1,6 +1,6 @@
-#include "t2h_http_server_cntl.hpp"
+#include "http_server_core.hpp"
 
-#include "t2h_transport_ev_handler.hpp"
+#include "http_transport_ev_handler.hpp"
 #include "transport_types.hpp"
 #include "syslogger.hpp"
 
@@ -22,12 +22,12 @@ inline static common::transport_config from_setting_manager(
 }
 
 /**
- * Public http_server_cntl api
+ * Public http_server_core api
  */
 
-char const * http_server_cntl::http_core_service_name = "t2h_http_core";
+char const * http_server_core::http_core_service_name = "t2h_http_core";
 
-http_server_cntl::http_server_cntl(setting_manager_ptr setting_manager) 
+http_server_core::http_server_core(setting_manager_ptr setting_manager) 
 	: base_service(http_core_service_name), 
 	transport_(),
 	transport_ev_handler_(), 
@@ -36,12 +36,12 @@ http_server_cntl::http_server_cntl(setting_manager_ptr setting_manager)
 { 
 }  
 
-http_server_cntl::~http_server_cntl() 
+http_server_core::~http_server_core() 
 {
 
 }
 
-bool http_server_cntl::launch_service() 
+bool http_server_core::launch_service() 
 {
 	using namespace common;	
 	try 
@@ -67,7 +67,7 @@ bool http_server_cntl::launch_service()
 	return (cur_state_ == base_service::service_running);
 }
 
-void http_server_cntl::stop_service() 
+void http_server_core::stop_service() 
 {
 	using namespace common;
 	try 
@@ -83,7 +83,7 @@ void http_server_cntl::stop_service()
 	}
 }
 
-void http_server_cntl::wait_service() 
+void http_server_core::wait_service() 
 {
 	using namespace common;
 	try 
@@ -97,19 +97,19 @@ void http_server_cntl::wait_service()
 	}
 }
 
-common::base_service_ptr http_server_cntl::clone() 
+common::base_service_ptr http_server_core::clone() 
 {
-	return boost::shared_ptr<http_server_cntl>(
-		new http_server_cntl(setting_manager_));
+	return boost::shared_ptr<http_server_core>(
+		new http_server_core(setting_manager_));
 }
 
-common::base_service::service_state http_server_cntl::get_service_state() const 
+common::base_service::service_state http_server_core::get_service_state() const 
 {
 	return cur_state_;
 }
 
 /**
- * Private http_server_cntl api
+ * Private http_server_core api
  */
 
 } // namespace t2h_core

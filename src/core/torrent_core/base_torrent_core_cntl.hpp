@@ -1,6 +1,8 @@
 #ifndef BASE_TORRENT_CORE_CNTL_HPP_INCLUDED
 #define BASE_TORRENT_CORE_CNTL_HPP_INCLUDED
 
+#include "torrent_info.hpp"
+
 #include <libtorrent/config.hpp>
 #include <libtorrent/session.hpp>
 #include <libtorrent/alert_types.hpp>
@@ -10,6 +12,10 @@
 #include <boost/noncopyable.hpp>
 
 namespace t2h_core {
+
+struct torrent_udata {
+	int index;
+};
 
 class base_torrent_core_cntl : boost::noncopyable {
 public :
@@ -23,16 +29,10 @@ public :
 	virtual void on_setup_core_session(libtorrent::session_settings & settings) = 0;
 	
 	virtual void dispatch_alert(libtorrent::alert * alert) = 0;
-	
+	virtual void on_add_torrent(libtorrent::add_torrent_alert * alert) = 0;
+
 	virtual bool handle_with_critical_errors() { return false; }
 
-	virtual void post_pause_download(std::string const & torrent_name) = 0;
-	virtual void post_resume_download(std::string const & torrent_name) = 0;
-	virtual void post_stop_download(std::string const & torrent_name) = 0;
-	virtual void post_remove_torrent(std::string const & torrent_name) = 0;
-
-	virtual std::size_t decode_id(std::string const & torrent_name) = 0;
-	virtual std::string encode_id(std::size_t torrent_id) = 0;
 };
 
 typedef base_torrent_core_cntl::ptr_type base_torrent_core_cntl_ptr;
