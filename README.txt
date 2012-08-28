@@ -1,3 +1,11 @@
+Introduction.
+
+	The 't2h' library provide features use bittorrent protocol to download torrents and get torrent data via http protocol.
+	How it works: via C api as front-end of this system the user could manage torrents. 
+	And getting data of the torrents via the http server[Partial-Content http req.].
+
+	Back-end of this system is dual-core arch. first core is torrent client core, the second is http server.
+
 Repo sructure.
 	
 	t2h\
