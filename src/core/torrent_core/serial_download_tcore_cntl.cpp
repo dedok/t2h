@@ -210,16 +210,11 @@ void serial_download_tcore_cntl::on_update(libtorrent::state_update_alert * aler
 		it != last;
 		++it) 
 	{
-		std::string const paused( it->paused ? "yes" : "no");
-		std::cout << "State : " << (int)it->state << " paused : " << paused << std::endl;
-		std::cout << "Download rate " << it->download_rate << std::endl;
 	}
 }
 
 void serial_download_tcore_cntl::on_piece_finished(libtorrent::piece_finished_alert * alert) 
 {
-	std::cout << "Path " << alert->handle.save_path() 
-		<< " Index downloaded : " << alert->piece_index << std::endl;
 }
 
 void serial_download_tcore_cntl::on_file_complete(libtorrent::file_completed_alert * alert)
