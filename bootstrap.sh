@@ -41,7 +41,7 @@ EOF
 	#
 
 clear_build() { # clean-up prev build info 
-	rm -Rf $BUILD_DIR $SVN_TRUNK/lib/* $SVN_TRUNK/bin/* $SVN_TRUNK/bs
+	rm -Rf $BUILD_DIR $REPO_ROOT/lib/* $REPO_ROOT/bin/* $REPO_ROOT/bs
 	}
 	#
 
@@ -54,7 +54,7 @@ abort() { # clean-up build, print error message and exit with code 1
 eval_cmake() { # execute cmake command with situable args for macosx
 	local tc_file=$TOOLCHAINS_DIR/$TOOLCHAIN_MACOSX_UNIVERSAL_FILE
 	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1"
-	local cmake_eval_cmd="cmake -H$SVN_TRUNK/src -B$SVN_TRUNK/$2 $cmake_basic_args"
+	local cmake_eval_cmd="cmake -H$REPO_ROOT/src -B$REPO_ROOT/$2 $cmake_basic_args"
 	echo  "Command: $cmake_eval_cmd" && {
 		(eval $cmake_eval_cmd) || abort "cmake command fail"
 		}
@@ -63,6 +63,12 @@ eval_cmake() { # execute cmake command with situable args for macosx
 
 create_build() { # run macosx cmake command
 	eval_cmake $1 $BUILD_DIR
+	}
+	#
+
+configure_repo() {
+	[ ! -e $REPO_ROOT/lib ] mkdir $REPO_ROOT/lib
+	[ ! -e $REPO_ROOT/bin ] mkdir $REPO_ROOT/bin
 	}
 	#
 
@@ -101,6 +107,7 @@ for option ;do
 [ ! -z $WANNA_CLEAR ] && clear_build
 
 create_build $BUILD_TYPE || abort "$(basename) failed for details see ${LOG_FILE}."
-	
+configure_repo
+
 echo "bootstrap is done."
 

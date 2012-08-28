@@ -1,11 +1,11 @@
 #!/bin/bash
-# Soshnikov Vasiliy <vasiliy.soshnikov@simbirsoft.com>
+# Soshnikov Vasiliy <dedok.mad@gmail.com>
 
 # globs envt variables 
-SVN_TRUNK=$(pwd)
-MAC_SCRIPT_DIR=$SVN_TRUNK/src/scripts
-TOOLCHAINS_DIR=$SVN_TRUNK/toolchains
+REPO_ROOT=$(pwd)
+TOOLCHAINS_DIR=$REPO_ROOT/toolchains
 
 TOOLCHAIN_MACOSX_UNIVERSAL_FILE=MacOS.Universal.cmake
 TOOLCHAIN_LUNIX_UNIVERSAL_FILE=
+TOOLCHAIN_WINDOWS_UNIVERSAL_FILE=
 
