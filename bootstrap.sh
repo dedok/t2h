@@ -3,8 +3,9 @@
 
 # Global vars
 
-BUILD_DIR=build_dir
 LOG_FILE=$(basename $0).log
+BUILD_SHARED_DIR=shared_build
+BUILD_STATIC_DIR=static_build
 
 usage() { # print usage
 	cat << EOF
@@ -19,7 +20,9 @@ Defaults for the options are specified in brackets.
 Options:
    --help, -h                 display usage and exit 
 
-   --build-type               set build type [default=Debug]
+   --shared=[yes|no]          create an shared core library [detauld=Yes]
+
+   --build-type=[D|R|R]       set build type [default=Debug]
 	                         
                               Debug 
                               - generate debug build
@@ -41,7 +44,7 @@ EOF
 	#
 
 clear_build() { # clean-up prev build info 
-	rm -Rf $BUILD_DIR $REPO_ROOT/lib $REPO_ROOT/bin
+	rm -Rf $BUILD_STATIC_DIR $BUILD_SHARED_DIR $REPO_ROOT/lib $REPO_ROOT/bin
 	}
 	#
 
@@ -51,24 +54,38 @@ abort() { # clean-up build, print error message and exit with code 1
 	}
 	#
 
-eval_cmake() { # execute cmake command with situable args for macosx
+eval_cmake_with_static_lib() { # execute cmake command with situable args for static build
 	local tc_file=$TOOLCHAINS_DIR/$TOOLCHAIN_MACOSX_UNIVERSAL_FILE
 	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1"
 	local cmake_eval_cmd="cmake -H$REPO_ROOT/src -B$REPO_ROOT/$2 $cmake_basic_args"
-	echo  "Command: $cmake_eval_cmd" && {
+	echo "Command: $cmake_eval_cmd" && {
+		(eval $cmake_eval_cmd) || abort "cmake command fail"
+		}
+	}
+	#
+
+eval_cmake_with_shared_lib() { # execute cmake command with situable args for shared build
+	local tc_file=$TOOLCHAINS_DIR/$TOOLCHAIN_MACOSX_UNIVERSAL_FILE
+	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1 -DT2H_CORE_SHARED:BOOL=TRUE"
+	local cmake_eval_cmd="cmake -H$REPO_ROOT/src -B$REPO_ROOT/$2 $cmake_basic_args"
+	echo "Command: $cmake_eval_cmd" && {
 		(eval $cmake_eval_cmd) || abort "cmake command fail"
 		}
 	}
 	#
 
 create_build() { # run macosx cmake command
-	eval_cmake $1 $BUILD_DIR
+	[ x$2 = "xyes" ] && {
+		eval_cmake_with_shared_lib $1 $BUILD_SHARED_DIR
+		return
+		}
+	eval_cmake_with_static_lib $1 $BUILD_STATIC_DIR
 	}
 	#
 
-configure_repo() {
-	[ ! -e $REPO_ROOT/lib ] mkdir $REPO_ROOT/lib
-	[ ! -e $REPO_ROOT/bin ] mkdir $REPO_ROOT/bin
+configure_repo() { # pre-build build configurations
+	[ ! -e $REPO_ROOT/lib ] && mkdir $REPO_ROOT/lib
+	[ ! -e $REPO_ROOT/bin ] && mkdir $REPO_ROOT/bin
 	}
 	#
 
@@ -80,7 +97,8 @@ source $EXEC_DIR/src/scripts/tools/envt-inc || abort "can not include envt"
 
 BUILD_TYPE=Debug
 BUILD_LIST=
-WANNA_CLEAR=
+WANT_CLEAR=
+WANT_SHARED=yes
 IS_IPAD_BUILD=
 
 for option ;do
@@ -96,7 +114,10 @@ for option ;do
 			BUILD_TYPE=`expr "x$option" : "x--build-type=\(.*\)"`
 			;;
 		--clear | -c )
-			WANNA_CLEAR=yes
+			WANT_CLEAR=yes
+			;;
+		--shared=*)
+			WANT_SHARED=`expr "x$option" : "x--shared=\(.*\)"`
 			;;
 		* )
 			abort "unrecognized option: $option , type --help | --h to see available options"
@@ -104,9 +125,11 @@ for option ;do
 		esac
 	done
 
-[ ! -z $WANNA_CLEAR ] && clear_build
+[ ! -z $WANT_CLEAR ] && clear_build
 
-create_build $BUILD_TYPE || abort "$(basename) failed for details see ${LOG_FILE}."
+create_build $BUILD_TYPE $WANT_SHARED || \
+	abort "$(basename) failed for details see ${LOG_FILE}."
+
 configure_repo
 
 echo "bootstrap is done."
