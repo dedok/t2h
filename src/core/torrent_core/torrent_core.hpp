@@ -66,10 +66,10 @@ public :
 	
 	int add_torrent(boost::filesystem::path const & path);
 	int add_torrent_url(std::string const & url);
-	std::string start_torrent_download(int torrent_id, int file_id);
 	
-	std::string get_torrent_info(int torrent_id);
+	std::string get_torrent_info(int torrent_id) const;
 
+	std::string start_torrent_download(int torrent_id, int file_id);
 	void pause_download(int torrent_id, int file_id);
 	void resume_download(int torrent_id, int file_id);	
 	void remove_torrent(int torrent_id);
@@ -84,8 +84,6 @@ private :
 	void handle_core_notifications();	
 	bool is_critical_error(libtorrent::alert * alert);
 	void handle_critical_error_notification(libtorrent::alert * alert);
-	
-	int sync_add_torrent(boost::filesystem::path const & path);
 
 	bool prepare_torrent_params_for_file(
 		libtorrent::add_torrent_params & torrent_params, boost::filesystem::path const & path);

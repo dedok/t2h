@@ -28,10 +28,13 @@ public :
 	virtual void set_core_session(libtorrent::session * session_ref) = 0;
 	virtual void on_setup_core_session(libtorrent::session_settings & settings) = 0;
 	
+	virtual bool add_torrent(
+		libtorrent::add_torrent_params const & params, libtorrent::torrent_handle & handle) = 0;
+	
 	virtual void dispatch_alert(libtorrent::alert * alert) = 0;
-	virtual void on_add_torrent(libtorrent::add_torrent_alert * alert) = 0;
-
 	virtual bool handle_with_critical_errors() { return false; }
+
+private :
 
 };
 

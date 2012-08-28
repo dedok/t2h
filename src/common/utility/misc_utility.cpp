@@ -7,7 +7,7 @@ namespace utility {
 
 static std::string const chars_set =  
 	"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	"1234567890 ";
+	"1234567890";
 
 std::string get_random_string(std::size_t dist_max) 
 {

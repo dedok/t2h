@@ -10,7 +10,7 @@ static char const * json_config =
 "\"server_port\" : \"8080\",\n"
 "\"server_addr\" : \"127.0.0.1\",\n" 
 "\"doc_root\" : \"test/path\",\n" 
-"\"tc_root\" : \"tc_root\", \n"
+"\"tc_root\" : \"/Users/dedokOne/workspace/src/c++/torrent2http/tc_root\", \n"
 "\"tc_port_start\" : \"6881\",\n"
 "\"tc_port_end\" : \"6889\", \n"
 "\"tc_max_alert_wait_time\" : \"10\", \n" // mseconds
@@ -52,13 +52,21 @@ int main(int argc, char ** argv)
 
 	int const torrent_id = core.add_torrent(argv[1]);
 	if (torrent_id == -1) 
+	{ 
 		die("add torrent failed", -2);
-	else {
-		std::cout << "trying to start download torrent by id : " << torrent_id << std::endl;
-		std::cout << "url for download : " << core.start_torrent_download(torrent_id, 0) << std::endl;
 	}
+	else if (torrent_id > 0)
+	{
+		std::cout << "Torrent added, torrent id : " << torrent_id << std::endl;
+		std::cout << "Torrent info : " << core.get_torrent_info(torrent_id) << std::endl;
 
-	core.wait_service();
+		int file_id = 0;
+		for (;;) {
+			std::cout << "Url : " << core.start_torrent_download(torrent_id, file_id) << std::endl;
+			std::cin.get(); ++file_id;
+		} // ! for
+		core.wait_service();
+	}
 	
 	return 0;
 }

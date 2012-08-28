@@ -1,5 +1,6 @@
 #include "torrent_core.hpp"
 #include "misc_utility.hpp"
+#include "torrent_core_macros.hpp"
 
 namespace t2h_core {
 
@@ -63,7 +64,11 @@ bool torrent_core::launch_service()
 
 void torrent_core::stop_service() 
 {
-	if (cur_state_ == base_service::service_running) { 
+	/** Stop core_session_ subsytems, then core_session_ main loop. 
+		NOTE: To stop all 'trackers' session need to call dtor of core_session_ */
+	if (cur_state_ == base_service::service_running) {
+		core_session_.stop_dht(); core_session_.stop_lsd();
+		core_session_.stop_upnp(); core_session_.stop_natpmp();
 		core_session_.post_torrent_updates();
 		cur_state_ = base_service::service_stoped;
 		wait_service();
@@ -88,12 +93,43 @@ common::base_service::service_state torrent_core::get_service_state() const
 
 int torrent_core::add_torrent(boost::filesystem::path const & path) 
 {
+	/** Setup torrent and envt. then async add new torrent by file path. 
+	 	NOTE if torrent already in queue, the torrent will be add by force */
+	using libtorrent::torrent_info;
+	
+	int torrent_id = details::invalid_torrent_id;	
+	details::torrent_ex_info_ptr ex_info(new details::torrent_ex_info());
+	
+	LIBTORRENT_EXCEPTION_SAFE_BEGIN
+
 	if (cur_state_ != base_service::service_running) { 
-		TCORE_WARNING("add torrent by path '%s' failed torrent core not runing", path.string().c_str())
+		TCORE_WARNING("add torrent by path '%s' failed torrent core not runing", 
+			path.string().c_str())
 		return invalid_torrent_id;
 	}
+			
+	if (!prepare_torrent_params_for_file(ex_info->torrent_params, path)) { 
+		TCORE_WARNING("add torrent by path '%s' failed torrent file not valid", 
+			path.string().c_str())
+		return details::invalid_torrent_id;
+	}
 
-	return sync_add_torrent(path);	
+	if (!prepare_torrent_sandbox(ex_info->torrent_params)) {
+		TCORE_WARNING("add torrent by path '%s' failed can not prepare torrent sandbox", 
+			path.string().c_str())
+		return details::invalid_torrent_id;
+	}
+
+	if (!params_.controller->add_torrent(ex_info->torrent_params, ex_info->handle)) 
+		return details::invalid_torrent_id;
+	
+	ex_info->torrent_info.reset(new libtorrent::torrent_info(ex_info->handle.get_torrent_info()));	
+	torrent_id = torrents_map_.size() + 1;
+	torrents_map_[torrent_id] = ex_info;
+	
+	LIBTORRENT_EXCEPTION_SAFE_END_(return details::invalid_torrent_id)
+
+	return torrent_id;	
 }
 
 int torrent_core::add_torrent_url(std::string const & url) 
@@ -101,7 +137,10 @@ int torrent_core::add_torrent_url(std::string const & url)
 	/** Setup torrent and envt. then async add new torrent by url to the core_session_ message queue. 
 	 	NOTE if torrent already in queue, the torrent will be add by force */	
 	details::torrent_ex_info ex_info;
+	int torrent_id = details::invalid_torrent_id;
 
+	LIBTORRENT_EXCEPTION_SAFE_BEGIN
+	
 	if (cur_state_ != base_service::service_running) { 
 		TCORE_WARNING("add torrent by path '%s' failed torrent core not runing", url.c_str())
 		return invalid_torrent_id;
@@ -109,50 +148,64 @@ int torrent_core::add_torrent_url(std::string const & url)
 
 	prepare_torrent_params_for_url(ex_info.torrent_params, url);
 
-	return details::invalid_torrent_id;
-}
-
-std::string torrent_core::start_torrent_download(int torrent_id, int file_id) 
-{
-	if (cur_state_ != base_service::service_running) {
-		TCORE_WARNING("start download by id '%i' failed torrent core not runing", torrent_id)
-		return std::string();
-	}
-	
-	return "????";
-}
-
-int torrent_core::sync_add_torrent(boost::filesystem::path const & path) 
-{
-	/** Setup torrent and envt. then sync add new torrent by file path. 
-	 	NOTE if torrent already in queue, the torrent will be add by force */
-	using libtorrent::torrent_info;
-	
-	details::torrent_ex_info_ptr ex_info;
-	boost::system::error_code error_code;
-	int torrent_id = details::invalid_torrent_id;
-	boost::scoped_ptr<libtorrent::add_torrent_alert> add_alert;
-	
-	if (!prepare_torrent_params_for_file(ex_info->torrent_params, path)) 
-		return details::invalid_torrent_id;
-
-	if (!prepare_torrent_sandbox(ex_info->torrent_params))
-		return details::invalid_torrent_id;
-	
-	ex_info->handle = core_session_.add_torrent(ex_info->torrent_params, error_code);
-	if (ex_info->handle.is_valid() && !error_code) {
-		torrent_id = torrents_map_.size() + 1;
-		torrents_map_[torrent_id] = ex_info;
-		add_alert.reset(new libtorrent::add_torrent_alert(ex_info->handle, ex_info->torrent_params, error_code));
-		params_.controller->on_add_torrent(add_alert.get());
-	}
+	LIBTORRENT_EXCEPTION_SAFE_END_(torrent_id = details::invalid_torrent_id)
 
 	return torrent_id;
 }
 
-void torrent_core::pause_download(int torrent_id, int file_id) 
-{	
+std::string torrent_core::get_torrent_info(int torrent_id) const 
+{
+	details::torrents_map_type::const_iterator found;
+
+	if (cur_state_ != base_service::service_running) {
+		TCORE_WARNING("start download by id '%i' failed torrent core not runing", torrent_id)
+		return std::string();
+	}
+
+	LIBTORRENT_EXCEPTION_SAFE_BEGIN
+	
+	if ((found = torrents_map_.find(torrent_id)) != torrents_map_.end())  
+		return details::torrent_info_to_json(found->second);
+
+	LIBTORRENT_EXCEPTION_SAFE_END
+
+	return std::string();
+}
+
+std::string torrent_core::start_torrent_download(int torrent_id, int file_id) 
+{
+	/** To start download just return notmal prior to req. file, 
+		then post message to main loop about this change */
 	details::torrents_map_type::iterator found;
+
+	LIBTORRENT_EXCEPTION_SAFE_BEGIN	
+	
+	if (cur_state_ != base_service::service_running) {
+		TCORE_WARNING("start download by id '%i' failed torrent core not runing", torrent_id)
+		return std::string();
+	}
+
+	if ((found = torrents_map_.find(torrent_id)) != torrents_map_.end()) {
+		libtorrent::torrent_handle & handle = found->second->handle;
+		if (found->second->torrent_info->num_files() > file_id) {
+			handle.file_priority(file_id, details::file_ex_info::normal_prior);
+			core_session_.post_torrent_updates();
+			return found->second->torrent_info->file_at(file_id).path;	
+		} // !if
+	}
+
+	LIBTORRENT_EXCEPTION_SAFE_END
+	
+	return std::string();
+}
+
+void torrent_core::pause_download(int torrent_id, int file_id) 
+{		
+	/** To pause download just set off prior to req. file, 
+		then post message to main loop about this change */
+	details::torrents_map_type::iterator found;
+	
+	LIBTORRENT_EXCEPTION_SAFE_BEGIN
 
 	if (cur_state_ != base_service::service_running) {
 		TCORE_WARNING("start download by id '%i' failed torrent core not runing", torrent_id)
@@ -161,16 +214,20 @@ void torrent_core::pause_download(int torrent_id, int file_id)
 
 	if ((found = torrents_map_.find(torrent_id)) != torrents_map_.end()) {
 		details::torrent_ex_info_ptr ex_info = found->second;
-		if (ex_info->handle.is_valid()) {
+		if (found->second->torrent_info->num_files() > file_id) {
 			ex_info->handle.file_priority(file_id, details::file_ex_info::off_prior);
 			core_session_.post_torrent_updates();
 		} // !if
 	}
+
+	LIBTORRENT_EXCEPTION_SAFE_END
 }
 
 void torrent_core::resume_download(int torrent_id, int file_id) 
 {
 	details::torrents_map_type::iterator found;
+
+	LIBTORRENT_EXCEPTION_SAFE_BEGIN
 
 	if (cur_state_ != base_service::service_running) {
 		TCORE_WARNING("start download by id '%i' failed torrent core not runing", torrent_id)
@@ -181,17 +238,26 @@ void torrent_core::resume_download(int torrent_id, int file_id)
 		details::torrent_ex_info_ptr ex_info = found->second;
 		if (ex_info->handle.is_valid()) {
 			if (file_id < 0) 
+			{ 
 				ex_info->handle.resume();
-			else 
-				ex_info->handle.file_priority(file_id, details::file_ex_info::max_prior);
-			core_session_.post_torrent_updates();
+				core_session_.post_torrent_updates();
+			}
+			else if (found->second->torrent_info->num_files() > file_id) 
+			{
+				ex_info->handle.file_priority(file_id, details::file_ex_info::normal_prior);
+				core_session_.post_torrent_updates();
+			}
 		} // !if
 	}
+
+	LIBTORRENT_EXCEPTION_SAFE_END
 }	
 
 void torrent_core::remove_torrent(int torrent_id) 
 {
 	details::torrents_map_type::iterator found;
+
+	LIBTORRENT_EXCEPTION_SAFE_BEGIN
 
 	if (cur_state_ != base_service::service_running) {
 		TCORE_WARNING("start download by id '%i' failed torrent core not runing", torrent_id)
@@ -202,21 +268,25 @@ void torrent_core::remove_torrent(int torrent_id)
 		core_session_.remove_torrent(found->second->handle);
 		torrents_map_.erase(found);
 	}
+
+	LIBTORRENT_EXCEPTION_SAFE_END
 }
 
 void torrent_core::stop_torrent_download(int torrent_id) 
 {
 	details::torrents_map_type::iterator found;
 
+	LIBTORRENT_EXCEPTION_SAFE_BEGIN
+	
 	if (cur_state_ != base_service::service_running) {
 		TCORE_WARNING("start download by id '%i' failed torrent core not runing", torrent_id)
 		return;
 	}
 	
-	if ((found = torrents_map_.find(torrent_id)) != torrents_map_.end()) {
-		if (found->second->handle.is_valid()) 
+	if ((found = torrents_map_.find(torrent_id)) != torrents_map_.end()) 
 			found->second->handle.pause();
-	} 
+	
+	LIBTORRENT_EXCEPTION_SAFE_END
 }
 
 /**
@@ -230,6 +300,9 @@ bool torrent_core::init_core_session()
  	if (init_torrent_core_settings()) 
 	{
 		boost::system::error_code error_code;
+		core_session_.start_lsd();
+		core_session_.start_upnp();
+		core_session_.start_natpmp();
 		core_session_.listen_on(std::make_pair(settings_.port_start, settings_.port_end), error_code);	
 		setup_core_session();	
 		return (error_code ? false : true);
@@ -278,12 +351,15 @@ void torrent_core::core_main_loop()
 	libtorrent::time_duration const wait_alert_time = libtorrent::seconds(settings_.max_alert_wait_time);
 	while (cur_state_ == base_service::service_running) 
 	{
+		LIBTORRENT_EXCEPTION_SAFE_BEGIN
 		if (core_session_.wait_for_alert(wait_alert_time) != NULL) {
 			handle_core_notifications();
 			continue;
 		}
 		core_session_.post_torrent_updates();
+		LIBTORRENT_EXCEPTION_SAFE_END_(break)
 	} // !loop
+	cur_state_ = base_service::service_stoped;
 }
 
 void torrent_core::handle_core_notifications() 
