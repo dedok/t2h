@@ -37,7 +37,7 @@ Options:
 
 Example:
    
-   ./$(basename $0) --clear --build-type=Release
+   ./$(basename $0) --clear --build-type=Release 
 
 EOF
 	}
