@@ -41,7 +41,7 @@ EOF
 	#
 
 clear_build() { # clean-up prev build info 
-	rm -Rf $BUILD_DIR $REPO_ROOT/lib/* $REPO_ROOT/bin/* $REPO_ROOT/bs
+	rm -Rf $BUILD_DIR $REPO_ROOT/lib $REPO_ROOT/bin
 	}
 	#
 

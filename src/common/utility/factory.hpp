@@ -86,7 +86,7 @@ private:
 	};
    	
 	typedef boost::unordered_map<std::string, base_type_ptr> factory_map_type;
-    typedef typename factory_map_type::iterator fmt_iterator;
+	typedef typename factory_map_type::iterator fmt_iterator;
 	typedef typename factory_map_type::const_iterator fmt_const_iterator;
 	
 	factory_map_type factories_;
