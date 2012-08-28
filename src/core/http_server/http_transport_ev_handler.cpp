@@ -105,7 +105,7 @@ transport_ev_handler::recv_result transport_ev_handler::on_recv_succ(
 	if (!parse_range_header_result) { 
 		HCORE_WARNING(
 			"ill formed data, parsing of the 'Range' header failed, req. bytes: s '%i' e '%i'"
-			, bytes_begin, bytes_end)
+			, (int)bytes_begin, (int)bytes_end)
 		return on_recv_error(serv_reply, http_reply::bad_request);
 	}
 	
@@ -123,7 +123,7 @@ transport_ev_handler::recv_result transport_ev_handler::on_recv_succ(
 		case http_reply::buffer_error : 
 		case http_reply::unknown_error :
 			HCORE_WARNING("get content data failed, with state '%i', req. path '%s', req. bytes: s '%i' e '%i'", 
-				(int)state, request_path.c_str(), bytes_begin, bytes_end)
+				(int)state, request_path.c_str(), (int)bytes_begin, (int)bytes_end)
 			return on_recv_error(serv_reply, http_reply::internal_server_error);
 		default : /* Shoud never happen */ 
 			return on_recv_error(serv_reply, http_reply::not_implemented);

@@ -6,6 +6,7 @@ configure_file(
 set(T2H_HEADERS 
 	${T2H_HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/setting_manager.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/core_version.hpp
 	PARENT_SCOPE
 	)
 

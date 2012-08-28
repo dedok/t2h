@@ -2,6 +2,7 @@
 #define TORRENT_CORE_CONFIG_HPP_INCLUDED
 
 #include "syslogger.hpp"
+#include "core_version.hpp"
 
 #define TORRENT_CORE_LOG_PREFIX "TORRENT CORE "
 #define FUNCTION_PREFIX __FUNCTION__" "

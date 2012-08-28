@@ -2,6 +2,7 @@
 #define HTTP_SERVER_CORE_CONFIG_HPP_INCLUDED
 
 #include "syslogger.hpp"
+#include "core_version.hpp"
 
 #define HTTP_SERVER_LOG_PREFIX "HTTP SERVER CORE "
 

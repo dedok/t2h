@@ -2,7 +2,7 @@
 
 #include "http_transport_ev_handler.hpp"
 #include "transport_types.hpp"
-#include "syslogger.hpp"
+#include "http_server_core_config.hpp"
 
 namespace t2h_core {
 
@@ -61,7 +61,7 @@ bool http_server_core::launch_service()
 	} 
 	catch (common::transport_exception const & expt) 
 	{
-		LOG_ERROR("transport init/run failed, with message '%s'", expt.what())
+		HCORE_ERROR("transport init/run failed, with message '%s'", expt.what())
 		return false;
 	}
 	return (cur_state_ == base_service::service_running);
@@ -79,7 +79,7 @@ void http_server_core::stop_service()
 	}
 	catch (transport_exception const & expt) 
 	{
-		LOG_ERROR("transport stop failed, with message '%s'", expt.what())
+		HCORE_ERROR("transport stop failed, with message '%s'", expt.what())
 	}
 }
 
@@ -93,7 +93,7 @@ void http_server_core::wait_service()
 	} 
 	catch (transport_exception const & expt) 
 	{
-		LOG_ERROR("transport wait failed, with message '%s'", expt.what())
+		HCORE_ERROR("transport wait failed, with message '%s'", expt.what())
 	}
 }
 
