@@ -1,6 +1,7 @@
+
 #include "http_transport_ev_handler.hpp"
 #include "http_utility.hpp"
-#include "syslogger.hpp"
+#include "http_server_core_config.hpp"
 
 /** 
  * Public transport_ev_handler api 
@@ -21,7 +22,7 @@ transport_ev_handler::~transport_ev_handler()
 transport_ev_handler::recv_result transport_ev_handler::on_recv(
 		buffer_type const & recv_data, std::size_t recv_data_size, buffer_type & answ_data) 
 {
-	LOG_TRACE("processing recv data")
+	HCORE_TRACE("processing recv data")
 
 	using namespace utility;
 
@@ -32,7 +33,7 @@ transport_ev_handler::recv_result transport_ev_handler::on_recv(
 	if (result) 
 		return on_recv_succ(client_request, serv_reply);
 	else if (!result) {
-		LOG_WARNING("parsing of the recv data failed")
+		HCORE_WARNING("parsing of the recv data failed")
 		return on_recv_error(serv_reply, http_reply::bad_request);
 	}
 	return on_recv_more_data(serv_reply);
@@ -40,12 +41,12 @@ transport_ev_handler::recv_result transport_ev_handler::on_recv(
 
 void transport_ev_handler::on_error(int error) 
 {
-	LOG_WARNING("error code '%i'", error)
+	HCORE_WARNING("error code '%i'", error)
 }
 
 void transport_ev_handler::on_close() 
 {
-	LOG_TRACE("connection closed")
+	HCORE_TRACE("connection closed")
 }
 
 transport_ev_handler::ptr_type transport_ev_handler::clone() 
@@ -88,21 +89,21 @@ transport_ev_handler::recv_result transport_ev_handler::on_recv_succ(
 	boost::int64_t bytes_begin = 0 , bytes_end = 0;
 	
 	if (!url_decode(req.uri, request_path)) {
-		LOG_WARNING("uri decode failed with data '%s'", req.uri.c_str())
+		HCORE_WARNING("uri decode failed with data '%s'", req.uri.c_str())
 		return on_recv_error(serv_reply, http_reply::bad_request);
 	}
 
 	request_path = (doc_root_ / request_path).string();
 	
 	if (!http_request_get_range_header(req, range_header)) {
-		LOG_WARNING("ill formed data, getting of the range header failed")
+		HCORE_WARNING("ill formed data, getting of the range header failed")
 		return on_recv_error(serv_reply, http_reply::bad_request);
 	}
 
 	boost::tie(bytes_begin, bytes_end, parse_range_header_result) 
 		= parse_range_header(range_header);
 	if (!parse_range_header_result) { 
-		LOG_WARNING(
+		HCORE_WARNING(
 			"ill formed data, parsing of the 'Range' header failed, req. bytes: s '%i' e '%i'"
 			, bytes_begin, bytes_end)
 		return on_recv_error(serv_reply, http_reply::bad_request);
@@ -121,7 +122,7 @@ transport_ev_handler::recv_result transport_ev_handler::on_recv_succ(
 		case http_reply::io_error : 
 		case http_reply::buffer_error : 
 		case http_reply::unknown_error :
-			LOG_WARNING("get content data failed, with state '%i', req. path '%s', req. bytes: s '%i' e '%i'", 
+			HCORE_WARNING("get content data failed, with state '%i', req. path '%s', req. bytes: s '%i' e '%i'", 
 				(int)state, request_path.c_str(), bytes_begin, bytes_end)
 			return on_recv_error(serv_reply, http_reply::internal_server_error);
 		default : /* Shoud never happen */ 

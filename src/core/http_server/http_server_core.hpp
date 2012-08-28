@@ -32,6 +32,8 @@ private :
 
 };
 
+typedef boost::shared_ptr<http_server_core> http_server_core_ptr;
+
 }
 
 #endif

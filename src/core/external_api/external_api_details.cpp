@@ -67,23 +67,59 @@ bool core_handle::init_support_system()
 bool core_handle::init_core_services() 
 {
 	bool state = false;
-	try 
-	{
-		base_torrent_core_cntl_ptr serial_download_cntl(new serial_download_tcore_cntl(sets_manager_));
-		torrent_core_params tcore_params;
-		tcore_params.setting_manager = sets_manager_; 
-		tcore_params.controller = serial_download_cntl;
-		torrent_core_ptr tcore(new torrent_core(tcore_params));
-		if (tcore->launch_service())
-			state = servs_manager_.registrate(tcore);
+	torrent_core_ptr torrent_core;
+	http_server_core_ptr http_server;
+	
+	if ((torrent_core = init_torrent_core())) { 
+		if ((http_server = init_http_server())) {
+			state = servs_manager_.registrate(torrent_core);
+			state = servs_manager_.registrate(http_server);
+		} // !if		
 	}
-	catch (std::exception const & expt) 
-	{
-		return false;
-	}
+
+	if (!state) {
+		torrent_core->stop_service();
+		http_server->stop_service();
+	} 
+	
 	return state;
 }
 
+torrent_core_ptr core_handle::init_torrent_core() 
+{
+	torrent_core_ptr tcore;
+	torrent_core_params tcore_params;
+	try 
+	{
+		base_torrent_core_cntl_ptr serial_download_cntl(new serial_download_tcore_cntl(sets_manager_));
+		tcore_params.setting_manager = sets_manager_; 
+		tcore_params.controller = serial_download_cntl;
+		tcore.reset(new torrent_core(tcore_params));
+		if (!tcore->launch_service())
+			return torrent_core_ptr();
+	} 
+	catch (std::exception const & expt) 
+	{
+		return torrent_core_ptr(); 
+	}
+	return tcore;
+}
+
+http_server_core_ptr core_handle::init_http_server() 
+{
+	http_server_core_ptr http_server;
+	try 
+	{
+		http_server.reset(new http_server_core(sets_manager_));
+		if (!http_server->launch_service())
+			return http_server_core_ptr();
+	} 
+	catch (std::exception const & expt)
+	{
+		return http_server_core_ptr();
+	}
+	return http_server;
+}
 
 } // namespace t2h_core
 

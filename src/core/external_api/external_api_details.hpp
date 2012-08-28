@@ -34,6 +34,9 @@ private :
 	bool init_support_system();
 	bool init_core_services();
 	
+	torrent_core_ptr init_torrent_core();
+	http_server_core_ptr init_http_server();
+
 	core_handle_settings settings_;
 	common::services_manager servs_manager_;
 	t2h_core::setting_manager_ptr sets_manager_;
