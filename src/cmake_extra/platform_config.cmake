@@ -3,17 +3,15 @@
 # Soshnikov Vasiliy <dedok.mad@gmail.com>
 #
 
-message(STATUS "Setup extra depends, for OSX platform.")
-include(${CMAKE_SOURCE_DIR}/cmake_extra/osx/lib_dir.cmake OPTIONAL)
-
-
-#set(T2H_CORE_SHARED TRUE)
+message(STATUS "Setup extra depends for ${PLATFORM_TYPE}")
+include(${CMAKE_SOURCE_DIR}/cmake_extra/${PLATFORM_TYPE}/config.cmake OPTIONAL)
 
 # Try to find/setup the boost library
 add_definitions(-DTORRENT_USE_OPENSSL) 
 add_definitions(-DTORRENT_DISABLE_GEO_IP) 
 add_definitions(-DBOOST_ASIO_ENABLE_CANCELIO)
-if (T2H_CORE_SHARED)
+
+if (DEFINED T2H_CORE_SHARED)
 	add_definitions(-DBOOST_ASIO_SEPARATE_COMPILATION)
 else()
 	add_definitions(-DBOOST_ASIO_DYN_LINK)

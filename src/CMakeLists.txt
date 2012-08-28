@@ -44,8 +44,7 @@ elseif(UNIX)
 endif()
 
 # This file should contain all additional include and link directories
-set(EXTRA_CONF_DIR ${CMAKE_SOURCE_DIR}/cmake_extra/${PLATFORM_TYPE})
-include(${EXTRA_CONF_DIR}/platform_config.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake_extra/platform_config.cmake)
 
 # Specifying directory for executable and libraries files with 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/../bin)
