@@ -6,17 +6,7 @@ Introduction.
 
 	Back-end of this system is dual-core arch. first core is torrent client core, the second is http server.
 
-Repo sructure.
-	
-	t2h\
-		doc - containts 't2h' decumentation.
-		src - containts 't2h' sources.
-		toolchains - containts the gcc/cl/etc the cmake toolchains.
-		packages - for the extra packages.
-		bin - generate by bootstrap.[sh|bat], containts binaries files.
-		lib - generate by bootstrap.[sh|bat], containts libraries files.
-
-Supporting OS/Compilers.
+1. Supporting OS/Compilers.
 	
 	1.0 OS.
 		Windows min. version XP with SP 1.
@@ -31,7 +21,7 @@ Supporting OS/Compilers.
 		1.1.3 Linux/BSD
 			Min. version. gcc-4.2
 
-Building 't2h'.
+2. Building 't2h'.
 
     2.0 Extra depends.
         The 't2h' library have several extra depends, boost[1.45 min. ver.], libtorrent[0.16.0 min. ver.],
@@ -52,4 +42,15 @@ Building 't2h'.
 	
     2.3 [NOT IMPLEMENTED]
         To test 't2h', after building type to terminal/cmd.exe follow text 'cd shared_build && make/nmake check'
+
+3. Repo sructure.
+	
+	t2h\
+		doc - containts 't2h' decumentation.
+		src - containts 't2h' sources.
+		toolchains - containts the gcc/cl/etc the cmake toolchains.
+		packages - for the extra packages.
+		bin - generate by bootstrap.[sh|bat], containts binaries files.
+		lib - generate by bootstrap.[sh|bat], containts libraries files.
+
 
