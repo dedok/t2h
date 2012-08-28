@@ -1,3 +1,5 @@
+# Some tests might not link well only if 't2h' build as dynamic lib.
+# That happens because not all 't2h' api(deep hidden classes) have export attributes.
 if (DEFINED T2H_CORE_SHARED)
 	set(link_depends core)
 else()
@@ -17,6 +19,6 @@ add_executable(link_test_c EXCLUDE_FROM_ALL link_test.c)
 target_link_libraries(link_test_c ${link_depends})
 
 add_executable(link_test_cpp EXCLUDE_FROM_ALL link_test.cpp)
-target_link_libraries(link_test_cpp core)
+target_link_libraries(link_test_cpp ${link_depends})
 
 
