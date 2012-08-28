@@ -30,6 +30,8 @@ Building 't2h'.
         cmake the build system [2.8 min. ver.], Open SSL[as the boost and the libtorrent extra depends].
         To know how-to build/get libtorrent see the libtorrent[http://www.rasterbar.com/products/libtorrent] site.
         To know hot-tp build/get boost see the boost[www.boost.org] site.
+		NOTE : boost, and the libtorrent must be static libraries, for Mac OS X with extra g++ and the gcc args :
+			gcc '-arch i386 -arch x86_64 -fvisibility=hidden' and for g++ '-arch i386 -arch x86_64 -fvisibility=hidden -fvisibility-inlines-hidden'
 
     2.1 Mac OS X/Linux/BSD.
         To build 't2h' release dynamic library udner Linux/Mac OS X/BSD open 'terminal' -> cd to the repo root and type
