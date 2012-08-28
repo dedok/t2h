@@ -3,6 +3,8 @@
 
 #include "t2h_config.h"
 
+#define INVALID_TORRENT_ID -1 
+
 /** Hidden t2h handle type */
 typedef void * t2h_handle_t;
 
@@ -127,7 +129,7 @@ T2H_STD_API t2h_delete_torrent(t2h_handle_t handle, int torrent_id);
  * @return
  *	Nothing
  */
-T2H_STD_API t2h_stop_download(t2h_handle_t handle, int torrent_id, int file_id);
+T2H_STD_API t2h_stop_download(t2h_handle_t handle, int torrent_id);
 
 #endif
 

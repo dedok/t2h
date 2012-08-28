@@ -13,7 +13,7 @@ int main(char ** argv, int argc)
 	t2h_paused_download(NULL, -1, -1);
 	t2h_resume_download(NULL, -1, -1);
 	t2h_delete_torrent(NULL, -1);
-	t2h_stop_download(NULL, -1, -1);
+	t2h_stop_download(NULL, -1);
 	return 0;
 }
 
