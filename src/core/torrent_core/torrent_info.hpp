@@ -7,8 +7,15 @@
 #include <boost/function.hpp>
 #include <boost/scoped_ptr.hpp>
 
+#if defined (__GNUG__)
+#pragma GCC system_header
+#endif
+
 #include <libtorrent/config.hpp>
 #include <libtorrent/session.hpp>
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 namespace t2h_core { namespace details {
 

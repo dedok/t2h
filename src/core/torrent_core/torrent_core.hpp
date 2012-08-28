@@ -8,6 +8,10 @@
 
 #include <map>
 
+#if defined(__GNUG__)
+#pragma GCC system_header
+#endif
+
 #include <libtorrent/config.hpp>
 #include <libtorrent/session.hpp>
 

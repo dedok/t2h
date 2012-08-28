@@ -8,7 +8,6 @@
 #include <libtorrent/create_torrent.hpp>
 #include <libtorrent/extensions/metadata_transfer.hpp>
 
-
 namespace t2h_core {
 
 /**
