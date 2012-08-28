@@ -98,7 +98,7 @@ source $EXEC_DIR/src/scripts/tools/envt-inc || abort "can not include envt"
 BUILD_TYPE=Debug
 BUILD_LIST=
 WANT_CLEAR=
-WANT_SHARED=yes
+WANT_SHARED=no
 IS_IPAD_BUILD=
 
 for option ;do
@@ -125,7 +125,7 @@ for option ;do
 		esac
 	done
 
-[ ! -z $WANT_CLEAR ] && clear_build
+[ x$WANT_CLEAR = "xyes" ] && clear_build
 
 create_build $BUILD_TYPE $WANT_SHARED || \
 	abort "$(basename) failed for details see ${LOG_FILE}."
