@@ -12,7 +12,7 @@ asio_socket_transport::asio_socket_transport(
 	transport_config const & config, 
 	base_transport_ev_handler_ptr event_handler) 
 		: base_transport(config, event_handler), 
-		thread_pool_(),
+		workers_(),
 		io_service_(), 
 		signals_(io_service_),
 		acceptor_(io_service_), 
@@ -25,6 +25,7 @@ asio_socket_transport::asio_socket_transport(
 
 asio_socket_transport::~asio_socket_transport() 
 {
+	stop_connection();
 }
 
 void asio_socket_transport::initialize() 
@@ -56,25 +57,11 @@ void asio_socket_transport::establish_connection()
 	
 	try 
 	{
-/*		thread_pool_.resize_max_threads(config_.max_threads);
-		for (std::size_t task_counter = 0; 
-			task_counter < config_.max_threads; 
-			++task_counter)
-		{
-			thread_pool_.add_task(task_counter,
-				boost::bind(&boost::asio::io_service::run, &io_service_));	
+		for (std::size_t i = 0; i < config_.max_threads; ++i) {
+			boost::shared_ptr<boost::thread> thread(new boost::thread(
+				boost::bind(&boost::asio::io_service::run, &io_service_)));
+			workers_.push_back(thread);
 		}
-*/
-		  std::vector<boost::shared_ptr<boost::thread> > threads;
-		    for (std::size_t i = 0; i < 4; ++i)
-			{
-			      boost::shared_ptr<boost::thread> thread(new boost::thread(
-				            boost::bind(&boost::asio::io_service::run, &io_service_)));
-							    threads.push_back(thread);
-			}
-
-			for (std::size_t i = 0; i < threads.size(); ++i)
-				threads[i]->join();
 	}
 	catch (boost::exception const & expt)
 	{
@@ -90,10 +77,16 @@ bool asio_socket_transport::is_connected() const
 
 void asio_socket_transport::stop_connection() 
 {
-	boost::lock_guard<boost::mutex> guard(lock_);
-	io_service_.stop();
-	event_handler_->on_close();
-	thread_pool_.wait_all_tasks();
+	if (is_connected()) {
+		io_service_.stop();
+		wait_unsafe();
+		event_handler_->on_close();
+	}
+}
+
+void asio_socket_transport::wait() 
+{
+	wait_unsafe();
 }
 		
 void asio_socket_transport::registr_event_handler(base_transport_ev_handler_ptr event_handler) 
@@ -114,7 +107,14 @@ base_transport_ev_handler_ptr asio_socket_transport::get_event_handler()
 
 bool asio_socket_transport::is_connected_unsafe() const 
 {
-	return thread_pool_.has_unfinished_task();
+	bool state = false;
+	for (thread_pool_type::const_iterator it = workers_.begin(), last = workers_.end(); 
+		it != last;
+		++it) 
+	{
+		state = (*it)->joinable();
+	}
+	return state;
 }
 
 bool asio_socket_transport::has_configured() const 
@@ -161,6 +161,16 @@ void asio_socket_transport::handle_stop()
 {
 	io_service_.stop();
 	event_handler_->on_error(0); 
+}
+
+void asio_socket_transport::wait_unsafe() 
+{
+	for (thread_pool_type::iterator it = workers_.begin(), last = workers_.end(); 
+		it != last;
+		++it) 
+	{
+		(*it)->join();
+	}
 }
 
 } } // namespace common, details

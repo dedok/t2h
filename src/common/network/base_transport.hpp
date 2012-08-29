@@ -37,7 +37,8 @@ public :
 	virtual void establish_connection() = 0;
 	virtual bool is_connected() const = 0;
 	virtual void stop_connection() = 0;
-		
+	virtual void wait() = 0;
+
 	virtual void registr_event_handler(base_transport_ev_handler_ptr ev_handler) = 0;
 	virtual base_transport_ev_handler_ptr get_event_handler() = 0;
 	

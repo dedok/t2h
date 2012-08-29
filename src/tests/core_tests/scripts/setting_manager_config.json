@@ -1,8 +1,12 @@
 { 
 	"workers" : "4",
-	"server_port" : "8080", 
+	"server_port" : "5999", 
 	"server_addr" : "127.0.0.1", 
-	"doc_root" : "test/path"
-	"port_start" : "6000"
-	"port_end" : "6001"
+	"doc_root" : "/Users/dedokOne/workspace/src/c++/torrent2http/tc_root",
+	"tc_root" : "/Users/dedokOne/workspace/src/c++/torrent2http/tc_root",
+	"tc_port_start" : "6000",
+	"tc_port_end" : "6001",
+	"tc_max_alert_wait_time" : "10",
+	"tc_max_async_download_size" : "5242880" 
 }
+

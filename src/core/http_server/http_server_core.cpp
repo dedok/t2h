@@ -38,7 +38,7 @@ http_server_core::http_server_core(setting_manager_ptr setting_manager)
 
 http_server_core::~http_server_core() 
 {
-
+	stop_service();
 }
 
 bool http_server_core::launch_service() 
@@ -89,7 +89,7 @@ void http_server_core::wait_service()
 	try 
 	{
 		if (cur_state_ == base_service::service_running)
-			transport_->stop_connection();
+			transport_->wait();
 	} 
 	catch (transport_exception const & expt) 
 	{

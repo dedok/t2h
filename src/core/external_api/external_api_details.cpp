@@ -36,7 +36,8 @@ bool core_handle::initialize()
 		if (sets_manager_->config_is_well())
 			state = init_core_services();
 	}
-	if (!state) destroy();
+	if (!state) { 
+	}
 	return state;
 }
 
@@ -78,8 +79,8 @@ bool core_handle::init_core_services()
 	}
 
 	if (!state) {
-		torrent_core->stop_service();
-		http_server->stop_service();
+	//	torrent_core->stop_service();
+	//	http_server->stop_service();
 	} 
 	
 	return state;

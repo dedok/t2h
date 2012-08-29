@@ -34,12 +34,15 @@ find_package(Boost 1.45.0 COMPONENTS
 	unit_test_framework
 	REQUIRED)
 
-set(Boost_LIBRARIES ${Boost_LIBRARIES} pthread)
-set(Boost_THREAD_LIBRARY ${Boost_THREAD_LIBRARY} pthread)
+if (UNIX OR APPLE)
+	set(Boost_LIBRARIES ${Boost_LIBRARIES} pthread)
+	set(Boost_THREAD_LIBRARY ${Boost_THREAD_LIBRARY} pthread)
+endif()
 
 # OpenSSL
 set(OPENSSL_USE_STATIC_LIBS ON)
 set(OPENSSL_USE_STATIC_RUNTIME ${use_static_runtime})
+
 find_package(OpenSSL PATHS ${CMAKE_SOURCE_DIR}/cmake_extra REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
 

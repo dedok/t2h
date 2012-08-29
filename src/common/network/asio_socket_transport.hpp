@@ -22,14 +22,13 @@ public :
 	virtual void establish_connection();
 	virtual bool is_connected() const;
 	virtual void stop_connection();
-		
+	virtual void wait();
+
 	virtual void registr_event_handler(base_transport_ev_handler_ptr event_handler);
 	virtual base_transport_ev_handler_ptr get_event_handler();
 	
 private :
-	typedef utility::base_thread_pool<
-		utility::details::default_policy
-	> thread_pool_type;
+	typedef std::vector<boost::shared_ptr<boost::thread> > thread_pool_type;
 
 	bool is_connected_unsafe() const;
 	bool has_configured() const;
@@ -39,8 +38,9 @@ private :
 	void start_accept();
 	void handle_accept(boost::system::error_code const & error);
 	void handle_stop();
+	void wait_unsafe();
 
-	thread_pool_type thread_pool_;
+	thread_pool_type workers_;
 	boost::asio::io_service io_service_;
 	boost::asio::signal_set signals_;
 	boost::asio::ip::tcp::acceptor acceptor_;	
