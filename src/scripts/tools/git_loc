@@ -1,0 +1,15 @@
+#!/bin/bash
+
+THIS_PROGRAM=$(basename $0) 
+
+# entry
+echo $THIS_PROGRAM
+
+[ -z $1 ] && \
+	echo "usage ./$THIS_PROGRAM [autor]" && exit -1
+	#
+
+git log --author="$1" --pretty=tformat: --numstat | \
+	awk '{ add += $1 ; subs += $2 ; loc += $1 - $2 } END \
+		{ printf "added lines: %s removed lines: %s total lines: %s\n",add,subs,loc }'
+
