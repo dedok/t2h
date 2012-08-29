@@ -15,7 +15,8 @@ public :
 
 	bool registrate(base_service_ptr service);
 	base_service_ptr unregistrate(std::string const & name);
-
+	
+	void wait_all();
 	void stop_all();
 
 	base_service::service_state get_service_state(std::string const & name) const;

@@ -43,14 +43,25 @@ void services_manager::stop_all()
 		it != end; 
 		++it) 
 	{
-		if (it->second->get_service_state() == 
-			base_service::service_running) 
-		{
+		if (it->second->get_service_state() == base_service::service_running) {
 			it->second->stop_service(); 
 			it->second->wait_service();
 		}
 	}
 	services_.clear();
+}
+
+void services_manager::wait_all() 
+{
+	for (services_list_type::const_iterator it = services_.begin(), 
+		end = services_.end();
+		it != end; 
+		++it) 
+	{
+		if (it->second->get_service_state() == base_service::service_running) 
+			it->second->wait_service();
+	}
+
 }
 
 base_service::service_state services_manager::get_service_state(std::string const & name) const

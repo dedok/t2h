@@ -35,8 +35,9 @@ bool core_handle::initialize()
 		sets_manager_->load_config(boost::filesystem::path(settings_.config_path));
 		if (sets_manager_->config_is_well())
 			state = init_core_services();
-	}
-	if (!state) { 
+	} 
+	else if (!state) {
+		destroy();
 	}
 	return state;
 }
@@ -49,7 +50,7 @@ void core_handle::destroy()
 
 void core_handle::wait() 
 {
-
+	servs_manager_.wait_all();
 }
 
 bool core_handle::init_support_system() 
@@ -79,8 +80,8 @@ bool core_handle::init_core_services()
 	}
 
 	if (!state) {
-	//	torrent_core->stop_service();
-	//	http_server->stop_service();
+		torrent_core->stop_service();
+		http_server->stop_service();
 	} 
 	
 	return state;

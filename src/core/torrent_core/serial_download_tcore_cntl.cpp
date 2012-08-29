@@ -174,7 +174,7 @@ void serial_download_tcore_cntl::on_add_torrent(libtorrent::add_torrent_alert * 
 	boost::lock_guard<boost::mutex> guard(futures_.lock);
 	details::futures_iterator found = utility::container_find_unsafe(futures_, handle.save_path());
 	if (found == futures_.cont.end()) {
-		TCORE_TRACE("failed to add torrent by path '%s', can not find future routine", 
+		TCORE_WARNING("failed to add torrent by path '%s', can not find future routine", 
 			alert->handle.save_path().c_str())
 		return;
 	} 
