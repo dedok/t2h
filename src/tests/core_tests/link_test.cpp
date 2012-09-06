@@ -1,5 +1,5 @@
 #include <iostream>
-
+#define T2H_IMPORT
 #include "t2h.h"
 
 int main(char ** argv, int argc) 
