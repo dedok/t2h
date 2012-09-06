@@ -1,4 +1,4 @@
-set(TARGET core)
+set(TARGET t2h_core)
 
 # Adding common sublibraries
 add_subdirectory(external_api)

@@ -7,6 +7,8 @@
 
 namespace common { 
 
+class base_service_event_handler;
+
 class base_service : private boost::noncopyable {
 public :	
 	typedef boost::shared_ptr<base_service> ptr_type;
@@ -14,6 +16,7 @@ public :
 	enum service_state {
 		service_running = 0x1,
 		service_stoped,
+		service_error, 
 		service_state_unknown = service_stoped + 0x1
 	};
 
@@ -29,14 +32,26 @@ public :
 	virtual service_state get_service_state() const = 0;
 	
 	std::string service_name() const;
-
+	
 private :
+	void watch_thread();
 	std::string const service_name_;
 
 };
 
 typedef	base_service::ptr_type base_service_ptr;
 
+class base_service_event_handler {
+public :
+	base_service_event_handler();
+	virtual ~base_service_event_handler();
+
+	virtual void on_service_error(base_service_ptr service) = 0;
+	virtual void on_service_restart(base_service_ptr service, int state) = 0;
+
+private :
+
+};
 } // namespace common
 
 #endif

@@ -5,6 +5,7 @@
 #include "torrent_core_future.hpp"
 #include "basic_safe_container.hpp"
 #include "base_torrent_core_cntl.hpp"
+#include "torrent_core_macros.hpp"
 
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>

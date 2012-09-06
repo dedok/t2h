@@ -1,20 +1,7 @@
 #ifndef TORRENT_CORE_CONFIG_HPP_INCLUDED
 #define TORRENT_CORE_CONFIG_HPP_INCLUDED
 
-#include "syslogger.hpp"
 #include "core_version.hpp"
-
-#define TORRENT_CORE_LOG_PREFIX "TORRENT CORE "
-#define FUNCTION_PREFIX __FUNCTION__" "
-
-#define TCORE_TRACE(...) \
-	LOG_TRACE(TORRENT_CORE_LOG_PREFIX __VA_ARGS__)
-
-#define TCORE_WARNING(...) \
-	LOG_WARNING(TORRENT_CORE_LOG_PREFIX __VA_ARGS__)
-
-#define TCORE_ERROR(...) \
-	LOG_ERROR(TORRENT_CORE_LOG_PREFIX __VA_ARGS__)
 
 #endif 
 

@@ -23,6 +23,30 @@ bool services_manager::registrate(base_service_ptr service)
 	return false;
 }
 
+void services_manager::watch_thread() 
+{
+/*	std::size_t const services_check_iter
+	for (; !stop_; ) 
+	{
+		base_service_ptr service;
+		boost::lock_guard<boost::mutex> guard(lock_);
+		for (services_list_type::iterator it = services_.begin(), last = services_.end(); 
+			it != last; 
+			++it) 
+		{
+			boost::this_thread::sleep(boost::posix_time::seconds(settings_.latency));
+			service = (*it);
+			if (service->get_service_state() == base_service::service_error) {
+				handler_->on_service_error(it);
+				if (!settings_.auto_managment)
+					continue;
+				unregistrate_unsafe(service->name());
+				handler_->on_service_restart(registrate(service->clone()));
+			} // !if
+		}
+	} // ! loop */
+}
+
 base_service_ptr services_manager::unregistrate(std::string const & name)
 {
 	boost::lock_guard<boost::mutex> guard(lock_);

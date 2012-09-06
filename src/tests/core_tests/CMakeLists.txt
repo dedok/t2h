@@ -1,9 +1,9 @@
 # Some tests might not link well only if 't2h' build as dynamic lib.
 # That happens because not all 't2h' api(deep hidden classes) have export attributes.
 if (T2H_CORE_SHARED)
-	set(link_depends core ${Boost_LIBRARIES})
+	set(link_depends t2h_core ${Boost_LIBRARIES})
 else()
-	set(link_depends common core ${libtorrent_LIBS} ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES})
+	set(link_depends common t2h_core ${libtorrent_LIBS} ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES})
 
 	# Setting manager test
 	add_executable(setting_manager_test EXCLUDE_FROM_ALL setting_manager_test.cpp)

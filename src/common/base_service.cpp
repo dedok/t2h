@@ -2,6 +2,14 @@
 
 namespace common {
 
+base_service_event_handler::base_service_event_handler()
+{
+}
+
+base_service_event_handler::~base_service_event_handler() 
+{ 
+}
+
 base_service::base_service(std::string const & name) 
 	: service_name_(name) 
 { 

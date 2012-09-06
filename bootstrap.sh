@@ -6,6 +6,7 @@
 LOG_FILE=$(basename $0).log
 BUILD_SHARED_DIR=shared_build
 BUILD_STATIC_DIR=static_build
+ENVT_EX_SCRIPT=export_vars.sh
 
 usage() { # print usage
 	cat << EOF
@@ -35,8 +36,21 @@ Options:
 
    --clear, -c                clear all previously builds 
 
-Example:
+Evnt. variables:
+
+   BOOST_ROOT [OPTIONAL] 
+     
+     This variable need to the build system(CMake) to find Boost headers & libraries.   
+     If Boost already into PATH then not need to set BOOST_ROOT. 
    
+   LIBTORRENT_ROOT [REQUIRED] 
+  
+     This variable need to the build system to find headers & libraries.
+
+Example:
+  	
+   export BOOST_ROOT=/home/boost_XXX
+   export LIBTORRENT_ROOT=/hone/liborrent_XXX
    ./$(basename $0) --clear --build-type=Release 
 
 EOF
@@ -56,7 +70,8 @@ abort() { # clean-up build, print error message and exit with code 1
 
 eval_cmake_with_static_lib() { # execute cmake command with situable args for static build
 	local tc_file=$TOOLCHAINS_DIR/$TOOLCHAIN_MACOSX_UNIVERSAL_FILE
-	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1"
+	local t2h_evnt_vars="-DBOOST_ROOT=$BOOST_ROOT -DLIBTORRENT_ROOT=$LIBTORRENT_ROOT"
+	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1 $t2h_evnt_vars"
 	local cmake_eval_cmd="cmake -H$REPO_ROOT/src -B$REPO_ROOT/$2 $cmake_basic_args"
 	echo "Command: $cmake_eval_cmd" && {
 		(eval $cmake_eval_cmd) || abort "cmake command fail"
@@ -66,7 +81,8 @@ eval_cmake_with_static_lib() { # execute cmake command with situable args for st
 
 eval_cmake_with_shared_lib() { # execute cmake command with situable args for shared build
 	local tc_file=$TOOLCHAINS_DIR/$TOOLCHAIN_MACOSX_UNIVERSAL_FILE
-	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1 -DT2H_CORE_SHARED:BOOL=TRUE"
+	local t2h_evnt_vars="-DBOOST_ROOT=$BOOST_ROOT -DLIBTORRENT_ROOT=$LIBTORRENT_ROOT"
+	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1 -DT2H_CORE_SHARED:BOOL=TRUE $t2h_evnt_vars"
 	local cmake_eval_cmd="cmake -H$REPO_ROOT/src -B$REPO_ROOT/$2 $cmake_basic_args"
 	echo "Command: $cmake_eval_cmd" && {
 		(eval $cmake_eval_cmd) || abort "cmake command fail"
@@ -100,6 +116,12 @@ BUILD_LIST=
 WANT_CLEAR=
 WANT_SHARED=no
 IS_IPAD_BUILD=
+
+[ -e $(pwd)/$ENVT_EX_SCRIPT ] && {
+	source $(pwd)/$ENVT_EX_SCRIPT
+	echo "Found $pwd/$ENVT_EX_SCRIPT"
+	echo "Exporting follow evnt. variables: $BOOST_ROOT $LIBTORRENT_ROOT" 
+}
 
 for option ;do
 	case $option in

@@ -1,5 +1,4 @@
 #include "serial_download_tcore_cntl.hpp"
-#include "torrent_core_config.hpp"
 
 #include <libtorrent/file.hpp>
 #include <libtorrent/entry.hpp>
@@ -209,11 +208,20 @@ void serial_download_tcore_cntl::on_update(libtorrent::state_update_alert * aler
 		it != last;
 		++it) 
 	{
+		std::cout << "Paused : " << std::boolalpha << it->paused << std::endl << 
+			"Torrent state : " << (int)it->state << std::endl <<
+			"Sequential download" << it->sequential_download << std::endl <<
+			"Progress : " << it->progress << std::endl <<
+			"Download rate : " << it->download_rate << std::endl <<
+			"Num completed : " << it->num_complete << 
+			std::endl;
+
 	}
 }
 
 void serial_download_tcore_cntl::on_piece_finished(libtorrent::piece_finished_alert * alert) 
 {
+	std::cout << "Downloaded piece : " << alert->piece_index << std::endl;
 }
 
 void serial_download_tcore_cntl::on_file_complete(libtorrent::file_completed_alert * alert)

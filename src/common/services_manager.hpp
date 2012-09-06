@@ -24,6 +24,8 @@ public :
 
 private :
 	typedef boost::unordered_map<std::string, base_service_ptr> services_list_type;
+	
+	void watch_thread();
 
 	services_list_type services_;
 	boost::mutex mutable lock_;
