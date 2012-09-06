@@ -7,12 +7,13 @@
 :: Glob vars
 
 set build_dir=
-set bin_dir=%CD%\bin
-set lib_dir=%CD%\lib
+set want_clean=no
 set error_message=
 set program_name=%0
-set cmake_source=%CD%\src
+set bin_dir=%CD%\bin
+set lib_dir=%CD%\lib
 set build_type=Debug
+set cmake_source=%CD%\src
 set out_build_type=shared
 set export_vars_script=%CD%\export_vars.bat
 set cmake_generator_type=NMake Makefiles
@@ -31,18 +32,12 @@ for %%A in (%*) do (
 	if "%%A" == "--release" set build_type=Release
 	if "%%A" == "--rel-with-deb-info" set build_type=RelWithDebInfo
 	if "%%A" == "--help" goto usage
+	if "%%A" == "--clean" set want_clean=yes
 	)
 
 set build_dir=%CD%\%out_build_type%_%build_type%_build
 
-if exist %bin_dir% rmdir /s /q %bin_dir% 
-mkdir %bin_dir%
-
-if exist %lib_dir% rmdir /s /q %lib_dir% 
-mkdir %lib_dir%
-
-if exist %build_dir% rmdir /s /q %build_dir% 
-mkdir %build_dir%
+if "%want_clean%" == "yes" goto clean 
 
 echo.
 echo Current options : 
@@ -51,6 +46,10 @@ echo build_type [%build_type%]
 echo lib type [%out_build_type%]
 echo cmake source [%cmake_source%]
 echo.
+
+if not exist mkdir %lib_dir%
+if not exist mkdir %build_dir%
+if not exist mkdir %bin_dir%
 
 goto run_cmake
 
@@ -100,10 +99,16 @@ goto failed_exit
 	echo    --help                                                 Print usage message and exit with code 0
 	echo    --static / --shared(default)                           The library out type
 	echo    --debug(default) / --release / --rel-with-deb-info     Build type
-	echo.
+	echo    --clean                                                clean all prev. build(s) data
 	echo.
 goto EOF
-	
+
+:clean
+	if exist %bin_dir% rmdir /s /q %bin_dir% 
+	if exist %lib_dir% rmdir /s /q %lib_dir% 
+	if exist %build_dir% rmdir /s /q %build_dir% 
+goto EOF
+
 :failed_exit
 	echo.
 	echo %program_name% fatal error : error level %errorlevel%, message %error_message% .
