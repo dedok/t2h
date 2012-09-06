@@ -1,0 +1,14 @@
+LIBRARY "t2h_core"
+EXPORTS
+	t2h_init PRIVATE
+	t2h_close PRIVATE
+	t2h_wait PRIVATE
+	t2h_add_torrent PRIVATE
+	t2h_add_torrent_url PRIVATE
+	t2h_get_torrent_files PRIVATE
+	t2h_start_download PRIVATE
+	t2h_paused_download PRIVATE
+	t2h_resume_download PRIVATE
+	t2h_delete_torrent PRIVATE
+	t2h_stop_download PRIVATE
+	
