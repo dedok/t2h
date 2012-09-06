@@ -14,6 +14,31 @@ namespace t2h_core {
  */
 namespace details {
 
+static void log_state_update_alerts(libtorrent::state_update_alert * alert) 
+{
+	using libtorrent::torrent_status;
+
+	typedef std::vector<torrent_status> statuses_type;
+
+	statuses_type statuses = alert->status;
+	for (statuses_type::iterator it = statuses.begin(), last = statuses.end();
+		it != last;
+		++it) 
+	{
+		TCORE_TRACE("Updated state for torrent '%s'\n"
+			"Paused '%s'\n Torrent state '%i'\n Sequential download '%i'\n Progress '%f' \n"
+			"Download rate '%i'\n Num completed '%i'",
+			it->handle.save_path().c_str(),
+			it->paused ? "true" : "false",
+			(int)it->state,
+			it->sequential_download,
+			it->progress,
+			it->download_rate,
+			it->num_complete)
+	}
+
+}
+
 static inline int save_file(std::string const & filename, std::vector<char> & bytes)
 {
 	libtorrent::file file;
@@ -144,6 +169,8 @@ void serial_download_tcore_cntl::update_settings()
 
 void serial_download_tcore_cntl::on_metadata_recv(libtorrent::metadata_received_alert * alert) 
 {	
+	TCORE_TRACE("Torrent '%s' recv. metadata", alert->handle.get_torrent_info().name().c_str())
+
 	std::vector<char> buffer;
 	libtorrent::torrent_handle & handle = alert->handle;
 	libtorrent::torrent_info const & torrent_info = handle.get_torrent_info();
@@ -161,6 +188,8 @@ void serial_download_tcore_cntl::on_metadata_recv(libtorrent::metadata_received_
 
 void serial_download_tcore_cntl::on_add_torrent(libtorrent::add_torrent_alert * alert) 
 {
+	TCORE_TRACE("Torrent '%s' added", alert->handle.save_path().c_str())
+
 	using libtorrent::torrent_handle;
 
 	torrent_handle handle = alert->handle;		
@@ -188,13 +217,13 @@ void serial_download_tcore_cntl::on_add_torrent(libtorrent::add_torrent_alert * 
 
 void serial_download_tcore_cntl::on_finished(libtorrent::torrent_finished_alert * alert) 
 {
-	TCORE_TRACE("torrent finished '%s'", alert->handle.save_path().c_str())
+	TCORE_TRACE("Torrent finished '%s'", alert->handle.save_path().c_str())
 	std::string const path = alert->handle.save_path();	
 } 
 
 void serial_download_tcore_cntl::on_pause(libtorrent::torrent_paused_alert * alert) 
 {
-	TCORE_TRACE("alert pause")
+	TCORE_TRACE("Torrent '%s' paused", alert->handle.save_path().c_str())
 }
 
 void serial_download_tcore_cntl::on_update(libtorrent::state_update_alert * alert) 
@@ -203,45 +232,35 @@ void serial_download_tcore_cntl::on_update(libtorrent::state_update_alert * aler
 
 	typedef std::vector<torrent_status> statuses_type;
 
-	statuses_type statuses = alert->status;
-	for (statuses_type::iterator it = statuses.begin(), last = statuses.end();
-		it != last;
-		++it) 
-	{
-		std::cout << "Paused : " << std::boolalpha << it->paused << std::endl << 
-			"Torrent state : " << (int)it->state << std::endl <<
-			"Sequential download" << it->sequential_download << std::endl <<
-			"Progress : " << it->progress << std::endl <<
-			"Download rate : " << it->download_rate << std::endl <<
-			"Num completed : " << it->num_complete << 
-			std::endl;
-
-	}
+#if defined(T2H_DEBUG)
+	details::log_state_update_alerts(alert);
+#endif
 }
 
 void serial_download_tcore_cntl::on_piece_finished(libtorrent::piece_finished_alert * alert) 
 {
-	std::cout << "Downloaded piece : " << alert->piece_index << std::endl;
+	TCORE_TRACE("Torrent '%s' finished download piece '%i'", 
+		alert->handle.save_path().c_str(), alert->piece_index)
 }
 
 void serial_download_tcore_cntl::on_file_complete(libtorrent::file_completed_alert * alert)
 {
-
+	TCORE_TRACE("Torrent '%s' complete download file '%i'", alert->handle.save_path().c_str(), alert->index)
 }
 
 void serial_download_tcore_cntl::on_deleted(libtorrent::torrent_deleted_alert * alert) 
 {
+	TCORE_TRACE("Torrent '%s' deleted", alert->handle.save_path().c_str())
 	std::string const path = alert->handle.save_path();
 }
 
 void serial_download_tcore_cntl::on_state_change(libtorrent::state_changed_alert * alert) 
 {
-	// TODO imvestigate this case
+	// TODO investigate this case
 }	
 
 void serial_download_tcore_cntl::not_dispatched_alert_came(libtorrent::alert * alert) 
 {
-//	TCORE_TRACE("event : '%i'", (int)alert->type())
 }
 
 }// namespace t2h_core 

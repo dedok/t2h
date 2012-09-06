@@ -8,7 +8,7 @@
 #endif
 
 #if defined(WIN32) || defined(WIN64)
-#	if defined(T2H_EXPORT)
+#	if defined(T2H_EXPORT) && !defined(T2H_IMPORT)
 #		define T2H_SPEC __declspec(dllexport)
 #	else
 #		define T2H_SPEC __declspec(dllimport)
@@ -17,7 +17,7 @@
 #	if __GNUC__ >= 4
 #		define T2H_SPEC __attribute__ ((visibility ("default")))
 #	else
-#		error "Old gcc, min support version is gcc 4.0"
+#		error "Too old gcc detected, min support version is gcc 4.0"
 #	endif // __GNUC__
 #endif
 

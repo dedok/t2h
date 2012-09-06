@@ -1,3 +1,4 @@
+#define T2H_IMPORT
 #include "t2h.h"
 
 #if defined(UNIX) || defined(__APPLE__)

@@ -6,8 +6,12 @@
 
 #define HTTP_SERVER_LOG_PREFIX "HTTP SERVER CORE "
 
-#define HCORE_TRACE(...) \
-	LOG_TRACE(HTTP_SERVER_LOG_PREFIX __VA_ARGS__)
+#if defined (T2H_DEBUG)
+#	define HCORE_TRACE(...) \
+		LOG_TRACE(HTTP_SERVER_LOG_PREFIX __VA_ARGS__)
+#else
+#	define HCORE_TRACE(...) { /* */ }
+#endif
 
 #define HCORE_WARNING(...) \
 	LOG_WARNING(HTTP_SERVER_LOG_PREFIX __VA_ARGS__)

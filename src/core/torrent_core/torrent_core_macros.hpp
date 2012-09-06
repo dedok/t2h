@@ -7,8 +7,12 @@
 #define TORRENT_CORE_LOG_PREFIX "TORRENT CORE "
 #define FUNCTION_PREFIX __FUNCTION__" "
 
-#define TCORE_TRACE(...) \
-	LOG_TRACE(TORRENT_CORE_LOG_PREFIX __VA_ARGS__)
+#if defined (T2H_DEBUG)
+#	define TCORE_TRACE(...) \
+		LOG_TRACE(TORRENT_CORE_LOG_PREFIX __VA_ARGS__)
+#else
+#	define TCORE_TRACE(...) { /* */ }
+#endif
 
 #define TCORE_WARNING(...) \
 	LOG_WARNING(TORRENT_CORE_LOG_PREFIX __VA_ARGS__)
