@@ -84,9 +84,16 @@ goto failed_exit
 	echo    %program_name% can failed with difference error, all bad codes not equ to 0.
 	echo.
 	echo    NOTE Make sure You setup MSVC envt. and t2h envt. before run the %program_name%,
-	echo         otherwise the %program_name% should fail.
+	echo         otherwise the %program_name% migth fail.
 	echo    NOTE For extra(including setup envt.) help see the %CD%\README.txt
-	echo    NOTE %program_name% must launching only from t2h git repo
+	echo    NOTE %program_name% must launching only from t2h git repo root
+	echo.
+	echo. Envt.
+	echo.
+	echo     BOOST_ROOT - path to boost root, example : set BOOST_ROOT=C:/boost_1_47/
+	echo     LIBTORRENT_ROOT - path to libtorrent root, example : set LIBTORRENT_ROOT=C:/libtorrent_0_16_3/
+	echo     As alternative, set BOOST_ROOT and LIBTORRENT_ROOT inside file '%export_vars_script%' and do 
+	echo     at the EOF "echo -DBOOST_ROOT=path-to-root -DLIBTORRENT_ROOT=path-to-root"
 	echo.
 	echo Optinons
 	echo.
