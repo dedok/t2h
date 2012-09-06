@@ -36,8 +36,12 @@ public :
 	{
 		boost::lock_guard<boost::mutex> guard(lock_);
 		typename underlaing_handles_map_type::iterator found = handles_map_.find(handle_id);
-		if (found != handles_map_.end())
+		if (found != handles_map_.end()) {
+			underlaing_handle handle = found->second;
 			handles_map_.erase(found);
+			return handle;
+		}
+		return underlaing_handle();
 	}
 
 	inline underlaing_handle get_handle(int handle_id) const

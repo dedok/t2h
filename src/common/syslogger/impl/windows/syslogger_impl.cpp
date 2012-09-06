@@ -4,7 +4,7 @@
  *
  */
 syslogger_impl::syslogger_impl(syslogger_settings const & settings) 
-	: abstract_syslogger(), settings_(settings) 
+	: abstract_syslogger(settings), settings_(settings) 
 {
 }
 

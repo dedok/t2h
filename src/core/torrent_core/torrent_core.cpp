@@ -67,7 +67,10 @@ void torrent_core::stop_service()
 	/** Stop core_session_ subsytems, then core_session_ main loop. 
 		NOTE: To stop all 'trackers' session need to call dtor of core_session_ */
 	if (cur_state_ == base_service::service_running) {
-		core_session_.stop_dht(); core_session_.stop_lsd();
+#ifndef TORRENT_DISABLE_DHT
+		core_session_.stop_dht(); 
+#endif
+		core_session_.stop_lsd();
 		core_session_.stop_upnp(); core_session_.stop_natpmp();
 		core_session_.post_torrent_updates();
 		cur_state_ = base_service::service_stoped;
@@ -420,10 +423,10 @@ bool torrent_core::prepare_torrent_params_for_file(
 	libtorrent::add_torrent_params & torrent_params, boost::filesystem::path const & path) 
 {
 	using namespace libtorrent;
-
+	std::string const path_ = path.string();
 	boost::system::error_code error_code;
 	boost::intrusive_ptr<torrent_info> new_torrent_info = 
-		new (std::nothrow) torrent_info(path.c_str(), error_code);	
+		new (std::nothrow) torrent_info(path_, error_code);	
 
 	if (new_torrent_info && !error_code) {
 		torrent_params.save_path = details::create_random_path(settings_.save_root);

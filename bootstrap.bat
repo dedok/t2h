@@ -1,5 +1,4 @@
 @echo off
-
 ::
 :: bootstrap t2h lib for windows platforms, for details use bootstrap.bat --help
 :: Soshnikov Vasiliy<dedok.mad@gmail.com>
@@ -15,6 +14,7 @@ set program_name=%0
 set cmake_source=%CD%\src
 set build_type=Debug
 set out_build_type=shared
+set export_vars_script=%CD%\export_vars.bat
 set cmake_generator_type=NMake Makefiles
 set cmake_extra_args=-DT2H_CORE_SHARED:BOOL=TRUE
 
@@ -33,7 +33,7 @@ for %%A in (%*) do (
 	if "%%A" == "--help" goto usage
 	)
 
-set build_dir=%CD%\%build_type%_build
+set build_dir=%CD%\%out_build_type%_%build_type%_build
 
 if exist %bin_dir% rmdir /s /q %bin_dir% 
 mkdir %bin_dir%
@@ -57,8 +57,19 @@ goto run_cmake
 :: bootstrap helpers
 
 :run_cmake
+	if exist %export_vars_script% ( 
+		:: NOTE export_vars_script_output must echo cmake args.
+		if exist %CD%\export_vars_script_output del %CD%\export_vars_script_output
+		call %export_vars_script% >> %CD%\export_vars_script_output
+		set /p cmake_envt_args=< %CD%\export_vars_script_output
+		del export_vars_script_output
+		echo.
+		echo Found "%export_vars_script%", 
+		echo cmake envt. args set to "%cmake_envt_args%"
+		echo.
+	)
 	set cmake_ending_args=-G"%cmake_generator_type%" -B%build_dir% -DCMAKE_BUILD_TYPE=%build_type%
-	cmake %cmake_ending_args% %cmake_extra_args% %cmake_source%
+	cmake %cmake_ending_args% %cmake_extra_args% -H%cmake_source% %cmake_envt_args%
 	if %errorlevel% EQU 0 goto end
 	set error_message=cmake command failed
 goto failed_exit
