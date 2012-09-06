@@ -209,7 +209,7 @@ http_reply::formating_result http_reply::fill_content_from_file()
 	namespace io = boost::iostreams;
 	formating_result result = file_not_exist; 
 	char * buffer_ptr = NULL;
-	std::_Ios_Openmode const open_mode = std::ios::in | std::ios::binary;
+	std::ios::openmode const open_mode = std::ios::in | std::ios::binary;
 	io::file_descriptor_source file_handle(file_info_.file_path.string(), open_mode);
 	if (file_handle.is_open()) {
 		if (io::seek(file_handle, file_info_.from, BOOST_IOS::beg) >= 0) {

@@ -4,7 +4,6 @@
 # extra variables, extra libraries, test envt.
 # Soshnikov Vasiliy <dedok.mad@gmail.com>
 #
-
 cmake_minimum_required(VERSION 2.8)
 
 # Add build configurations
@@ -21,9 +20,12 @@ project(torrent2http)
 include(cmake_extra/version.cmake)
 
 # Set build option to default value(only if we does not set the build type early)
-if(NOT CMAKE_BUILD_TYPE)
+if(NOT DEFINED CMAKE_BUILD_TYPE)
+	message(STATUS "Setup to default build configuration[Debug]")
     set(CMAKE_BUILD_TYPE Debug)
-endif(NOT CMAKE_BUILD_TYPE)
+else()
+	message(STATUS "Setup to ${CMAKE_BUILD_TYPE} build configuration")
+endif()
 
 # Define the more convenient variable with more convenient values
 set(CPU_TYPE "stub" CACHE INTERNAL "" FORCE)
