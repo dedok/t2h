@@ -287,8 +287,10 @@ void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit
 
 void sig_handler(int signo)
 {
+#if defined(UNIX) || defined(APPLE)
 	if (signo != SIGINT) 
 		return;
+#endif
 	t2h_close(core_handle.handle);
 	sig_exit = true;
 }
