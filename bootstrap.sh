@@ -11,7 +11,7 @@ ENVT_EX_SCRIPT=export_vars.sh
 usage() { # print usage
 	cat << EOF
 
-$(basename $0) - prepares nDrive for building under iOS/MacOSX/BSD/Lunix/Unix-like platforms.
+$(basename $0) - prepare to build t2h under iOS/MacOSX/BSD/Lunix/Unix-like platforms.
             In case of succeed script return 0, in case of failure 1(for details see the ${LOG_FILE})
 
 Usage: $(basename $0) [OPTIONS] ...
