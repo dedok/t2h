@@ -37,7 +37,7 @@ else()
 endif()
 
 # Set Mac OS X compiler flags
-set(BASIC_COMPILER_FLAGS "-Wextra -fvisibility=hidden -arch x86_64 -arch i386 ${BUILD_TYPE_GCC_ARGS}")
+set(BASIC_COMPILER_FLAGS "-Wextra -fvisibility=hidden -arch x86_64 ${BUILD_TYPE_GCC_ARGS}")
 set(CMAKE_C_FLAGS "${BASIC_COMPILER_FLAGS}" CACHE STRING "" FORCE)
 set(CMAKE_CXX_FLAGS "${BASIC_COMPILER_FLAGS} -fvisibility-inlines-hidden" CACHE STRING "" FORCE)
 set(EXTRA_LINK_FLAGS "-macosx_version_min=${CMAKE_SYSTEM_VERSION}" CACHE STRING "" FORCE)	
