@@ -2,6 +2,11 @@
 #define BASE_TORRENT_CORE_CNTL_HPP_INCLUDED
 
 #include "torrent_info.hpp"
+#include "shared_buffer.hpp"
+
+#if defined(__GNUG__)
+#	pragma GCC system_header
+#endif
 
 #include <libtorrent/config.hpp>
 #include <libtorrent/session.hpp>
@@ -25,11 +30,13 @@ public :
 	virtual ~base_torrent_core_cntl() { }
 	
 	virtual int availables_categories() const = 0;
-	virtual void set_core_session(libtorrent::session * session_ref) = 0;
-	virtual void on_setup_core_session(libtorrent::session_settings & settings) = 0;
 	
-	virtual bool add_torrent(
-		libtorrent::add_torrent_params const & params, libtorrent::torrent_handle & handle) = 0;
+	virtual void set_session(libtorrent::session * session_ref) = 0;
+	virtual void on_setup_core_session(libtorrent::session_settings & settings) = 0;
+
+	virtual void set_shared_buffer(details::shared_buffer * buffer) = 0;
+
+	virtual bool add_torrent(details::torrent_ex_info_ptr ex_info) = 0;
 	
 	virtual void dispatch_alert(libtorrent::alert * alert) = 0;
 	virtual bool handle_with_critical_errors() { return false; }

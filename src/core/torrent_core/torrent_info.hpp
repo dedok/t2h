@@ -1,14 +1,18 @@
 #ifndef TORRENTS_INFO_EX_HPP_INCLUDED
 #define TORRENTS_INFO_EX_HPP_INCLUDED
 
+#include "base_resolver.hpp"
+#include "torrent_core_future.hpp"
+
 #include <map>
 #include <vector>
 
 #include <boost/function.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 #if defined (__GNUG__)
-#pragma GCC system_header
+#	pragma GCC system_header
 #endif
 
 #include <libtorrent/config.hpp>
@@ -16,11 +20,13 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace t2h_core { namespace details {
 
-static int const invalid_torrent_id = -1;
-
+/**
+ *	File extended information
+ */
 struct file_ex_info {
 	static std::size_t const off_prior = 0;
 	static std::size_t const normal_prior = 1;
@@ -31,27 +37,41 @@ typedef std::vector<file_ex_info> files_info_list_type;
 typedef files_info_list_type::iterator feil_iterator;
 typedef files_info_list_type::const_iterator feil_const_iterator;
 
+/**
+ * Torrent extended informantion & functionality
+ */
 struct torrent_ex_info {	
-	typedef boost::scoped_ptr<libtorrent::torrent_info> torrent_info_ptr;
+	typedef boost::shared_ptr<torrent_ex_info> ptr_type;
+	typedef boost::intrusive_ptr<libtorrent::torrent_info> torrent_info_ptr;
 
-	torrent_ex_info() :
-		files_info(),
-		save_path(),
-		torrent_info(),
-		handle(), 
-		torrent_params() 
-	{ }
- 	
-	files_info_list_type files_info;
-	std::string save_path;
-	torrent_info_ptr torrent_info;
-	libtorrent::torrent_handle handle;
-	libtorrent::add_torrent_params torrent_params;
+	torrent_ex_info();
+	
+	/* Extended functionality */
+	static bool initialize_f(
+		ptr_type ex_info, boost::filesystem::path const & save_root, boost::filesystem::path const & path);
+	static bool prepare_f(ptr_type ex_info, boost::filesystem::path const & path);
+	static void prepare_u(ptr_type ex_info, std::string const & url);
+	static bool prepare_sandbox(ptr_type ex_info);
+	
+	/* Extended data filds */
+	base_resolver_ptr resolver;									// Error reslover
+	boost::posix_time::time_duration last_resolve_checkout;		// Error checking duration 
+	details::torrent_core_future_ptr future;					// Future callback
+
+	torrent_info_ptr torrent_info;								// libtorrent torrent information
+	libtorrent::torrent_handle handle;							// libtorrent torrent handle
+	libtorrent::add_torrent_params torrent_params;				// libtorrent add torrent params
+
+	files_info_list_type files_info;							// Extended file information
+	std::string save_root;										// Save root path for the torrent
+	std::size_t index;											// Torrent index(eg hash)
 };
 
-typedef boost::shared_ptr<torrent_ex_info> torrent_ex_info_ptr;
-typedef std::map<int, torrent_ex_info_ptr> torrents_map_type; 
+typedef torrent_ex_info::ptr_type torrent_ex_info_ptr;
 
+/**
+ * Torrent extended info helpers 
+ */
 struct default_on_path_process {
 	inline std::string operator()(std::string const & p) { return p; } 
 };

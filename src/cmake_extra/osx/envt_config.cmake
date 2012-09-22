@@ -14,7 +14,7 @@ if (NOT EXISTS ${LIBTORRENT_ROOT} OR NOT EXISTS ${BOOST_ROOT})
 endif()
 
 set(libtorrent_INCLUDE_DIR ${LIBTORRENT_ROOT}/include)
-set(libtorrent_LIBS ${LIBTORRENT_ROOT}/libtorrent-rasterbar.a)
+set(libtorrent_LIBS ${LIBTORRENT_ROOT}/libtorrent.a)
 
 if (NOT EXISTS ${libtorrent_INCLUDE_DIR})
 	message(FATAL_ERROR "Configure error : can not find ${libtorrent_INCLUDE_DIR}")

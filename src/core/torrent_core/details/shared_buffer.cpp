@@ -4,13 +4,12 @@
 
 namespace t2h_core { namespace details {
 
-boost::function<std::size_t(std::string const &)> shared_buffer_default_hasher = boost::bind(&boost::hash_value, _1);
 /**
  * Public shared_buffer api
  */
 
 shared_buffer::shared_buffer() 
-	: torrents_(), lock_(), hasher_(shared_buffer_default_hasher) { }
+	: torrents_(), lock_(), hasher_(boost::bind(&hash_function, _1)) { }
 
 shared_buffer::~shared_buffer() 
 { 
@@ -78,7 +77,7 @@ boost::function<std::size_t(std::string const &)>
 	return hasher_;
 }
 
-void set_hasher(boost::function<std::size_t(std::string const &)> hasher) 
+void shared_buffer::set_hasher(boost::function<std::size_t(std::string const &)> hasher) 
 {
 	/*  TODO Fail case : after then we set new hasher we must to rehash all map,
 		otherwise UB(eg colisios) */

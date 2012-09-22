@@ -18,28 +18,8 @@
 namespace t2h_core { namespace details {
 
 struct resolve_info { 
-	libtorrent::torrent_handle handle;
-	int resolver_type;
-	boost::posix_time::time_duration add_time;
+	libtorrent::torrent_status status;
 };
-
-inline bool operator==(resolve_info const & rhs, resolve_info const & lhs) 
-{
-	bool is_equal = false;
-	LIBTORRENT_EXCEPTION_SAFE_BEGIN
-	boost::filesystem::path full_path_first = rhs.handle.save_path(),
-		full_path_second = lhs.handle.save_path();
-	full_path_first = full_path_first / rhs.handle.name(); 
-	full_path_second = full_path_second / lhs.handle.name();
-	is_equal = (full_path_first == full_path_second);
-	LIBTORRENT_EXCEPTION_SAFE_END
-	return is_equal;
-}
-
-inline bool operator!=(resolve_info const & rhs, resolve_info const & lhs) 
-{
-	return !operator==(rhs, lhs);
-}
 
 class base_resolver {
 public :
@@ -53,15 +33,21 @@ public :
 	}
 
 	explicit base_resolver(int resolver_type) : resolver_type_(resolver_type) { }
-	virtual ~base_resolver()  { }
+	base_resolver(int resolver_type, resolve_info const & info) : resolver_type_(resolver_type) { }
+	virtual ~base_resolver() { }
 
-	inline int get_type() const { return resolver_type_;  }
-	virtual bool resolve(resolve_info & info) = 0;
+	virtual ptr_type clone(resolve_info const & info) = 0; 
+	virtual void set_resolve_info(resolve_info const & info) = 0;
+	
+	inline int get_type() const 
+		{ return resolver_type_;  }
+
+	virtual bool resolve() = 0;
 	virtual bool is_need_resolve(resolve_info & info) = 0;
 
 private :
 	int const resolver_type_;
-
+	
 };
 
 typedef base_resolver::ptr_type base_resolver_ptr;
@@ -70,10 +56,20 @@ int const default_resolver_type = std::numeric_limits<int>::min();
 
 class default_resolver : public base_resolver {
 public :
-	default_resolver() : base_resolver(default_resolver_type) { }
-	virtual bool resolve(resolve_info & info) { return true; }
-	virtual bool is_need_resolve(resolve_info & info) { return false; }
+	default_resolver() : base_resolver(default_resolver_type) { }	
 	virtual ~default_resolver() { }
+
+	virtual base_resolver_ptr clone(resolve_info const & info) 
+		{ return base_resolver_ptr(new default_resolver()); };
+	
+	virtual void set_resolve_info(resolve_info const & info) 
+		{ /*Do nothing*/ }
+
+	virtual bool resolve() 
+		{ return true; }
+	
+	virtual bool is_need_resolve(resolve_info & info) 
+		{ return false; }
 };
 
 } } // namespace t2h_core, details 

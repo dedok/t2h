@@ -1,9 +1,7 @@
-#ifndef SERIAL_DOWNLOAD_TCORE_CNTL_HPP_INCLUDED
-#define SERIAL_DOWNLOAD_TCORE_CNTL_HPP_INCLUDED
+#ifndef SEQUENTIAL_TORRENT_CONTROLLER_HPP_INCLUDED
+#define SEQUENTIAL_TORRENT_CONTROLLER_HPP_INCLUDED
 
 #include "setting_manager.hpp"
-#include "torrent_core_future.hpp"
-#include "basic_safe_container.hpp"
 #include "base_torrent_core_cntl.hpp"
 #include "torrent_core_macros.hpp"
 
@@ -16,47 +14,48 @@ namespace t2h_core {
 
 namespace details {
 
-struct future_queue_traits {
-	typedef boost::unordered_map<std::string, details::torrent_core_future_ptr> object_type;
-	typedef details::torrent_core_future_ptr item_type;
-	typedef item_type item_ptr;
-	typedef item_type & item_ref;
-	typedef item_type const & item_cref;
-	typedef std::string find_type;
-};
-
-typedef future_queue_traits::object_type::iterator futures_iterator;
-typedef future_queue_traits::object_type::const_iterator futures_const_iterator;
-typedef utility::basic_safe_container<future_queue_traits> futures_queue;
-
+/**
+ * Controller hidden settings
+ */
 struct static_settings {
-	std::string tc_root;
-	boost::int64_t max_async_download_size; 
+	std::string tc_root;							// Working root, must be a full path
+	bool auto_error_resolving;						// Auto error detencting and resolving
+	std::size_t resolve_checkout;					// Resolving check out duration for each torrent in queue, in seconds
+	boost::int64_t max_async_download_size; 		// Not used for now, in kilobytes
+	bool partial_files_download;					// Allow to partrial files download
+	bool sequential_download;						// Allow sequential download
+	bool resolve_countries;							// Allow to use resolve countries
+	int download_limit;								// Download rate limit 0 = unlimit, in kb
+	int upload_limit;								// Unpload rate limit 0 = unlimit, in kb
+	int max_uploads;								// Max upload limit
+	int max_connections_per_torrent;				// Max allow connection per torrent
+	struct {
+		std::size_t torrent_add_timeout;		 	// Torrent add promise timeout, in seconds
+	} futures_timeouts;
 };
 
 } // namespace details
 
 /**
- *
+ * sequential download controller 
  */
-class serial_download_tcore_cntl : public base_torrent_core_cntl {
+class sequential_torrent_controller : public base_torrent_core_cntl {
 public :
-	serial_download_tcore_cntl();
-	explicit serial_download_tcore_cntl(setting_manager_ptr setting_manager);
-	virtual ~serial_download_tcore_cntl();
+	sequential_torrent_controller();
+	explicit sequential_torrent_controller(setting_manager_ptr setting_manager);
+	virtual ~sequential_torrent_controller();
 	
-	virtual void set_core_session(libtorrent::session * session_ref);
+	virtual int availables_categories() const;
+	
+	virtual void set_session(libtorrent::session * session_ref);
 	virtual void on_setup_core_session(libtorrent::session_settings & settings);
 
-	virtual int availables_categories() const;
+	virtual void set_shared_buffer(details::shared_buffer * buffer_ref);
 
-	virtual bool add_torrent(
-		libtorrent::add_torrent_params const & params, libtorrent::torrent_handle & handle);
+	virtual bool add_torrent(details::torrent_ex_info_ptr ex_info);
 
 	virtual void dispatch_alert(libtorrent::alert * alert);
 
-	void update_settings();
-	
 private :
 	
 	/** Functions for dispatching notification from core_session */	
@@ -70,15 +69,17 @@ private :
 	void on_deleted(libtorrent::torrent_deleted_alert * alert);
 	void on_state_change(libtorrent::state_changed_alert * alert);	
 	void not_dispatched_alert_came(libtorrent::alert * alert);
+	void on_torrent_status_changes(details::torrent_ex_info_ptr ex_info);
+	void on_torrent_status_failure(details::torrent_ex_info_ptr ex_info);
 
-	/** */	
-	bool setup_torrent(libtorrent::torrent_handle & handle);
-
+	/** Others funtions */	
+	void setup_torrent(libtorrent::torrent_handle & handle);
+	void update_settings();
+	
 	setting_manager_ptr setting_manager_;
 	libtorrent::session * session_ref_;
-	details::futures_queue futures_;
+	details::shared_buffer * shared_buffer_ref_;
 	details::static_settings mutable settings_;
-
 };
 
 } // namespace t2h_core

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <boost/lexical_cast.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace utility {
 
@@ -28,6 +29,8 @@ inline static T safe_lexical_cast(U const & u)
 }
 
 std::string get_random_string(std::size_t dist_max = 8);
+
+boost::posix_time::time_duration get_current_time();
 
 } // namespace utility
 

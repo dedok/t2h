@@ -25,5 +25,11 @@ std::string get_random_string(std::size_t dist_max)
 	return random_string;
 }
 
+boost::posix_time::time_duration get_current_time() 
+{
+	boost::posix_time::ptime const now = boost::posix_time::second_clock::local_time();
+	return now.time_of_day();
+}
+
 } // namespace utility
 

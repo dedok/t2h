@@ -3,21 +3,32 @@
 namespace t2h_core { namespace details {
 
 torrent_core_future::torrent_core_future(int future_type) 
-	: status_(false), lock_(), future_type_(future_type) { }
+	: status_(false), lock_(), waiters_(), future_type_(future_type) { }
 
 void torrent_core_future::change_status(bool status) 
 {
-	boost::lock_guard<boost::mutex> guard(lock_);
 	status_ = status;
+	waiters_.notify_all();
 }
 
-void torrent_core_future::wait_result() const 
+void torrent_core_future::wait_result() 
 {
-	// TODO impl follow logic via condition variables + add timed wait
+	boost::unique_lock<boost::mutex> guard(lock_);
 	for (;;) {
-		boost::lock_guard<boost::mutex> guard(lock_);
+		waiters_.wait(guard);
 		if (status_) break;
 	}
+}
+
+bool torrent_core_future::timed_wait_result(boost::system_time const & target_time) 
+{
+	boost::unique_lock<boost::mutex> guard(lock_);
+	for(;;) {
+		bool const success = waiters_.timed_wait(guard, target_time);
+		if (!status_ && !success) return false;
+		if (status_) break;
+	}
+	return true;
 }
 
 int torrent_core_future::get_type() const 
@@ -34,5 +45,5 @@ scoped_future_release::~scoped_future_release()
 		future_->change_status(true);
 }
 
-} }
+} } // namespace t2h_core, details
 

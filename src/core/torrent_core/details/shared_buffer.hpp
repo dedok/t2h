@@ -15,9 +15,7 @@ namespace t2h_core { namespace details {
 
 class shared_buffer;
 
-static boost::function<std::size_t(std::string const &)> shared_buffer_default_hasher; 
-
-std::size_t hash_of(shared_buffer const & sb, std::string const & str);
+inline static std::size_t hash_function(std::string const & str) { return boost::hash_value(str); } 
 
 template <class Function> 
 void for_each(shared_buffer const & sb, Function function);
@@ -30,15 +28,13 @@ public :
 	~shared_buffer();
 	
 //	boost::tuple<bool, torrent_ex_info_ptr> add(libtorrent::torrent_handle & handle);
-	boost::tuple<bool, torrent_ex_info_ptr> add(torrent_ex_info_ptr info);
+	boost::tuple<bool, std::size_t> add(torrent_ex_info_ptr info);
 
 	torrent_ex_info_ptr get(std::string const & path);
 	torrent_ex_info_ptr get(std::size_t hash_value);
 
 	void remove(std::string const & path);
 	void remove(std::size_t hash_value);
-	
-	friend std::size_t hash_of(shared_buffer const & sb, std::string const & str);
 	
 	template <class Function> 
 	friend void for_each(shared_buffer & sb, Function function);
@@ -62,12 +58,6 @@ void for_each(shared_buffer & sb, Function function)
 	boost::lock_guard<boost::mutex> guard(sb.lock_);
 	std::for_each(sb.torrents_.begin(), sb.torrents_.end(), function);
 }
-
-inline std::size_t hash_of(shared_buffer const & sb, std::string const & str) 
-{
-	return  shared_buffer_default_hasher(str);
-}
-
 
 } } // namespace t2h_core, details
 

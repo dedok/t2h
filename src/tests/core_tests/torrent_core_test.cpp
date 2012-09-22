@@ -1,6 +1,6 @@
 #include "syslogger.hpp"
 #include "torrent_core.hpp"
-#include "serial_download_tcore_cntl.hpp"
+#include "sequential_torrent_controller.hpp"
 
 #include <iostream>
 
@@ -36,12 +36,12 @@ int main(int argc, char ** argv)
 	LOG_INIT(log_settings)
 	
 	setting_manager_ptr sm = setting_manager::shared_manager();
-	base_torrent_core_cntl_ptr serial_download_cntl(new serial_download_tcore_cntl(sm));
+	base_torrent_core_cntl_ptr stc(new sequential_torrent_controller(sm));
 	sm->init_config(json_config);
 		
 	torrent_core_params params;
 	params.setting_manager = sm; 
-	params.controller = serial_download_cntl;
+	params.controller = stc;
 
 	if (!sm->config_is_well())
 		die(sm->get_last_error(), -1);
@@ -50,24 +50,24 @@ int main(int argc, char ** argv)
 	if (!core.launch_service())
 		die("launch torrent core services failed", -1);
 
-	int const torrent_id = core.add_torrent(argv[1]);
-	if (torrent_id == -1) 
+	std::size_t const torrent_id = core.add_torrent(argv[1]);
+	if (torrent_id == torrent_core::invalid_torrent_id) 
 	{ 
 		die("add torrent failed", -2);
 	}
-	else if (torrent_id > 0)
+	else
 	{
 		std::cout << "Torrent added, torrent id : " << torrent_id << std::endl;
-		std::cout << "Torrent info : " << core.get_torrent_info(torrent_id) << std::endl;
+		//std::cout << "Torrent info : " << core.get_torrent_info(torrent_id) << std::endl;
 
 		int file_id = 0;
 		for (;;) {
-			std::cout << "Url : " << core.start_torrent_download(torrent_id, file_id) << std::endl;
+	//		std::cout << "Url : " << core.start_torrent_download(torrent_id, file_id) << std::endl;
 			std::cin.get(); ++file_id;
 		} // ! for
-		core.wait_service();
 	}
-	
+	core.wait_service();
+	std::cout << "End..." << std::endl;
 	return 0;
 }
 

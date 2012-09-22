@@ -26,12 +26,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 # Setup Boost library.
 # Allow to avoid link errors inside Boost.Asio, if we link against boost dynamicly.
 # Also add to link abainst t2h platform libraries as part of Boost link rule.
-add_definitions(-DBOOST_ASIO_ENABLE_CANCELIO -DBOOST_DISABLE_EXCEPTION)
-if (DEFINED T2H_CORE_ASIO_SHARED)
-	add_definitions(-DBOOST_ASIO_DYN_LINK)
-else()
-	add_definitions(-DBOOST_ASIO_SEPARATE_COMPILATION)
-endif()
+add_definitions(-DBOOST_ASIO_ENABLE_CANCELIO -DBOOST_DISABLE_EXCEPTION -DBOOST_ASIO_SEPARATE_COMPILATION)
 
 find_package(Boost 1.45.0 COMPONENTS
 	filesystem

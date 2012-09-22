@@ -58,20 +58,9 @@ void syslogger_impl::init_logger()
 {
 	int const asl_open_opt = ASL_OPT_STDERR | ASL_OPT_NO_DELAY;
 	if (!log_.handle) {
-		if ((log_.fd = open(settings_.log_file_path.string().c_str(), 
-			O_RDWR | O_CREAT)) < 0) 
-		{	
-			return;
-		}
 		log_.handle = asl_open(settings_.ident.c_str(), 
 								settings_.facility.c_str(), 
 								asl_open_opt);
-		if (!log_.handle && 
-			asl_add_log_file(log_.handle, log_.fd) > 0) 
-		{ 
-			close_logger();
-			return;
-		}
 		connect_log_event_signals();	
 	}
 }

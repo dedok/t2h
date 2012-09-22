@@ -1,20 +1,26 @@
 #include "error_resolvers_types.hpp"
 
-#include "misc_utility.hpp"
 #include "torrent_core_macros.hpp"
 
 namespace t2h_core { namespace details {
 
-bool hang_at_start_error::resolve(resolve_info & info) 
+void hang_at_start_error::set_resolve_info(resolve_info const & info) 
+{
+	res_info_ = info;
+}
+
+bool hang_at_start_error::resolve() 
 {
 	LIBTORRENT_EXCEPTION_SAFE_BEGIN
 
-	// check type, just for sure
-	if (info.resolver_type == hang_downloading_type) {
-		TCORE_TRACE("Torrent error resolving: type 'hang downloading'", info.handle.name().c_str())
-		info.handle.force_recheck();
-		info.add_time = utility::get_current_time();
-		info.resolver_type = no_error_detected;
+	if (!res_info_.status.handle.is_valid()) {
+		TCORE_WARNING("Can not resolve hang_at_start_error, torrent handle not valid")
+		return false;
+	}
+	
+	if (utility::get_current_time() >= end_of_delay_) {
+		TCORE_TRACE("Torrent error resolving: type 'hang downloading'", res_info_.status.handle.name().c_str())
+		res_info_.status.handle.force_recheck();
 		return true;
 	}
 
@@ -24,34 +30,32 @@ bool hang_at_start_error::resolve(resolve_info & info)
 }
 
 bool hang_at_start_error::is_need_resolve(resolve_info & info) 
-{
-	
+{	
 	using libtorrent::torrent_status;
 
-	bool is_problem = false;
-	
 	LIBTORRENT_EXCEPTION_SAFE_BEGIN
 		
-	torrent_status status = info.handle.status();
+	torrent_status & status = info.status;
 	
-	if (info.resolver_type != no_error_detected)
-		return false;
-
-	if (!status.paused && status.state != torrent_status::finished && 
-			status.state != torrent_status::seeding && status.state == torrent_status::downloading && 
-			(status.num_peers == 0 && status.connect_candidates != 0)) 
+	if (!status.paused && status.state == torrent_status::downloading && 
+		(status.num_peers == 0 && status.connect_candidates != 0) &&
+		status.progress == 0.0f)
 	{
-		TCORE_TRACE("Torrent error detected : type 'hang downloading' , torrent '%s'", info.handle.name().c_str())
-		if (is_problem = (utility::get_current_time() >= (info.add_time + hang_duration_)))
-			info.resolver_type = hang_downloading_type;
+		TCORE_TRACE("Torrent error detected : type 'hang downloading' , torrent '%s'", info.status.handle.name().c_str())
+		return true;
 	}
 
-	LIBTORRENT_EXCEPTION_SAFE_END_(is_problem = false)
+	LIBTORRENT_EXCEPTION_SAFE_END_(return false)
 
-	return is_problem;
+	return false;
 }
 
-bool connection_error::resolve(resolve_info & info) 
+void connection_error::set_resolve_info(resolve_info const & info) 
+{
+	res_info_ = info;
+}
+
+bool connection_error::resolve() 
 {
 	return true;
 }
@@ -61,8 +65,12 @@ bool connection_error::is_need_resolve(resolve_info & info)
 	return false;
 }
 
+void unknown_error::set_resolve_info(resolve_info const & info) 
+{
+	res_info_ = info;
+}
 
-bool unknown_error::resolve(resolve_info & info) 
+bool unknown_error::resolve() 
 {
 	return true;
 }
