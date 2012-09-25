@@ -58,11 +58,11 @@ int main(int argc, char ** argv)
 	else
 	{
 		std::cout << "Torrent added, torrent id : " << torrent_id << std::endl;
-		//std::cout << "Torrent info : " << core.get_torrent_info(torrent_id) << std::endl;
+		std::cout << "Torrent info : " << core.get_torrent_info(torrent_id) << std::endl;
 
 		int file_id = 0;
 		for (;;) {
-	//		std::cout << "Url : " << core.start_torrent_download(torrent_id, file_id) << std::endl;
+			std::cout << "Path to : " << core.start_torrent_download(torrent_id, file_id) << std::endl;
 			std::cin.get(); ++file_id;
 		} // ! for
 	}

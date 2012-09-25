@@ -176,7 +176,7 @@ std::string torrent_core::get_torrent_info(torrent_core::size_type torrent_id) c
 	boost::lock_guard<boost::mutex> guard(core_lock_);
 
 	if (cur_state_ != base_service::service_running) {
-		TCORE_WARNING("get torrent info by id '%i' failed torrent core not runing", torrent_id)
+		TCORE_WARNING("get torrent info by id '%u' failed torrent core not runing", torrent_id)
 		return std::string();
 	}
 
@@ -207,6 +207,15 @@ std::string torrent_core::start_torrent_download(torrent_core::size_type torrent
 	}
 	
 	details::torrent_ex_info_ptr ex_info = shared_buffer_->get(torrent_id);
+	if (ex_info) {
+		libtorrent::torrent_info const & info = ex_info->handle.get_torrent_info();
+		if (info.num_files() > file_id && file_id >= 0) {
+			ex_info->handle.file_priority(file_id, details::file_ex_info::normal_prior);
+			ex_info->handle.force_reannounce();	
+			core_session_->post_torrent_updates();
+			return info.file_at(file_id).path;
+		} // if
+	} // if
 
 	LIBTORRENT_EXCEPTION_SAFE_END
 	
@@ -227,6 +236,13 @@ void torrent_core::pause_download(torrent_core::size_type torrent_id, int file_i
 	}
 	
 	details::torrent_ex_info_ptr ex_info = shared_buffer_->get(torrent_id);
+	if (ex_info) {
+		libtorrent::torrent_info const & info = ex_info->handle.get_torrent_info();
+		if (info.num_files() > file_id && file_id >= 0) {
+			ex_info->handle.file_priority(file_id, details::file_ex_info::off_prior);
+			core_session_->post_torrent_updates();
+		} // if
+	} // if
 
 	LIBTORRENT_EXCEPTION_SAFE_END
 }
@@ -243,6 +259,14 @@ void torrent_core::resume_download(torrent_core::size_type torrent_id, int file_
 	}
 	
 	details::torrent_ex_info_ptr ex_info = shared_buffer_->get(torrent_id);
+	if (ex_info) {
+		libtorrent::torrent_info const & native_info = ex_info->handle.get_torrent_info();
+		ex_info->handle.resume();
+		if (native_info.num_files() > file_id && file_id >= 0) {
+			ex_info->handle.file_priority(file_id, details::file_ex_info::normal_prior);
+			core_session_->post_torrent_updates();
+		} // if
+	} // if
 
 	LIBTORRENT_EXCEPTION_SAFE_END
 }	
@@ -258,10 +282,12 @@ void torrent_core::remove_torrent(size_type torrent_id)
 		return;
 	}
 	
+	// TODO add saving resumed data
 	details::torrent_ex_info_ptr ex_info = shared_buffer_->get(torrent_id);
 	if (ex_info) {
 		core_session_->remove_torrent(ex_info->handle);
 		shared_buffer_->remove(torrent_id);
+		core_session_->post_torrent_updates();
 	}
 
 	LIBTORRENT_EXCEPTION_SAFE_END
@@ -279,9 +305,11 @@ void torrent_core::stop_torrent_download(torrent_core::size_type torrent_id)
 	}
 	
 	details::torrent_ex_info_ptr ex_info = shared_buffer_->get(torrent_id);
-	if (ex_info) 
+	if (ex_info) { 
 		ex_info->handle.pause();
-	
+		core_session_->post_torrent_updates();
+	}
+
 	LIBTORRENT_EXCEPTION_SAFE_END
 }
 
@@ -420,7 +448,7 @@ bool torrent_core::is_critical_error(libtorrent::alert * alert)
 	using namespace libtorrent;
 
 	if (alert->category() & alert::error_notification) { 
-		size_type const type = alert->type();
+		int const type = alert->type();
 		return (type == listen_failed_alert::alert_type) ? true : false;
 	}
 

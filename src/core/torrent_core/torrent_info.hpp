@@ -58,7 +58,6 @@ struct torrent_ex_info {
 	boost::posix_time::time_duration last_resolve_checkout;		// Error checking duration 
 	details::torrent_core_future_ptr future;					// Future callback
 
-	torrent_info_ptr torrent_info;								// libtorrent torrent information
 	libtorrent::torrent_handle handle;							// libtorrent torrent handle
 	libtorrent::add_torrent_params torrent_params;				// libtorrent add torrent params
 

@@ -3,7 +3,7 @@
 
 #include "t2h_config.h"
 
-#define INVALID_TORRENT_ID -1 
+#define INVALID_TORRENT_ID 0x1001 
 
 /** Hidden t2h handle type */
 typedef void * t2h_handle_t;
@@ -33,7 +33,7 @@ T2H_STD_API_(t2h_handle_t) t2h_init(char const * config);
 T2H_STD_API t2h_close(t2h_handle_t handle);
 
 /**
- * Close t2h service.
+ * Bloking wait t2h service end of work.
  *
  * @param $handle
  *	Handle to valid t2h object.
@@ -52,7 +52,7 @@ T2H_STD_API t2h_wait(t2h_handle_t handle);
  * @return
  *	
  */
-T2H_STD_API_(int) t2h_add_torrent(t2h_handle_t handle, char const * path);
+T2H_STD_API_(unsigned int) t2h_add_torrent(t2h_handle_t handle, char const * path);
 
 /**
  * 
@@ -63,7 +63,7 @@ T2H_STD_API_(int) t2h_add_torrent(t2h_handle_t handle, char const * path);
  * @return
  *	
  */
-T2H_STD_API_(int) t2h_add_torrent_url(t2h_handle_t handle, char const * url);
+T2H_STD_API_(unsigned int) t2h_add_torrent_url(t2h_handle_t handle, char const * url);
 
 /**
  * 
@@ -74,18 +74,7 @@ T2H_STD_API_(int) t2h_add_torrent_url(t2h_handle_t handle, char const * url);
  * @return
  *
  */
-T2H_STD_API_(char *) t2h_get_torrent_files(t2h_handle_t handle, int torrent_id);
-
-/**
- * 
- *
- * @param $handle
- *	Handle to valid t2h object.
- *
- * @return
- *	Nothing
- */
-T2H_STD_API_(char *) t2h_start_download(t2h_handle_t handle, int torrent_id, int file_id);
+T2H_STD_API_(char *) t2h_get_torrent_files(t2h_handle_t handle, unsigned int torrent_id);
 
 /**
  * 
@@ -96,7 +85,7 @@ T2H_STD_API_(char *) t2h_start_download(t2h_handle_t handle, int torrent_id, int
  * @return
  *	Nothing
  */
-T2H_STD_API t2h_paused_download(t2h_handle_t handle, int torrent_id, int file_id);
+T2H_STD_API_(char *) t2h_start_download(t2h_handle_t handle, unsigned int torrent_id, int file_id);
 
 /**
  * 
@@ -107,7 +96,7 @@ T2H_STD_API t2h_paused_download(t2h_handle_t handle, int torrent_id, int file_id
  * @return
  *	Nothing
  */
-T2H_STD_API t2h_resume_download(t2h_handle_t handle, int torrent_id, int file_id);
+T2H_STD_API t2h_paused_download(t2h_handle_t handle, unsigned int torrent_id, int file_id);
 
 /**
  * 
@@ -118,7 +107,7 @@ T2H_STD_API t2h_resume_download(t2h_handle_t handle, int torrent_id, int file_id
  * @return
  *	Nothing
  */
-T2H_STD_API t2h_delete_torrent(t2h_handle_t handle, int torrent_id);
+T2H_STD_API t2h_resume_download(t2h_handle_t handle, unsigned int torrent_id, int file_id);
 
 /**
  * 
@@ -129,7 +118,18 @@ T2H_STD_API t2h_delete_torrent(t2h_handle_t handle, int torrent_id);
  * @return
  *	Nothing
  */
-T2H_STD_API t2h_stop_download(t2h_handle_t handle, int torrent_id);
+T2H_STD_API t2h_delete_torrent(t2h_handle_t handle, unsigned int torrent_id);
+
+/**
+ * 
+ *
+ * @param $handle
+ *	Handle to valid t2h object.
+ *
+ * @return
+ *	Nothing
+ */
+T2H_STD_API t2h_stop_download(t2h_handle_t handle, unsigned int torrent_id);
 
 #endif
 

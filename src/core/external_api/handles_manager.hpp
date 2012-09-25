@@ -13,7 +13,7 @@ class handles_manager : boost::noncopyable {
 public :
 	typedef UnderlaingHandle underlaing_handle;
 	typedef boost::shared_ptr<handles_manager> handles_manager_ptr;
-	typedef typename std::map<int, underlaing_handle> underlaing_handles_map_type;
+	typedef typename std::map<std::size_t, underlaing_handle> underlaing_handles_map_type;
 
 	handles_manager() : lock_(), handles_map_() { }
 	~handles_manager() { }
@@ -32,7 +32,7 @@ public :
 		return new_id;
 	}
 
-	inline underlaing_handle unregistr_handle(int handle_id) 
+	inline underlaing_handle unregistr_handle(std::size_t handle_id) 
 	{
 		boost::lock_guard<boost::mutex> guard(lock_);
 		typename underlaing_handles_map_type::iterator found = handles_map_.find(handle_id);
@@ -44,7 +44,7 @@ public :
 		return underlaing_handle();
 	}
 
-	inline underlaing_handle get_handle(int handle_id) const
+	inline underlaing_handle get_handle(std::size_t handle_id) const
 	{
 		boost::lock_guard<boost::mutex> guard(lock_);
 		typename underlaing_handles_map_type::const_iterator found = handles_map_.find(handle_id);

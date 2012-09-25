@@ -13,7 +13,7 @@
 #define FUNCTION_PREFIX __FUNCTION__
 #define TORRENT_CORE_LOG_PREFIX "TORRENT CORE"
 
-#define TCORE_LOG_MAX_MESSAGE_SIZE 4096
+#define TCORE_LOG_MAX_MESSAGE_SIZE 4096*3
 
 #define TCORE_LOG_GENERIC(log_type, ...)												\
 do {																					\

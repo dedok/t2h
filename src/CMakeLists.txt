@@ -4,6 +4,10 @@
 # extra variables, extra libraries, test envt.
 # Soshnikov Vasiliy <dedok.mad@gmail.com>
 #
+# Export vars :
+# CMAKE_BUILD_TYPE [Debug|Releas|RelWithDebInfo]
+# T2H_CORE_SHARED [TRUE|FALSE] 
+#
 cmake_minimum_required(VERSION 2.8)
 
 # Add build configurations

@@ -1,6 +1,6 @@
 #include "external_api_details.hpp"
 
-#include "serial_download_tcore_cntl.hpp"
+#include "sequential_torrent_controller.hpp"
 #include "syslogger.hpp"
 
 namespace t2h_core {
@@ -93,9 +93,9 @@ torrent_core_ptr core_handle::init_torrent_core()
 	torrent_core_params tcore_params;
 	try 
 	{
-		base_torrent_core_cntl_ptr serial_download_cntl(new serial_download_tcore_cntl(sets_manager_));
+		base_torrent_core_cntl_ptr torrent_controller(new sequential_torrent_controller(sets_manager_));
 		tcore_params.setting_manager = sets_manager_; 
-		tcore_params.controller = serial_download_cntl;
+		tcore_params.controller = torrent_controller;
 		tcore.reset(new torrent_core(tcore_params));
 		if (!tcore->launch_service())
 			return torrent_core_ptr();

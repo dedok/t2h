@@ -21,9 +21,9 @@ static inline void log_state_update_alerts(libtorrent::torrent_status const & st
 {
 	using libtorrent::torrent_status;
 
-	TCORE_TRACE("Updated state for torrent '%s' :"
-		"Paused '%s'\nTorrent state '%i'\nSequential download '%i'\nProgress '%f'\n"
-		"Download rate '%i'\nNum completed '%i'",
+	TCORE_TRACE("Updated state for torrent '%s' :\n"
+		"paused '%s', torrent state '%i', sequential download '%i', progress '%f', "
+		"download rate '%i', num completed '%i'",
 		status.handle.save_path().c_str(),
 		status.paused ? "true" : "false",
 		(int)status.state,
@@ -115,7 +115,6 @@ bool sequential_torrent_controller::add_torrent(details::torrent_ex_info_ptr ex_
 		ex_info->handle = future_cast<add_torrent_future>(ex_info->future)->handle;
 		return ex_info->handle.is_valid();
 	}
-
 	return false;
 }
 
@@ -163,20 +162,18 @@ void sequential_torrent_controller::setup_torrent(libtorrent::torrent_handle & h
 
 void sequential_torrent_controller::update_settings() 
 {
-	// TODO add more settings
-	settings_.max_async_download_size =
-		setting_manager_->get_value<boost::int64_t>("tc_max_async_download_size");
+	settings_.max_async_download_size = setting_manager_->get_value<boost::int64_t>("tc_max_async_download_size");
 	settings_.tc_root = setting_manager_->get_value<std::string>("tc_root");
-	settings_.auto_error_resolving = true;
-	settings_.resolve_checkout = 20;
-	settings_.resolve_countries = true;
-	settings_.sequential_download = true;
-	settings_.download_limit = 0;
-	settings_.upload_limit = 0;
-	settings_.max_uploads = -1;
-	settings_.max_connections_per_torrent = 50;
-	settings_.partial_files_download = false;
-	settings_.futures_timeouts.torrent_add_timeout = 3;
+	settings_.auto_error_resolving = setting_manager_->get_value<bool>("tc_auto_error_resolving");
+	settings_.resolve_checkout = setting_manager_->get_value<std::size_t>("tc_resolve_checkout");
+	settings_.resolve_countries = setting_manager_->get_value<bool>("tc_resolve_countries");
+	settings_.sequential_download = setting_manager_->get_value<bool>("tc_sequential_download");
+	settings_.download_limit = setting_manager_->get_value<int>("tc_download_limit");
+	settings_.upload_limit = setting_manager_->get_value<int>("tc_upload_limit");
+	settings_.max_uploads = setting_manager_->get_value<int>("tc_max_uploads");
+	settings_.max_connections_per_torrent = setting_manager_->get_value<std::size_t>("tc_max_connections_per_torrent");
+	settings_.partial_files_download = setting_manager_->get_value<bool>("tc_partial_files_download");
+	settings_.futures_timeouts.torrent_add_timeout = setting_manager_->get_value<std::size_t>("tc_futures_timeout");
 }
 
 /**

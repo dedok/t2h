@@ -30,7 +30,6 @@ inline static std::string concat_paths(std::string const & root, std::string con
 torrent_ex_info::torrent_ex_info() :
 	resolver(), 
 	last_resolve_checkout(utility::get_current_time()),
-	torrent_info(),
 	handle(), 
 	torrent_params(),
 	files_info(),
@@ -111,16 +110,14 @@ std::string torrent_info_to_json(
 	boost::property_tree::ptree out_json;
 	try 
 	{
-		int const last = ex_info->torrent_info->num_files();
+		libtorrent::torrent_info const & info = ex_info->handle.get_torrent_info();
+		int const last = info.num_files();
 		for (int it = 0; it < last; ++it) {
 			boost::property_tree::ptree json_child;
 			std::string const path = on_path_process(
-				concat_paths(
-					ex_info->torrent_params.save_path, 
-					ex_info->torrent_info->file_at(it).path)
-			);
+				concat_paths(ex_info->torrent_params.save_path, info.file_at(it).path));
 
-			json_child.put("size", ex_info->torrent_info->file_at(it).size);
+			json_child.put("size", info.file_at(it).size);
 			json_child.put("path", path);
 			json_child.put("id", it);
 			json_root.push_back(std::make_pair("", json_child));

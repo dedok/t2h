@@ -5,14 +5,14 @@
 #	define EXPORT_API __stdcall
 #else
 #	define EXPORT_API
-#endif
+#endif // WINXX
 
 #if defined(WIN32) || defined(WIN64)
 #	if defined(T2H_EXPORT) && !defined(T2H_IMPORT)
 #		define T2H_SPEC __declspec(dllexport)
 #	else
 #		define T2H_SPEC __declspec(dllimport)
-#	endif
+#	endif // WINXX 
 #else 
 #	if __GNUC__ >= 4
 #		define T2H_SPEC __attribute__ ((visibility ("default")))
@@ -25,7 +25,7 @@
 #	define EXTERN_C extern "C" 
 #else
 # 	define EXTERN_C
-#endif
+#endif // __cplusplus
 
 #define T2H_STD_API_(x) EXTERN_C T2H_SPEC x EXPORT_API 
 #define T2H_STD_API T2H_STD_API_(void)

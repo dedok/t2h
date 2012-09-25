@@ -1,4 +1,7 @@
-#define T2H_IMPORT
+#if defined(T2H_CORE_SHARED)
+#	define T2H_IMPORT
+#endif // T2H_CORE_SHARED
+
 #include "t2h.h"
 
 #if defined(UNIX) || defined(__APPLE__)
