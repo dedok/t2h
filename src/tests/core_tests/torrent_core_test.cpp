@@ -9,8 +9,8 @@ static char const * json_config =
 "\"workers\" : \"4\",\n"
 "\"server_port\" : \"8080\",\n"
 "\"server_addr\" : \"127.0.0.1\",\n" 
-"\"doc_root\" : \"test/path\",\n" 
-"\"tc_root\" : \"/Users/dedokOne/workspace/src/c++/torrent2http/tc_root\", \n"
+"\"doc_root\" : \"test/path\",\n" // not needed for this test 
+"\"tc_root\" : \"tc_root\", \n"
 "\"tc_port_start\" : \"6881\",\n"
 "\"tc_port_end\" : \"6889\", \n"
 "\"tc_max_alert_wait_time\" : \"10\", \n" // mseconds
@@ -33,6 +33,8 @@ int main(int argc, char ** argv)
 {
 	using namespace t2h_core; 
 	
+	if (argc <= 1) return EXIT_FAILURE;
+
 	LOG_INIT(log_settings)
 	
 	setting_manager_ptr sm = setting_manager::shared_manager();

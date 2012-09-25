@@ -33,10 +33,6 @@ struct file_ex_info {
 	static std::size_t const max_prior = 5;
 };
 
-typedef std::vector<file_ex_info> files_info_list_type;
-typedef files_info_list_type::iterator feil_iterator;
-typedef files_info_list_type::const_iterator feil_const_iterator;
-
 /**
  * Torrent extended informantion & functionality
  */
@@ -49,8 +45,10 @@ struct torrent_ex_info {
 	/* Extended functionality */
 	static bool initialize_f(
 		ptr_type ex_info, boost::filesystem::path const & save_root, boost::filesystem::path const & path);
-	static bool prepare_f(ptr_type ex_info, boost::filesystem::path const & path);
-	static void prepare_u(ptr_type ex_info, std::string const & url);
+	static bool prepare_f(
+		ptr_type ex_info, boost::filesystem::path const & save_root, boost::filesystem::path const & path);
+	static void prepare_u(
+		ptr_type ex_info, boost::filesystem::path const & save_root, std::string const & url);
 	static bool prepare_sandbox(ptr_type ex_info);
 	
 	/* Extended data filds */
@@ -61,8 +59,7 @@ struct torrent_ex_info {
 	libtorrent::torrent_handle handle;							// libtorrent torrent handle
 	libtorrent::add_torrent_params torrent_params;				// libtorrent add torrent params
 
-	files_info_list_type files_info;							// Extended file information
-	std::string save_root;										// Save root path for the torrent
+	std::string sandbox_dir_name;								// sandbox directory name
 	std::size_t index;											// Torrent index(eg hash)
 };
 

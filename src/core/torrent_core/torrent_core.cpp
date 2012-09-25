@@ -1,6 +1,12 @@
 #include "torrent_core.hpp"
 #include "misc_utility.hpp"
 #include "torrent_core_macros.hpp"
+#include "torrent_core_utility.hpp"
+
+#include <libtorrent/file.hpp>
+#include <libtorrent/entry.hpp>
+#include <libtorrent/bencode.hpp>
+#include <libtorrent/bitfield.hpp>
 
 namespace t2h_core {
 
@@ -70,21 +76,40 @@ void torrent_core::stop_service()
 		NOTE: To stop all 'trackers' session need to call dtor of core_session_ */
 	boost::lock_guard<boost::mutex> guard(core_lock_);
 	if (cur_state_ == base_service::service_running) {
+		if (settings_.loadable_session) 
+			s11z_session_state();
+
 #ifndef TORRENT_DISABLE_DHT
 		core_session_->stop_dht(); 
 #endif
 		core_session_->stop_lsd();
 		core_session_->stop_upnp(); 
 		core_session_->stop_natpmp();
-		core_session_->post_torrent_updates();
 		
 		cur_state_ = base_service::service_stoped;
+		core_session_->post_torrent_updates();	
+		core_session_loop_->join();
+		delete core_session_; core_session_ = NULL;
+	}
+}
+
+void torrent_core::s11z_session_state() 
+{
+	std::vector<char> state_bytes;
+	libtorrent::entry session_state_entry;
+	core_session_->save_state(session_state_entry);
+	libtorrent::bencode(std::back_inserter(state_bytes), session_state_entry);
+	if (details::save_file(libtorrent::combine_path(settings_.save_root, ".ses_state"), 
+		state_bytes) == -1 ) 
+	{
+		TCORE_WARNING("can not save torrent session state")	
 	}
 }
 
 void torrent_core::wait_service() 
 {
-	core_session_loop_->join();	
+	if (cur_state_ == base_service::service_running)
+		core_session_loop_->join();	
 }
 
 torrent_core::ptr_type torrent_core::clone() 
@@ -193,9 +218,9 @@ std::string torrent_core::get_torrent_info(torrent_core::size_type torrent_id) c
 
 std::string torrent_core::start_torrent_download(torrent_core::size_type torrent_id, int file_id) 
 {
-	/** To start download just return notmal prior to req. file, 
-		then post message to main loop about this change */
-	TCORE_TRACE("start_torrent_download '%u' '%i'", torrent_id, file_id)
+	/** To start download just set to normal prior to req. file, 
+		then post message to main loop about changes */
+	TCORE_TRACE("'%u' '%i'", torrent_id, file_id)
 
 	LIBTORRENT_EXCEPTION_SAFE_BEGIN	
 	
@@ -213,7 +238,7 @@ std::string torrent_core::start_torrent_download(torrent_core::size_type torrent
 			ex_info->handle.file_priority(file_id, details::file_ex_info::normal_prior);
 			ex_info->handle.force_reannounce();	
 			core_session_->post_torrent_updates();
-			return info.file_at(file_id).path;
+			return libtorrent::combine_path(ex_info->sandbox_dir_name, info.file_at(file_id).path);
 		} // if
 	} // if
 
@@ -322,28 +347,33 @@ bool torrent_core::init_core_session()
 	/** Get & validate settings from t2h_core::settings_manager, 
 		if all good & valid, then start the core_session_ async listen */
 	std::vector<char> bytes;
+	bool has_prev_state = false;
 	boost::system::error_code error_code;
 	std::string const session_state_filename = std::string(".") + service_name() + std::string("_state");
-	std::string const session_state_filepath = 
-		libtorrent::combine_path("", session_state_filename);
-	
+		
 	if (init_torrent_core_settings()) {
-		if (libtorrent::load_file(session_state_filepath, bytes, error_code) == 0) {
-			libtorrent::lazy_entry entry;
-			if (libtorrent::lazy_bdecode(&bytes.at(0), &bytes.at(0) + bytes.size(), 
-					entry, 
-					error_code) 
-				== 0) 
-			{
-				core_session_->load_state(entry);
-			}
-		}
+		if (settings_.loadable_session) {
+			std::string const session_state_filepath = 
+				libtorrent::combine_path(settings_.save_root, session_state_filename);
+			if (libtorrent::load_file(session_state_filepath, bytes, error_code) == 0) {
+				libtorrent::lazy_entry entry;
+				if (libtorrent::lazy_bdecode(&bytes.at(0), &bytes.at(0) + bytes.size(), 
+						entry, 
+						error_code) 
+					== 0) 
+				{
+					core_session_->load_state(entry);
+					has_prev_state = true;
+				} // if lazy_bdecode
+			} // if load_file
+		} // if loadable_session
 
 		core_session_->start_lsd();
 		core_session_->start_upnp();
 		core_session_->start_natpmp();	
 		
-		setup_core_session();	
+		if (!has_prev_state)	
+			setup_core_session();	
 		
 		core_session_->listen_on(std::make_pair(settings_.port_start, settings_.port_end), error_code);	
 		
@@ -369,12 +399,20 @@ void torrent_core::setup_core_session()
 
 bool torrent_core::init_torrent_core_settings() 
 {
+	boost::system::error_code error;
 	try 
 	{
-		settings_.save_root = params_.setting_manager->get_value<std::string>("tc_root");
+		boost::filesystem::path tc_root = params_.setting_manager->get_value<std::string>("tc_root");
+		if (!boost::filesystem::exists(tc_root, error) && 
+			boost::filesystem::is_directory(tc_root, error)) 
+		{
+			return false;
+		}
+		settings_.save_root = boost::filesystem::absolute(tc_root).string();
 		settings_.port_start = params_.setting_manager->get_value<int>("tc_port_start");
 		settings_.port_end = params_.setting_manager->get_value<int>("tc_port_end");
 		settings_.max_alert_wait_time = params_.setting_manager->get_value<int>("tc_max_alert_wait_time");
+		settings_.loadable_session = params_.setting_manager->get_value<bool>("tc_loadable_session");
 	} 
 	catch (setting_manager_exception const & expt) 
 	{ 
@@ -432,8 +470,9 @@ void torrent_core::handle_core_notifications()
 				TCORE_WARNING("handle_core_notification have not valid alert")
 				continue;
 			}
-			if (is_critical_error(*it)) handle_critical_error_notification(*it);
-			controller->dispatch_alert(*it);
+			(is_critical_error(*it)) ?
+				handle_critical_error_notification(*it) :
+				controller->dispatch_alert(*it);
 		}
 		TORRENT_CATCH (std::exception const & expt) 
 		{

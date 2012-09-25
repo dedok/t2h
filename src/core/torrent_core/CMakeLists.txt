@@ -15,6 +15,7 @@ set(T2H_HEADERS ${T2H_HEADERS}
 	${DETAILS_PATH}/resolvers_factory.hpp
 	${DETAILS_PATH}/lookup_error.hpp	
 	${DETAILS_PATH}/shared_buffer.hpp
+	${DETAILS_PATH}/torrent_core_utility.hpp
 	PARENT_SCOPE)
 				   
 set(T2H_SOURCES ${T2H_SOURCES}
@@ -28,5 +29,6 @@ set(T2H_SOURCES ${T2H_SOURCES}
 	${DETAILS_PATH}/resolvers_factory.cpp
 	${DETAILS_PATH}/lookup_error.cpp	
 	${DETAILS_PATH}/shared_buffer.cpp
+	${DETAILS_PATH}/torrent_core_utility.cpp
 	PARENT_SCOPE)
 

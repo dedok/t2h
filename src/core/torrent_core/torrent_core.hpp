@@ -30,6 +30,7 @@ struct torrent_core_settings {
 	int port_start;
 	int port_end;
 	int max_alert_wait_time;
+	bool loadable_session;
 };
 
 } // namespace details
@@ -81,7 +82,8 @@ private :
 	bool init_core_session();
 	void setup_core_session();
 	bool init_torrent_core_settings();
-	
+	void s11z_session_state();
+
 	void core_main_loop();
 	void handle_core_notifications();	
 	bool is_critical_error(libtorrent::alert * alert);

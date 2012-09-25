@@ -38,6 +38,7 @@ ADD_KEY_TYPE(tc_sequential_download, "true")
 ADD_KEY_TYPE(tc_resolve_countries, "true")
 ADD_KEY_TYPE(tc_resolve_checkout, "20")
 ADD_KEY_TYPE(tc_auto_error_resolving, "true")
+ADD_KEY_TYPE(tc_loadable_session, "true")
 
 static inline void set_key(boost::property_tree::ptree & parser, 
 			setting_manager::key_base_ptr key) 
@@ -144,7 +145,7 @@ void setting_manager::init_keys_storage()
 	key_storage_->reg<key_tc_resolve_countries>("tc_resolve_countries");
 	key_storage_->reg<key_tc_resolve_checkout>("tc_resolve_checkout");
 	key_storage_->reg<key_tc_auto_error_resolving>("tc_auto_error_resolving");
-
+	key_storage_->reg<key_tc_loadable_session>("tc_loadable_session");
 }
 
 } // namespace t2h_core

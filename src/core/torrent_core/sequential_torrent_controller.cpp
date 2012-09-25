@@ -2,6 +2,7 @@
 
 #include "lookup_error.hpp"
 #include "misc_utility.hpp"
+#include "torrent_core_utility.hpp"
 
 #include <libtorrent/file.hpp>
 #include <libtorrent/entry.hpp>
@@ -31,20 +32,6 @@ static inline void log_state_update_alerts(libtorrent::torrent_status const & st
 		status.progress,
 		status.download_rate,
 		status.num_complete)
-}
-
-static inline int save_file(std::string const & filename, std::vector<char> & bytes)
-{
-	libtorrent::file file;
-	boost::system::error_code error_code;
-	if (!file.open(filename, libtorrent::file::write_only, error_code)) { 
-		if (error_code) 
-			return -1;
-		libtorrent::file::iovec_t filb = { &bytes[0], bytes.size() };
-		libtorrent::size_type const written = file.writev(0, &filb, 1, error_code);
-		return (error_code ? -3 : written);
-	}
-	return -1;
 }
 
 } // namespace details
