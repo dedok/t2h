@@ -36,9 +36,8 @@ bool core_handle::initialize()
 		if (sets_manager_->config_is_well())
 			state = init_core_services();
 	} 
-	else if (!state) {
-		destroy();
-	}
+	
+	if (!state) destroy();
 	return state;
 }
 

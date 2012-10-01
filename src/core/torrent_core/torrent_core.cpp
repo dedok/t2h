@@ -168,7 +168,7 @@ torrent_core::size_type torrent_core::add_torrent(boost::filesystem::path const 
 	}
 
 	LIBTORRENT_EXCEPTION_SAFE_END_(return torrent_core::invalid_torrent_id)
-
+	TCORE_TRACE("Torrent id = '%u'", torrent_id)
 	return torrent_id;	
 }
 

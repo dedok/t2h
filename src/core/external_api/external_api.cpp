@@ -76,7 +76,7 @@ T2H_STD_API t2h_wait(t2h_handle_t handle)
 	}
 }
 
-T2H_STD_API_(unsigned int) t2h_add_torrent(t2h_handle_t handle, char const * path) 
+T2H_STD_API_(T2H_SIZE_TYPE) t2h_add_torrent(t2h_handle_t handle, char const * path) 
 {
 	using namespace details;
 	underlying_handle_info * info = (underlying_handle_info *)handle;
@@ -88,7 +88,7 @@ T2H_STD_API_(unsigned int) t2h_add_torrent(t2h_handle_t handle, char const * pat
 	return INVALID_TORRENT_ID;
 }
 
-T2H_STD_API_(unsigned int) t2h_add_torrent_url(t2h_handle_t handle, char const * url) 
+T2H_STD_API_(T2H_SIZE_TYPE) t2h_add_torrent_url(t2h_handle_t handle, char const * url) 
 {
 	using namespace details;
 	underlying_handle_info * info = (underlying_handle_info *)handle;
@@ -100,7 +100,7 @@ T2H_STD_API_(unsigned int) t2h_add_torrent_url(t2h_handle_t handle, char const *
 	return INVALID_TORRENT_ID;
 }
 
-T2H_STD_API_(char *) t2h_get_torrent_files(t2h_handle_t handle, unsigned int torrent_id) 
+T2H_STD_API_(char *) t2h_get_torrent_files(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id) 
 {
 	using namespace details;
 	underlying_handle_info * info = (underlying_handle_info *)handle;
@@ -110,12 +110,13 @@ T2H_STD_API_(char *) t2h_get_torrent_files(t2h_handle_t handle, unsigned int tor
 		std::string const info_string = tcore->get_torrent_info(torrent_id);
 		char * mem = details::string_to_c_string(info_string);
 		h->torrents_info_mem.push_back(boost::shared_array<char>(mem));
+		std::cout << mem <<std::endl;
 		return mem;
 	}
 	return NULL;
 }
 
-T2H_STD_API_(char *) t2h_start_download(t2h_handle_t handle, unsigned int torrent_id, int file_id) 
+T2H_STD_API_(char *) t2h_start_download(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id, int file_id) 
 {	
 	using namespace details;
 	underlying_handle_info * info = (underlying_handle_info *)handle;
@@ -128,7 +129,7 @@ T2H_STD_API_(char *) t2h_start_download(t2h_handle_t handle, unsigned int torren
 	return NULL;
 }
 
-T2H_STD_API t2h_paused_download(t2h_handle_t handle, unsigned int torrent_id, int file_id) 
+T2H_STD_API t2h_paused_download(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id, int file_id) 
 {
 	using namespace details;
 	underlying_handle_info * info = (underlying_handle_info *)handle;
@@ -138,7 +139,7 @@ T2H_STD_API t2h_paused_download(t2h_handle_t handle, unsigned int torrent_id, in
 	}
 }
 
-T2H_STD_API t2h_resume_download(t2h_handle_t handle, unsigned int torrent_id, int file_id) 
+T2H_STD_API t2h_resume_download(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id, int file_id) 
 {
 	using namespace details;
 	underlying_handle_info * info = (underlying_handle_info *)handle;
@@ -148,7 +149,7 @@ T2H_STD_API t2h_resume_download(t2h_handle_t handle, unsigned int torrent_id, in
 	}
 }
 
-T2H_STD_API t2h_delete_torrent(t2h_handle_t handle, unsigned int torrent_id) 
+T2H_STD_API t2h_delete_torrent(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id) 
 {
 	using namespace details;
 	underlying_handle_info * info = (underlying_handle_info *)handle;
@@ -159,7 +160,7 @@ T2H_STD_API t2h_delete_torrent(t2h_handle_t handle, unsigned int torrent_id)
 	}
 }
 
-T2H_STD_API t2h_stop_download(t2h_handle_t handle, unsigned int torrent_id) 
+T2H_STD_API t2h_stop_download(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id) 
 {
 	using namespace details;
 	underlying_handle_info * info = (underlying_handle_info *)handle;

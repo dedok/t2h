@@ -8,12 +8,16 @@
 #endif // WINXX
 
 #if defined(WIN32) || defined(WIN64)
+#include <windows.h>
+#define T2H_SIZE_TYPE SSIZE_T
 #	if defined(T2H_EXPORT) && !defined(T2H_IMPORT)
 #		define T2H_SPEC __declspec(dllexport)
 #	else
 #		define T2H_SPEC __declspec(dllimport)
 #	endif // WINXX 
 #else 
+#include <stdlib.h>
+#define T2H_SIZE_TYPE size_t
 #	if __GNUC__ >= 4
 #		define T2H_SPEC __attribute__ ((visibility ("default")))
 #	else
