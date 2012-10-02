@@ -2,6 +2,7 @@
 #define TORRENT_CORE_MACROS_HPP_INCLUDED
 
 #include "syslogger.hpp"
+#include "core_version.hpp"
 
 #if defined(__GNUG__)
 #	pragma GCC system_header
@@ -15,12 +16,12 @@
 
 #define TCORE_LOG_MAX_MESSAGE_SIZE 4096*3
 
-#define TCORE_LOG_GENERIC(log_type, ...)												\
-do {																					\
-	char vat_[TCORE_LOG_MAX_MESSAGE_SIZE];												\
-	std::memset(vat_, '\0', TCORE_LOG_MAX_MESSAGE_SIZE);								\
-	std::sprintf(vat_, __VA_ARGS__);													\
-	log_type("%s %s %s", TORRENT_CORE_LOG_PREFIX, FUNCTION_PREFIX, vat_)				\
+#define TCORE_LOG_GENERIC(log_type, ...)																		\
+do {																											\
+	char vat_[TCORE_LOG_MAX_MESSAGE_SIZE];																		\
+	std::memset(vat_, '\0', TCORE_LOG_MAX_MESSAGE_SIZE);														\
+	std::sprintf(vat_, __VA_ARGS__);																			\
+	log_type("%s [%s] %s %s", TORRENT_CORE_LOG_PREFIX, CORE_VERSION_STRING, FUNCTION_PREFIX, vat_)				\
 } while(0); 
 
 #if defined (T2H_DEBUG)

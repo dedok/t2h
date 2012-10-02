@@ -86,6 +86,7 @@ int main(int argc, char ** argv)
 
 		addrents_from_directory(core_handle, options);
 
+		std::cout << "t2h[" << T2H_VERSION_STRING << "] run..." << std::endl;
 		boost::thread console_controller_loop(&console_controller);		
 		console_controller_loop.join();
 	} 
@@ -229,7 +230,7 @@ void _dispatch_vm(boost::program_options::variables_map const & vm, bool & exit)
 		}
 		char * mem = t2h_start_download(core_handle.handle, torrent_id, 1);
 		if (!mem) {
-			std::cout << "Failed to start download" << std::endl;
+			std::cout << "Failed to start download, file no not exists" << std::endl;
 			return;
 		}
 		shared_bytes_type bytes(mem);

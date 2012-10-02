@@ -1,3 +1,4 @@
+#include "core_version.hpp"
 #include "torrent_core.hpp"
 #include "misc_utility.hpp"
 #include "torrent_core_macros.hpp"
@@ -45,7 +46,7 @@ bool torrent_core::launch_service()
 		}
 
 		core_session_ = new libtorrent::session(
-								libtorrent::fingerprint("LT", LIBTORRENT_VERSION_MAJOR, LIBTORRENT_VERSION_MINOR, 0, 0), 
+								libtorrent::fingerprint("T2H", CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_PATCH, CORE_VERSION_BUILD), 
 								libtorrent::session::add_default_plugins, 
 								params_.controller->availables_categories());
 		

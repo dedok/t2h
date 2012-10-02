@@ -2,10 +2,21 @@
 #define T2H_H_INCLUDED
 
 #include "t2h_config.h"
+#include "core_version.hpp"
+
+/**
+ * Versions variants
+ */
+
+#define T2H_VERSION CORE_VERSION_HEX
+#define T2H_VERSION_STRING CORE_VERSION_STRING
+
+/**
+ * t2h types ... etc
+ */
 
 #define INVALID_TORRENT_ID 0x1001 
 
-/** t2h handle type */
 struct t2h_handle {
 	unsigned int id;
 };
