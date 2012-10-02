@@ -9,10 +9,13 @@
 #endif
 
 #include <map>
+#include <string>
+#include <locale>
 #include <iostream>
 
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/shared_array.hpp>
@@ -206,6 +209,42 @@ program_options get_options(int argc, char ** argv)
 	return options; 
 }
 
+template<typename T, typename P>
+static T my_remove_if(T beg, T end, P pred)
+{
+	T dest = beg;
+	for (T itr = beg;itr != end; ++itr)
+		if (!pred(*itr))
+			*(dest++) = *itr;
+	return dest;
+}
+
+static inline bool is_space_(char c) 
+{	
+	std::locale loc;
+	return std::isspace(c, loc);
+}
+
+static inline boost::tuple<bool, T2H_SIZE_TYPE, T2H_SIZE_TYPE> get_from_string_(std::string const & str) 
+{
+	bool state = false;
+	T2H_SIZE_TYPE torrent_id = 0, file_id = 0;
+	try 
+	{
+		std::string cleared_string = str;
+		cleared_string.erase(my_remove_if(cleared_string.begin(), cleared_string.end(), 
+			is_space_), 
+			cleared_string.end());
+		std::size_t const pos = str.find_first_of(",");
+		torrent_id = boost::lexical_cast<T2H_SIZE_TYPE>(str.substr(0, pos)); 
+		file_id = boost::lexical_cast<T2H_SIZE_TYPE>(str.substr(pos + 1, str.size()));
+		state = true;
+	}
+	catch (std::exception const & expt) 
+	{ /* do nothing */ }
+	return boost::make_tuple(state, torrent_id, file_id);
+}
+
 void _dispatch_vm(boost::program_options::variables_map const & vm, bool & exit) 
 {
 	boost::lock_guard<boost::mutex> guard(core_handle.im_lock);
@@ -215,26 +254,41 @@ void _dispatch_vm(boost::program_options::variables_map const & vm, bool & exit)
 	}
 	else if (vm.count("pause")) { 
 		std::cout << "Pausing..." << std::endl;
-		t2h_paused_download(core_handle.handle, vm["pause"].as<T2H_SIZE_TYPE>(), 1);	
+		bool state = false;
+		std::string const string_ids = vm["pause"].as<std::string>();
+		std::pair<T2H_SIZE_TYPE, T2H_SIZE_TYPE> ids_pair;
+		boost::tie(state, ids_pair.first, ids_pair.second) = get_from_string_(string_ids);
+		if (!state) { 
+			std::cout << "Failed to pause download : not valid args passed (" << string_ids << ")" << std::endl;
+			return;
+		}
+		t2h_paused_download(core_handle.handle, ids_pair.first, ids_pair.second);	
 	}
 	else if (vm.count("remove")) { 
 		std::cout << "Removing..." << std::endl;
 		t2h_delete_torrent(core_handle.handle, vm["remove"].as<T2H_SIZE_TYPE>());
 	}
-	else if (vm.count("start_download")) {
-		T2H_SIZE_TYPE const torrent_id = vm["start_download"].as<T2H_SIZE_TYPE>();	
-		std::cout << "Staring download..." << std::endl;
-		if (!core_handle.info_map.count(torrent_id)) {
-			std::cout << "Failed to start download : no such torrent id" << std::endl;
+	else if (vm.count("start_download")) {	
+		std::cout << "Staring download..." << std::endl;	
+		bool state = false;
+		std::string const string_ids = vm["start_download"].as<std::string>();
+		std::pair<T2H_SIZE_TYPE, T2H_SIZE_TYPE> ids_pair;
+		boost::tie(state, ids_pair.first, ids_pair.second) = get_from_string_(string_ids);
+		if (!state) { 
+			std::cout << "Failed to start download : not valid args passed (" << string_ids << ")" << std::endl;
 			return;
 		}
-		char * mem = t2h_start_download(core_handle.handle, torrent_id, 1);
+		if (!core_handle.info_map.count(ids_pair.first)) {
+			std::cout << "Failed to start download : no such torrent id ( ="  << ids_pair.first << ")" << std::endl;
+			return;
+		}
+		char * mem = t2h_start_download(core_handle.handle, ids_pair.first, ids_pair.second);
 		if (!mem) {
 			std::cout << "Failed to start download, file no not exists" << std::endl;
 			return;
 		}
 		shared_bytes_type bytes(mem);
-		std::cout << "Torrent url for download : " << &bytes[0] << std::endl;
+		std::cout << "Torrent url for download : " << mem << std::endl;
 	}
 	else if (vm.count("resume")) { 
 		std::cout << "Resuming..." << std::endl;
@@ -291,16 +345,17 @@ void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit
 	std::copy(ibuf, ibuf+ibuf_size, opt_ibuff[1]);
 
 	desc.add_options()
-			("help", "avaliable commands")
+			("help,h", "avaliable commands")
 		    ("stop", po::value<T2H_SIZE_TYPE>(), "take id for stop download")
-			("pause", po::value<T2H_SIZE_TYPE>(), "take id for pause download")
+			("pause,p", po::value<T2H_SIZE_TYPE>(), "take id for pause download")
 			("resume", po::value<T2H_SIZE_TYPE>(), "take id for resume download")
 			("get_info", po::value<T2H_SIZE_TYPE>(), "take id for get torrent info")
 			("remove", po::value<T2H_SIZE_TYPE>(), "take id for remove torrent")
-			("add", po::value<std::string>(), "take path to .torrent file")
-			("start_download", po::value<T2H_SIZE_TYPE>(), "take id for start download")
+			("add,a", po::value<std::string>(), "take path to .torrent file")
+			("start_download,sd", po::value<std::string>(), 
+					"take first torrent id for start download, socond file id")
 			("get_ids", po::value<bool>()->implicit_value(true), "print avaliable ids")
-			("quit", po::value<bool>()->implicit_value(true), "do quit")
+			("quit,q", po::value<bool>()->implicit_value(true), "do quit")
 			;
 	
 	po::store(po::parse_command_line(opt_ibuff_size, opt_ibuff, desc), vm);
