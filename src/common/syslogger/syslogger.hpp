@@ -7,6 +7,20 @@
 #include <cstdio>
 #include <cstring>
 
+#if defined(_MSC_VER)
+#	define SL_SIZE_T				"%Iu"
+#	define SL_SSIZE_T 				"%Id"
+#	define SL_PTRDIFF_T				"%Id"
+#elif defined(__GNUC__)
+#	define SL_SIZE_T				"%zu"
+#	define SL_SSIZE_T				"%zd"
+#	define SL_PTRDIFF_T				"%zd"
+#else
+#	define SL_SIZE_T				"%u"
+#	define SL_SSIZE_T				"%d"
+#	define SL_PTRDIFF_T				"%d"
+#endif
+
 #define SYS_LOGGER_MAX_MESSAGE_SIZE 256 * sizeof(char)
 
 #define TEMPLATE_SYS_LOG_NOTIFY_(log_type, ...)					\

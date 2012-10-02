@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
 #include <boost/signals2.hpp>
 
 class syslogger_impl : public abstract_syslogger { 
@@ -26,7 +27,9 @@ private :
 	
 	void init_logger();
 	void close_logger();
+	
 	void connect_log_event_signals();
+	void disconnect_log_event_signals();
 
 	void error_(std::string const & message);
 	void warning_(std::string const & message);
@@ -34,6 +37,7 @@ private :
 	void trace_(std::string const & message);
 
 	syslogger_settings settings_;
+	boost::mutex lock_;
 	struct {	
 		int fd;
 		aslclient handle;	

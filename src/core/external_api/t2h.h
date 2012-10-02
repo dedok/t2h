@@ -5,8 +5,12 @@
 
 #define INVALID_TORRENT_ID 0x1001 
 
-/** Hidden t2h handle type */
-typedef void * t2h_handle_t;
+/** t2h handle type */
+struct t2h_handle {
+	unsigned int id;
+};
+
+typedef struct t2h_handle * t2h_handle_t;
 
 /**
  * Create and init t2h handle.

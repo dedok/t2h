@@ -28,7 +28,10 @@ public :
 	{ 
 		return boost::static_pointer_cast<torrent_core>(
 				servs_manager_.get_service(torrent_core::this_service_name));
-	} 
+	}
+
+	inline setting_manager_ptr get_setting_manager() 
+		{ return sets_manager_; } 
 
 private :
 	bool init_support_system();
@@ -39,7 +42,7 @@ private :
 
 	core_handle_settings settings_;
 	common::services_manager servs_manager_;
-	t2h_core::setting_manager_ptr sets_manager_;
+	setting_manager_ptr sets_manager_;
 
 };
 

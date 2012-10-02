@@ -37,7 +37,13 @@ struct t2h_handle_wrapper {
 };
 
 static t2h_handle_wrapper core_handle;
-static bool volatile sig_exit = false;
+
+struct signal_handle_state{
+	bool sig_exit;
+	boost::mutex lock;
+}; 
+
+static signal_handle_state sig_state;
 
 struct program_options{
 	bool is_valid;
@@ -50,11 +56,11 @@ struct program_options{
  */
 void console_controller(); 
 
-void add_torrents_from_directory(t2h_handle_wrapper & handle, program_options const & options); 
+void addrents_from_directory(t2h_handle_wrapper & handle, program_options const & options); 
 
 program_options get_options(int argc, char ** argv); 
 
-void do_action_dispatch_vm(boost::program_options::variables_map const & vm, bool & exit); 
+void _dispatch_vm(boost::program_options::variables_map const & vm, bool & exit); 
 
 void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit); 
 
@@ -64,6 +70,8 @@ void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit
 
 int main(int argc, char ** argv) 
 {
+	sig_state.sig_exit = false;
+
 	try 
 	{
 #if defined(UNIX) || defined(__APPLE__)
@@ -76,16 +84,19 @@ int main(int argc, char ** argv)
 		if (!core_handle.handle)
 			die("failed to start torrent to http core", 2);
 
-		add_torrents_from_directory(core_handle, options);
+		addrents_from_directory(core_handle, options);
 
 		boost::thread console_controller_loop(&console_controller);		
-		t2h_wait(core_handle.handle);
 		console_controller_loop.join();
 	} 
 	catch (std::exception const & expt) 
 	{ 
 		die(expt.what(), 3);
 	}
+
+	std::cout << "Exiting..." << std::endl;
+	t2h_close(core_handle.handle);
+	std::cout << "All core services stoped" << std::endl;
 
 	return 0;
 }
@@ -113,22 +124,28 @@ void console_controller()
 {
 	std::size_t const ibuf_size = 256;
 	char ibuf[ibuf_size];
-	for (bool exit_state = false; !exit_state || !sig_exit;) {
+	for (bool exit_state = false;;) 
+	{
 		std::cout << "Waiting next command..." << std::endl;
 		try 
 		{
 			get_input_stream(ibuf, ibuf_size);
+			
+			{ // sig_state lock zone
+			boost::lock_guard<boost::mutex> guard(sig_state.lock);
+			if (exit_state || sig_state.sig_exit) break;
+			} // sig_state lock zone end
+
 			dispatch_text_command(ibuf, ibuf_size, exit_state);	
 		} 
 		catch (std::exception const & expt) 
 		{
-			std::cout << "Option error : " << expt.what() << std::endl;
+			std::cout << "Command error : " << expt.what() << std::endl;
 		}
 	} // !loop	
-	std::cout << "Exit from console_controller" << std::endl;
 }
 
-void add_torrents_from_directory(t2h_handle_wrapper & handle, program_options const & options) 
+void addrents_from_directory(t2h_handle_wrapper & handle, program_options const & options) 
 {
 	using namespace boost::filesystem;
 	
@@ -188,23 +205,23 @@ program_options get_options(int argc, char ** argv)
 	return options; 
 }
 
-void do_action_dispatch_vm(boost::program_options::variables_map const & vm, bool & exit) 
+void _dispatch_vm(boost::program_options::variables_map const & vm, bool & exit) 
 {
 	boost::lock_guard<boost::mutex> guard(core_handle.im_lock);
-	if (vm.count("tor_stop")) { 
+	if (vm.count("stop")) { 
 		std::cout << "Stoping..." << std::endl;
-		t2h_stop_download(core_handle.handle, vm["tor_stop"].as<T2H_SIZE_TYPE>());
+		t2h_stop_download(core_handle.handle, vm["stop"].as<T2H_SIZE_TYPE>());
 	}
-	else if (vm.count("tor_pause")) { 
+	else if (vm.count("pause")) { 
 		std::cout << "Pausing..." << std::endl;
-		t2h_paused_download(core_handle.handle, vm["tor_pause"].as<T2H_SIZE_TYPE>(), 1);	
+		t2h_paused_download(core_handle.handle, vm["pause"].as<T2H_SIZE_TYPE>(), 1);	
 	}
-	else if (vm.count("tor_remove")) { 
+	else if (vm.count("remove")) { 
 		std::cout << "Removing..." << std::endl;
-		t2h_delete_torrent(core_handle.handle, vm["tor_remove"].as<T2H_SIZE_TYPE>());
+		t2h_delete_torrent(core_handle.handle, vm["remove"].as<T2H_SIZE_TYPE>());
 	}
-	else if (vm.count("tor_start_download")) {
-		T2H_SIZE_TYPE const torrent_id = vm["tor_start_download"].as<T2H_SIZE_TYPE>();	
+	else if (vm.count("start_download")) {
+		T2H_SIZE_TYPE const torrent_id = vm["start_download"].as<T2H_SIZE_TYPE>();	
 		std::cout << "Staring download..." << std::endl;
 		if (!core_handle.info_map.count(torrent_id)) {
 			std::cout << "Failed to start download : no such torrent id" << std::endl;
@@ -216,28 +233,28 @@ void do_action_dispatch_vm(boost::program_options::variables_map const & vm, boo
 			return;
 		}
 		shared_bytes_type bytes(mem);
-		core_handle.info_map[torrent_id] = bytes; 
+		std::cout << "Torrent url for download : " << &bytes[0] << std::endl;
 	}
-	else if (vm.count("tor_resume")) { 
+	else if (vm.count("resume")) { 
 		std::cout << "Resuming..." << std::endl;
-		t2h_resume_download(core_handle.handle, vm["tor_resume"].as<T2H_SIZE_TYPE>(), 1);
+		t2h_resume_download(core_handle.handle, vm["resume"].as<T2H_SIZE_TYPE>(), 1);
 	}
-	else if (vm.count("tor_add_tor")) { 
+	else if (vm.count("add")) { 
 		std::cout << "Adding torrent.." << std::endl;
-		std::string const path = vm["tor_add_tor"].as<std::string>();
+		std::string const path = vm["add"].as<std::string>();
 		T2H_SIZE_TYPE const torrent_id = t2h_add_torrent(core_handle.handle, path.c_str());
 		if (torrent_id == INVALID_TORRENT_ID) {
-			std::cout << "Failed to add torrent by path : " << vm["tor_add_tor"].as<std::string>() << std::endl;
+			std::cout << "Failed to add torrent by path : " << vm["add"].as<std::string>() << std::endl;
 			return;
 		}
 		core_handle.info_map[torrent_id] = shared_bytes_type();
 	}
-	else if (vm.count("tor_get_info")) { 
+	else if (vm.count("get_info")) { 
 		std::cout << "Torrent info : ";
-		std::cout << t2h_get_torrent_files(core_handle.handle, vm["tor_get_info"].as<T2H_SIZE_TYPE>());
+		std::cout << t2h_get_torrent_files(core_handle.handle, vm["get_info"].as<T2H_SIZE_TYPE>());
 		std::cout << std::endl;
 	}
-	else if (vm.count("tor_get_ids")) {
+	else if (vm.count("get_ids")) {
 		std::cout << "Avaliables ids : " << std::endl;
 		std::for_each(core_handle.info_map.begin(), core_handle.info_map.end(), 
 			std::cout << 
@@ -246,13 +263,10 @@ void do_action_dispatch_vm(boost::program_options::variables_map const & vm, boo
 		std::cout << std::endl;
 	}
 	else if (vm.count("quit")) {
-		t2h_close(core_handle.handle);
-		t2h_wait(core_handle.handle);
-		std::cout << "All core services stoped" << std::endl;
 		exit = true;
 	}
 	else  {
-		std::cout << "Unknown option passed" << std::endl;
+		std::cout << "Unknown command passed" << std::endl;
 		return;
 	}
 
@@ -277,14 +291,14 @@ void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit
 
 	desc.add_options()
 			("help", "avaliable commands")
-		    ("tor_stop", po::value<T2H_SIZE_TYPE>(), "take id for stop download")
-			("tor_pause", po::value<T2H_SIZE_TYPE>(), "take id for pause download")
-			("tor_resume", po::value<T2H_SIZE_TYPE>(), "take id for resume download")
-			("tor_get_info", po::value<T2H_SIZE_TYPE>(), "take id for get torrent info")
-			("tor_remove", po::value<T2H_SIZE_TYPE>(), "take id for remove torrent")
-			("tor_add_tor", po::value<std::string>(), "take path to .torrent file")
-			("tor_start_download", po::value<T2H_SIZE_TYPE>(), "take id for start download")
-			("tor_get_ids", po::value<bool>()->implicit_value(true), "print avaliable ids")
+		    ("stop", po::value<T2H_SIZE_TYPE>(), "take id for stop download")
+			("pause", po::value<T2H_SIZE_TYPE>(), "take id for pause download")
+			("resume", po::value<T2H_SIZE_TYPE>(), "take id for resume download")
+			("get_info", po::value<T2H_SIZE_TYPE>(), "take id for get torrent info")
+			("remove", po::value<T2H_SIZE_TYPE>(), "take id for remove torrent")
+			("add", po::value<std::string>(), "take path to .torrent file")
+			("start_download", po::value<T2H_SIZE_TYPE>(), "take id for start download")
+			("get_ids", po::value<bool>()->implicit_value(true), "print avaliable ids")
 			("quit", po::value<bool>()->implicit_value(true), "do quit")
 			;
 	
@@ -296,7 +310,7 @@ void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit
 		return;
 	}
 	
-	do_action_dispatch_vm(vm, exit);
+	_dispatch_vm(vm, exit);
 	
 	for (std::size_t it = 0; it < opt_ibuff_size; ++it)  
 		delete [] opt_ibuff[it];
@@ -309,8 +323,9 @@ void sig_handler(int signo)
 	if (signo != SIGINT) 
 		return;
 #endif
-	t2h_close(core_handle.handle);
-	sig_exit = true;
+	boost::lock_guard<boost::mutex> guard(sig_state.lock);
+	sig_state.sig_exit = true;
+	std::cout << "Press 'enter' for exit..." << std::endl;
 }
 
 void die(std::string const & message, int error_code) 

@@ -168,7 +168,7 @@ torrent_core::size_type torrent_core::add_torrent(boost::filesystem::path const 
 	}
 
 	LIBTORRENT_EXCEPTION_SAFE_END_(return torrent_core::invalid_torrent_id)
-	TCORE_TRACE("Torrent id = '%u'", torrent_id)
+	
 	return torrent_id;	
 }
 
@@ -201,7 +201,7 @@ std::string torrent_core::get_torrent_info(torrent_core::size_type torrent_id) c
 	boost::lock_guard<boost::mutex> guard(core_lock_);
 
 	if (cur_state_ != base_service::service_running) {
-		TCORE_WARNING("get torrent info by id '%u' failed torrent core not runing", torrent_id)
+		TCORE_WARNING("get torrent info by id "SL_SIZE_T" failed torrent core not runing", torrent_id)
 		return std::string();
 	}
 
@@ -220,14 +220,12 @@ std::string torrent_core::start_torrent_download(torrent_core::size_type torrent
 {
 	/** To start download just set to normal prior to req. file, 
 		then post message to main loop about changes */
-	TCORE_TRACE("'%u' '%i'", torrent_id, file_id)
-
 	LIBTORRENT_EXCEPTION_SAFE_BEGIN	
 	
 	boost::lock_guard<boost::mutex> guard(core_lock_);
 
 	if (cur_state_ != base_service::service_running) {
-		TCORE_WARNING("start download by id '%u' failed torrent core not runing", torrent_id)
+		TCORE_WARNING("start download by id "SL_SIZE_T" failed torrent core not runing", torrent_id)
 		return std::string();
 	}
 	
@@ -256,7 +254,7 @@ void torrent_core::pause_download(torrent_core::size_type torrent_id, int file_i
 	boost::lock_guard<boost::mutex> guard(core_lock_);
 
 	if (cur_state_ != base_service::service_running) {
-		TCORE_WARNING("pause download by id '%u' failed torrent core not runing", torrent_id)
+		TCORE_WARNING("pause download by id "SL_SIZE_T" failed torrent core not runing", torrent_id)
 		return;
 	}
 	
@@ -279,7 +277,7 @@ void torrent_core::resume_download(torrent_core::size_type torrent_id, int file_
 	boost::lock_guard<boost::mutex> guard(core_lock_);
 	
 	if (cur_state_ != base_service::service_running) {
-		TCORE_WARNING("resume download by id '%u' failed torrent core not runing", torrent_id)
+		TCORE_WARNING("resume download by id "SL_SIZE_T" failed torrent core not runing", torrent_id)
 		return;
 	}
 	
@@ -303,7 +301,7 @@ void torrent_core::remove_torrent(size_type torrent_id)
 	boost::lock_guard<boost::mutex> guard(core_lock_);
 
 	if (cur_state_ != base_service::service_running) {
-		TCORE_WARNING("remove download by id '%u' failed torrent core not runing", torrent_id)
+		TCORE_WARNING("remove download by id "SL_SIZE_T" failed torrent core not runing", torrent_id)
 		return;
 	}
 	
@@ -325,7 +323,7 @@ void torrent_core::stop_torrent_download(torrent_core::size_type torrent_id)
 	boost::lock_guard<boost::mutex> guard(core_lock_);
 
 	if (cur_state_ != base_service::service_running) {
-		TCORE_WARNING("stop download by id '%u' failed torrent core not runing", torrent_id)
+		TCORE_WARNING("stop download by id "SL_SIZE_T" failed torrent core not runing", torrent_id)
 		return;
 	}
 	

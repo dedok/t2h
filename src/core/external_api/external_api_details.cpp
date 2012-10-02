@@ -5,6 +5,10 @@
 
 namespace t2h_core {
 
+/**
+ * Private-hidden core_handle helpers
+ */
+
 namespace details {
 
 char const * core_handle_component_name = "com.t2h.core";
@@ -18,6 +22,10 @@ syslogger_settings const log_settings = {
 };
 
 } // namespace details
+
+/**
+ * Public core_handle api
+ */
 
 core_handle::core_handle(core_handle_settings const & settings) 
 	: settings_(settings), servs_manager_(), sets_manager_() 
@@ -51,6 +59,10 @@ void core_handle::wait()
 {
 	servs_manager_.wait_all();
 }
+
+/**
+ * Private core_handle api
+ */
 
 bool core_handle::init_support_system() 
 {
