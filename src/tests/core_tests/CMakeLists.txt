@@ -21,4 +21,7 @@ target_link_libraries(link_test_c ${link_depends})
 add_executable(link_test_cpp EXCLUDE_FROM_ALL link_test.cpp)
 target_link_libraries(link_test_cpp ${link_depends})
 
+# Cpp/C type range test
+add_executable(external_type_test EXCLUDE_FROM_ALL external_type_test.cpp)
+target_link_libraries(external_type_test ${link_depends})
 
