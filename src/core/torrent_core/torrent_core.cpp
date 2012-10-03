@@ -44,7 +44,7 @@ bool torrent_core::launch_service()
 			TCORE_WARNING("fail to launch torrent core, torrent core already launced")
 			return false;
 		}
-
+		
 		core_session_ = new libtorrent::session(
 								libtorrent::fingerprint("T2H", CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_PATCH, CORE_VERSION_BUILD), 
 								libtorrent::session::add_default_plugins, 
@@ -55,8 +55,12 @@ bool torrent_core::launch_service()
 		params_.controller->set_session(core_session_);
 		params_.controller->set_shared_buffer(shared_buffer_);
 
-		if (!init_core_session()) 
+		if (!init_core_session()) {
+			TCORE_WARNING("can not init torrent_core engine, settings not valid or ill formet")
+			delete core_session_; core_session_ = NULL;
+			delete shared_buffer_; shared_buffer_ = NULL;
 			return false;
+		}
 		
 		cur_state_ = base_service::service_running;
 		core_session_loop_.reset(new boost::thread(&torrent_core::core_main_loop, this));
@@ -363,10 +367,11 @@ bool torrent_core::init_core_session()
 				{
 					core_session_->load_state(entry);
 					has_prev_state = true;
-				} // if lazy_bdecode
-			} // if load_file
-		} // if loadable_session
-
+				} // lazy_bdecode
+			} // loadable_session
+		} else 
+			return false;
+			
 		core_session_->start_lsd();
 		core_session_->start_upnp();
 		core_session_->start_natpmp();	
