@@ -5,7 +5,10 @@
 #include "t2h.h"
 
 #if defined(UNIX) || defined(__APPLE__)
-#include <signal.h>
+#	include <signal.h>
+#elif defined(WIN32)
+#define WIN32_LEAN_AND_MEAN  
+#	include <windows.h>
 #endif
 
 #include <map>
@@ -24,7 +27,12 @@
 /** 
  * Helpers declaraion 
  */
+#if defined(__APPLE__) || defined(UNIX)
 void sig_handler(int signo);
+#elif defined(WIN32)
+BOOL __stdcall console_handler(DWORD reason_type);
+#endif
+
 void die(std::string const & message, int error_code = 1); 
 
 /** 
@@ -70,7 +78,6 @@ void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit
 /** 
  * Entry point 
  */
-
 int main(int argc, char ** argv) 
 {
 	sig_state.sig_exit = false;
@@ -80,6 +87,9 @@ int main(int argc, char ** argv)
 #if defined(UNIX) || defined(__APPLE__)
 		if (signal(SIGINT, sig_handler) == SIG_ERR) 
 		 	die("failed to add signal handler", 1);
+#elif defined(WIN32)
+		if (SetConsoleCtrlHandler((PHANDLER_ROUTINE)console_handler, TRUE) == FALSE)
+			die("failed to add console handler", 1);
 #endif
 		program_options options = get_options(argc, argv);
 	
@@ -373,16 +383,29 @@ void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit
 	delete [] opt_ibuff;
 }
 
+#if defined(UNIX) || defined(__APPLE__)
 void sig_handler(int signo)
 {
-#if defined(UNIX) || defined(APPLE)
 	if (signo != SIGINT) 
 		return;
-#endif
 	boost::lock_guard<boost::mutex> guard(sig_state.lock);
 	sig_state.sig_exit = true;
 	std::cout << "Press 'enter' for exit..." << std::endl;
 }
+#elif defined(WIN32)
+BOOL __stdcall console_handler(DWORD reason_type) 
+{
+	switch (reason_type) 
+	{
+		case CTRL_C_EVENT: case CTRL_BREAK_EVENT: case CTRL_CLOSE_EVENT: case CTRL_SHUTDOWN_EVENT: case CTRL_LOGOFF_EVENT: 
+			boost::lock_guard<boost::mutex> guard(sig_state.lock);
+			sig_state.sig_exit = true;
+			std::cout << "Press 'enter' for exit..." << std::endl;
+		default : break;
+	} 
+	return TRUE;
+}
+#endif
 
 void die(std::string const & message, int error_code) 
 {
