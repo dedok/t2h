@@ -25,10 +25,14 @@ typedef handles_manager<handle_type> handles_manager_type;
 
 static inline char * string_to_c_string(std::string const & str) 
 {
-	char * mem = new char[str.size() + 1];
-	std::memset(mem, str.size(), 0);
-	std::copy(str.begin(), str.end(), mem);
-	return mem;
+	char * c_str = NULL;
+	if (!str.empty()) {
+		std::size_t const str_size = str.size() + 1;
+		c_str = new char[str_size]; std::memset(c_str, str_size, '\0');
+		for (std::size_t it = 0; it < str_size - 1; ++it)
+			c_str[it] = str.at(it); 
+	}
+	return c_str;
 }
 
 static inline std::string create_url(t2h_core::setting_manager_ptr sets_manager, std::string const & file_path) 
@@ -106,15 +110,16 @@ T2H_STD_API_(T2H_SIZE_TYPE) t2h_add_torrent_url(t2h_handle_t handle, char const 
 T2H_STD_API_(char *) t2h_get_torrent_files(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id) 
 {
 	using namespace details;
+
+	char * mem = NULL;
 	if (handle && torrent_id != INVALID_TORRENT_ID) {
 		handle_type h = handles_manager_type::shared_manager()->get_handle(handle->id);
 		t2h_core::torrent_core_ptr tcore = h->core_handle->get_torrent_core();
 		std::string const info_string = tcore->get_torrent_info(torrent_id);
-		char * mem = details::string_to_c_string(info_string);
-		h->torrents_info_mem.push_back(boost::shared_array<char>(mem));
-		return mem;
+		if ((mem = details::string_to_c_string(info_string)) != NULL)
+			h->torrents_info_mem.push_back(boost::shared_array<char>(mem));
 	}
-	return NULL;
+	return mem;
 }
 
 T2H_STD_API_(char *) t2h_start_download(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id, int file_id) 
