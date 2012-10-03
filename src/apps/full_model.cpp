@@ -7,7 +7,9 @@
 #if defined(UNIX) || defined(__APPLE__)
 #	include <signal.h>
 #elif defined(WIN32)
-#define WIN32_LEAN_AND_MEAN  
+#	if !defined(WIN32_LEAN_AND_MEAN)
+#		define WIN32_LEAN_AND_MEAN  
+#	endif
 #	include <windows.h>
 #endif
 
@@ -397,10 +399,12 @@ BOOL __stdcall console_handler(DWORD reason_type)
 {
 	switch (reason_type) 
 	{
-		case CTRL_C_EVENT: case CTRL_BREAK_EVENT: case CTRL_CLOSE_EVENT: case CTRL_SHUTDOWN_EVENT: case CTRL_LOGOFF_EVENT: 
-			boost::lock_guard<boost::mutex> guard(sig_state.lock);
+		case CTRL_C_EVENT: case CTRL_BREAK_EVENT: case CTRL_CLOSE_EVENT: 
+		case CTRL_SHUTDOWN_EVENT: case CTRL_LOGOFF_EVENT: 
+			sig_state.lock.lock();
 			sig_state.sig_exit = true;
 			std::cout << "Press 'enter' for exit..." << std::endl;
+			sig_state.lock.unlock();
 		default : break;
 	} 
 	return TRUE;
