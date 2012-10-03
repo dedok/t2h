@@ -1,9 +1,17 @@
 #include "t2h.h"
 
+#if defined(WIN32)
+#include <windows.h>
+#endif
+
 #include <limits>
+#include <cstdint>
 #include <iostream>
 #include <boost/cstdint.hpp>
 #include <boost/test/minimal.hpp>
+
+/* TODO Fix follow windows workaround */
+#undef max
 
 /**
  * Test helpers
@@ -32,12 +40,13 @@ do {										\
 int test_main(int argc, char ** argv) 
 {
 	std::cerr << "Type size info : " << std::endl;
-#if !defined(_WIN32) || !defined(_WIN64)
+#if defined(UNIX) || defined(APPLE)
 	PRINT_TYPE_SIZE(ssize_t)
 #endif
 	PRINT_TYPE_SIZE(std::size_t)
 	PRINT_TYPE_SIZE(unsigned int)
 	PRINT_TYPE_SIZE(size_t)
+	PRINT_TYPE_SIZE(T2H_SIZE_TYPE)
 	
 	UINT_MAX_CHECK_ENTITY(MAX_TYPE(std::size_t), == MAX_TYPE(T2H_SIZE_TYPE))
 	UINT_MAX_CHECK_ENTITY(MAX_TYPE(size_t), == MAX_TYPE(T2H_SIZE_TYPE))

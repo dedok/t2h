@@ -3,6 +3,11 @@
 #include <boost/random/random_device.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 
+#if defined(WIN32)
+#	pragma warning(push)
+#	pragma warning(disable : 4101) 
+#endif
+
 namespace utility {
 
 static std::string const chars_set =  
@@ -33,3 +38,6 @@ boost::posix_time::time_duration get_current_time()
 
 } // namespace utility
 
+#if defined(WIN32)
+#	pragma warning(pop)
+#endif

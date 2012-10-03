@@ -7,9 +7,10 @@
 #	define EXPORT_API
 #endif // WINXX
 
+/* TODO add more size_t type tests for windows platforms */
 #if defined(WIN32) || defined(WIN64)
 #include <windows.h>
-#define T2H_SIZE_TYPE SSIZE_T
+#define T2H_SIZE_TYPE SIZE_T
 #	if defined(T2H_EXPORT) && !defined(T2H_IMPORT)
 #		define T2H_SPEC __declspec(dllexport)
 #	else

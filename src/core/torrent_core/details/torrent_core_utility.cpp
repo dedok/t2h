@@ -20,7 +20,7 @@ int save_file(std::string const & filename, std::vector<char> & bytes)
 			return -1;
 		libtorrent::file::iovec_t filb = { &bytes[0], bytes.size() };
 		libtorrent::size_type const written = file.writev(0, &filb, 1, error_code);
-		return (error_code ? -3 : written);
+		return (error_code ? -3 : static_cast<int>(written));
 	}
 	return -1;
 }

@@ -3,6 +3,11 @@
 #include "sequential_torrent_controller.hpp"
 #include "syslogger.hpp"
 
+#if defined(WIN32)
+#	pragma warning(push)
+#	pragma warning(disable : 4101) 
+#endif
+
 namespace t2h_core {
 
 /**
@@ -136,3 +141,6 @@ http_server_core_ptr core_handle::init_http_server()
 
 } // namespace t2h_core
 
+#if defined(WIN32)
+#	pragma warning(pop)
+#endif

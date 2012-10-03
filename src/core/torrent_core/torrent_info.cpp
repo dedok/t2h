@@ -5,6 +5,11 @@
 #include <sstream>
 #include <boost/filesystem/path.hpp>
 
+#if defined(WIN32)
+#	pragma warning(push)
+#	pragma warning(disable : 4101) 
+#endif
+
 namespace t2h_core { namespace details {
 
 /**
@@ -124,3 +129,6 @@ std::string torrent_info_to_json(
 
 } } // namesapce t2h_core, details
 
+#if defined(WIN32)
+#	pragma warning(pop)
+#endif

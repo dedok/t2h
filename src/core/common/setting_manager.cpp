@@ -5,6 +5,11 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#if defined(WIN32)
+#	pragma warning(push)
+#	pragma warning(disable : 4101) 
+#endif
+
 #define ADD_KEY_TYPE(x_, y_)					\
 struct key_##x_									\
 	: public t2h_core_details::base_key 		\
@@ -152,3 +157,6 @@ void setting_manager::init_keys_storage()
 
 #undef ADD_KEY_TYPE
 
+#if defined(WIN32)
+#	pragma warning(pop)
+#endif

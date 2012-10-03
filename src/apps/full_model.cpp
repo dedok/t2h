@@ -132,14 +132,14 @@ void console_controller()
 	{
 		std::cout << "Waiting next command..." << std::endl;
 		try 
-		{
-			get_input_stream(ibuf, ibuf_size);
-			
+		{	
 			{ // sig_state lock zone
 			boost::lock_guard<boost::mutex> guard(sig_state.lock);
 			if (exit_state || sig_state.sig_exit) break;
 			} // sig_state lock zone end
-
+			
+			get_input_stream(ibuf, ibuf_size);
+			
 			dispatch_text_command(ibuf, ibuf_size, exit_state);	
 		} 
 		catch (std::exception const & expt) 
@@ -345,17 +345,17 @@ void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit
 	std::copy(ibuf, ibuf+ibuf_size, opt_ibuff[1]);
 
 	desc.add_options()
-			("help,h", "avaliable commands")
+			("help", "avaliable commands")
 		    ("stop", po::value<T2H_SIZE_TYPE>(), "take id for stop download")
-			("pause,p", po::value<T2H_SIZE_TYPE>(), "take id for pause download")
+			("pause", po::value<T2H_SIZE_TYPE>(), "take id for pause download")
 			("resume", po::value<T2H_SIZE_TYPE>(), "take id for resume download")
 			("get_info", po::value<T2H_SIZE_TYPE>(), "take id for get torrent info")
 			("remove", po::value<T2H_SIZE_TYPE>(), "take id for remove torrent")
-			("add,a", po::value<std::string>(), "take path to .torrent file")
-			("start_download,sd", po::value<std::string>(), 
+			("add", po::value<std::string>(), "take path to .torrent file")
+			("start_download", po::value<std::string>(), 
 					"take first torrent id for start download, socond file id")
 			("get_ids", po::value<bool>()->implicit_value(true), "print avaliable ids")
-			("quit,q", po::value<bool>()->implicit_value(true), "do quit")
+			("quit", po::value<bool>()->implicit_value(true), "do quit")
 			;
 	
 	po::store(po::parse_command_line(opt_ibuff_size, opt_ibuff, desc), vm);
