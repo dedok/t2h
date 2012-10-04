@@ -206,6 +206,7 @@ void http_reply::add_crlf_directly()
 
 http_reply::formating_result http_reply::fill_content_from_file() 
 {
+	//TODO fix types compability
 	namespace io = boost::iostreams;
 	formating_result result = file_not_exist; 
 	char * buffer_ptr = NULL;
