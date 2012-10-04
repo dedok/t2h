@@ -280,10 +280,10 @@ void _dispatch_vm(boost::program_options::variables_map const & vm, bool & exit)
 		std::cout << "Removing..." << std::endl;
 		t2h_delete_torrent(core_handle.handle, vm["remove"].as<T2H_SIZE_TYPE>());
 	}
-	else if (vm.count("start_download")) {	
+	else if (vm.count("start")) {	
 		std::cout << "Staring download..." << std::endl;	
 		bool state = false;
-		std::string const string_ids = vm["start_download"].as<std::string>();
+		std::string const string_ids = vm["start"].as<std::string>();
 		std::pair<T2H_SIZE_TYPE, T2H_SIZE_TYPE> ids_pair;
 		boost::tie(state, ids_pair.first, ids_pair.second) = get_from_string_(string_ids);
 		if (!state) { 
@@ -299,7 +299,6 @@ void _dispatch_vm(boost::program_options::variables_map const & vm, bool & exit)
 			std::cout << "Failed to start download, file no not exists" << std::endl;
 			return;
 		}
-		shared_bytes_type bytes(mem);
 		std::cout << "Torrent url for download : " << mem << std::endl;
 	}
 	else if (vm.count("resume")) { 
@@ -364,7 +363,7 @@ void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit
 			("get_info", po::value<T2H_SIZE_TYPE>(), "take id for get torrent info")
 			("remove", po::value<T2H_SIZE_TYPE>(), "take id for remove torrent")
 			("add", po::value<std::string>(), "take path to .torrent file")
-			("start_download", po::value<std::string>(), 
+			("start", po::value<std::string>(), 
 					"take first torrent id for start download, socond file id")
 			("get_ids", po::value<bool>()->implicit_value(true), "print avaliable ids")
 			("quit", po::value<bool>()->implicit_value(true), "do quit")

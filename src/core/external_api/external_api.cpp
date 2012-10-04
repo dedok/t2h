@@ -5,6 +5,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/shared_array.hpp>
+#include <boost/lambda/lambda.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
 /**
@@ -27,20 +28,23 @@ static inline char * string_to_c_string(std::string const & str)
 {
 	char * c_str = NULL;
 	if (!str.empty()) {
-		std::size_t const str_size = str.size() + 1;
-		c_str = new char[str_size]; std::memset(c_str, str_size, '\0');
-		for (std::size_t it = 0; it < str_size - 1; ++it)
-			c_str[it] = str.at(it); 
+		c_str = new char[str.size() + 1]; 
+		std::copy(str.begin(), str.end(), c_str);
+		c_str[str.size()] = '\0';
 	}
 	return c_str;
 }
 
-static inline std::string create_url(t2h_core::setting_manager_ptr sets_manager, std::string const & file_path) 
+static inline std::string create_url(
+	t2h_core::setting_manager_ptr sets_manager, std::string const & file_path) 
 {
 	static std::string const http_protocol_prefix = "http://";
 	if (file_path.empty()) return std::string();
-	std::string url = sets_manager->get_value<std::string>("server_addr");
-	return (url = http_protocol_prefix + url + "/" + file_path);
+	std::string well_formed_fp = file_path;
+	std::replace_if(well_formed_fp.begin(), well_formed_fp.end(), 
+		boost::lambda::_1 == '\\', '/');
+	return std::string(http_protocol_prefix + 
+		sets_manager->get_value<std::string>("server_addr") + "/" + well_formed_fp);
 }
 
 } // namespace details
@@ -128,9 +132,9 @@ T2H_STD_API_(char *) t2h_start_download(t2h_handle_t handle, T2H_SIZE_TYPE torre
 	if (handle && torrent_id != INVALID_TORRENT_ID) {
 		handle_type h = handles_manager_type::shared_manager()->get_handle(handle->id);
 		t2h_core::torrent_core_ptr tcore = h->core_handle->get_torrent_core();
-		std::string const path_to_file = tcore->start_torrent_download(torrent_id, file_id);
 		// TODO add server addres resolving(auto, manual)
-		std::string const url = details::create_url(h->core_handle->get_setting_manager(), path_to_file);
+		std::string const url = details::create_url(h->core_handle->get_setting_manager(), 
+			tcore->start_torrent_download(torrent_id, file_id));
 		return string_to_c_string(url);
 	}
 	return NULL;

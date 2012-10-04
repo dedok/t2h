@@ -241,7 +241,7 @@ std::string torrent_core::start_torrent_download(torrent_core::size_type torrent
 			ex_info->handle.file_priority(file_id, details::file_ex_info::normal_prior);
 			ex_info->handle.force_reannounce();	
 			core_session_->post_torrent_updates();
-			return libtorrent::combine_path(ex_info->sandbox_dir_name, info.file_at(file_id).path);
+			return std::string(ex_info->sandbox_dir_name + "/" + info.file_at(file_id).path);
 		} // if
 	} // if
 
