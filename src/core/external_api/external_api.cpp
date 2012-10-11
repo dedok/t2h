@@ -19,6 +19,8 @@
 #	define T2H_SHARED_EXPORT_FUNCDNAME
 #endif // T2H_SHARED_EXPORT_FUNCDNAME
 
+#define T2H_PASSED_HANDLES_CHECK
+
 #define T2H_RETURN_IF(x, x1) if (x) { x1 };
 
 namespace details {
@@ -32,13 +34,15 @@ struct underlying_info {
 	T2H_TORRENT_ID_TYPE_ tid;
 };
 
+typedef boost::shared_ptr<underlying_info> underlying_info_ptr;
+
 /**
  * t2h hidden underlying handle type
  */
 struct underlying_handle 
 	: public boost::enable_shared_from_this<underlying_handle> 
 {
-	typedef std::map<T2H_SIZE_TYPE, underlying_info> torrents_map_type;	
+	typedef std::map<T2H_SIZE_TYPE, underlying_info_ptr> torrents_map_type;	
 	t2h_core::core_handle_ptr core_handle;
 	torrents_map_type torrents;
 	boost::mutex mutable torrents_lock;
@@ -50,23 +54,26 @@ struct underlying_handle
 	{
 		//TODO Add element duplicate test
 		boost::lock_guard<boost::mutex> guard(torrents_lock);
+		underlying_info_ptr ui_ptr(new underlying_info());
+		ui_ptr->tid = info.tid;
+		ui_ptr->mem_collector = info.mem_collector;
 #if !defined(T2H_INT_WORKAROUND)
-		torrents.insert(std::make_pair(info.tid, info));
+		torrents.insert(std::make_pair(info.tid, ui_ptr));
 		return info.tid;
 #else
 		torrents_map_type::size_type const fake_id = torrents.size() + 1;
-		torrents.insert(std::make_pair(fake_id, info));
+		torrents.insert(std::make_pair(fake_id, ui_ptr));
 		return (T2H_SIZE_TYPE)fake_id;
 #endif // T2H_INT_WORKAROUND
 	}
 	
-	inline boost::tuple<underlying_info, bool> get_info(T2H_SIZE_TYPE tor_id) const 
+	inline boost::tuple<underlying_info_ptr, bool> get_info(T2H_SIZE_TYPE tid) const 
 	{
 		boost::lock_guard<boost::mutex> guard(torrents_lock);
-		torrents_map_type::const_iterator found = torrents.find(tor_id);
+		torrents_map_type::const_iterator found = torrents.find(tid);
 		if (found != torrents.end()) 
 			return boost::make_tuple(found->second, true);
-		return boost::make_tuple(underlying_info(), false);
+		return boost::make_tuple(underlying_info_ptr(), false);
 	}
 
 	inline void remove_info(T2H_SIZE_TYPE tor_id) 
@@ -207,12 +214,12 @@ T2H_STD_API_(char *) t2h_get_torrent_files(t2h_handle_t handle, T2H_SIZE_TYPE to
 		handle_type h = handles_manager_type::shared_manager()->get_handle(handle);
 		t2h_core::torrent_core_ptr tcore = h->core_handle->get_torrent_core();
 		
-		underlying_info info; bool result = false; 
+		underlying_info_ptr info; bool result = false; 
 		boost::tie(info, result) = h->get_info(torrent_id); 	
 		if (result) { 
-			std::string const info_string = tcore->get_torrent_info(info.tid);
+			std::string const info_string = tcore->get_torrent_info(info->tid);
 			if ((mem = details::string_to_c_string(info_string)) != NULL) 
-				info.mem_collector.push_back(boost::shared_array<char>(mem));
+				info->mem_collector.push_back(boost::shared_array<char>(mem));
 		} // result
 	}
 	return mem;
@@ -225,18 +232,18 @@ T2H_STD_API_(char *) t2h_start_download(t2h_handle_t handle, T2H_SIZE_TYPE torre
 	using namespace details;
 
 	char * mem = NULL;
-	if (handle > INVALID_T2H_HANDLE && torrent_id != INVALID_TORRENT_ID && file_id > 0) 
+	if (handle > INVALID_T2H_HANDLE && torrent_id != INVALID_TORRENT_ID && file_id >= 0) 
 	{
 		handle_type h = handles_manager_type::shared_manager()->get_handle(handle);
 		t2h_core::torrent_core_ptr tcore = h->core_handle->get_torrent_core();
 		
-		underlying_info info; bool result = false; 
-		boost::tie(info, result) = h->get_info(torrent_id); 	
+		underlying_info_ptr info; bool result = false; 
+		boost::tie(info, result) = h->get_info(torrent_id);
 		if (result) { 
 			std::string const url = details::create_url(h->core_handle->get_setting_manager(), 
-										tcore->start_torrent_download(info.tid, file_id));
+										tcore->start_torrent_download(info->tid, file_id));
 			if ((mem = details::string_to_c_string(url)) != NULL) 
-				info.mem_collector.push_back(boost::shared_array<char>(mem));
+				info->mem_collector.push_back(boost::shared_array<char>(mem));
 		} // result
 	}
 	return mem;
@@ -247,13 +254,13 @@ T2H_STD_API t2h_paused_download(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id, i
 #pragma T2H_SHARED_EXPORT_FUNCDNAME
 	using namespace details;
 	
-	underlying_info info; bool result = false; 
-	if (handle > INVALID_T2H_HANDLE && torrent_id != INVALID_TORRENT_ID && file_id > 0) 
+	underlying_info_ptr info; bool result = false; 
+	if (handle > INVALID_T2H_HANDLE && torrent_id != INVALID_TORRENT_ID && file_id >= 0) 
 	{
 		handle_type h = handles_manager_type::shared_manager()->get_handle(handle);	
 		boost::tie(info, result) = h->get_info(torrent_id); 	
 		if (result)
-			h->core_handle->get_torrent_core()->pause_download(info.tid, file_id);
+			h->core_handle->get_torrent_core()->pause_download(info->tid, file_id);
 	}
 }
 
@@ -262,13 +269,13 @@ T2H_STD_API t2h_resume_download(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id, i
 #pragma T2H_SHARED_EXPORT_FUNCDNAME
 	using namespace details;
 
-	underlying_info info; bool result = false; 
-	if (handle > INVALID_T2H_HANDLE && torrent_id != INVALID_TORRENT_ID && file_id > 0) 
+	underlying_info_ptr info; bool result = false; 
+	if (handle > INVALID_T2H_HANDLE && torrent_id != INVALID_TORRENT_ID && file_id >= 0) 
 	{
 		handle_type h = handles_manager_type::shared_manager()->get_handle(handle);
 		boost::tie(info, result) = h->get_info(torrent_id); 	
 		if (result)
-			h->core_handle->get_torrent_core()->resume_download(info.tid, file_id);
+			h->core_handle->get_torrent_core()->resume_download(info->tid, file_id);
 	}
 }
 
@@ -277,17 +284,17 @@ T2H_STD_API t2h_delete_torrent(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id)
 #pragma T2H_SHARED_EXPORT_FUNCDNAME
 	using namespace details;
 	
-	underlying_info info; bool result = false; 
+	underlying_info_ptr info; bool result = false; 
 	if (handle > INVALID_T2H_HANDLE && torrent_id != INVALID_TORRENT_ID) 
 	{
 		handle_type h = handles_manager_type::shared_manager()->get_handle(handle);
 		boost::tie(info, result) = h->get_info(torrent_id); 	
 		if (result) {
-			h->core_handle->get_torrent_core()->remove_torrent(info.tid);
+			h->core_handle->get_torrent_core()->remove_torrent(info->tid);
 #if defined(T2H_INT_WORKAROUND)
 			h->remove_info(torrent_id);
 #else 
-			h->remove_info(info.tid);
+			h->remove_info(info->tid);
 #endif // T2H_INT_WORKAROUND
 		} // result
 	}
@@ -298,16 +305,17 @@ T2H_STD_API t2h_stop_download(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id)
 #pragma T2H_SHARED_EXPORT_FUNCDNAME
 	using namespace details;
 
-	underlying_info info; bool result = false; 
+	underlying_info_ptr info; bool result = false; 
 	if (handle > INVALID_T2H_HANDLE && torrent_id != INVALID_TORRENT_ID) 
 	{
 		handle_type h = handles_manager_type::shared_manager()->get_handle(handle);
 		boost::tie(info, result) = h->get_info(torrent_id); 	
 		if (result)
-			h->core_handle->get_torrent_core()->stop_torrent_download(info.tid);
+			h->core_handle->get_torrent_core()->stop_torrent_download(info->tid);
 	}
 }
 
+#undef T2H_PASSED_HANDLES_CHECK
 #undef T2H_RETURN_IF
 #undef T2H_SHARED_EXPORT_FUNCDNAME
 
