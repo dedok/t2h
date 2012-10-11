@@ -78,16 +78,25 @@ setting_manager::~setting_manager()
 void setting_manager::load_config(boost::filesystem::path const & conf_path) 
 {
 	boost::lock_guard<boost::mutex> guard(lock_);
+	boost::system::error_code error_code;
 	reset_configurations(); last_error_.clear();
+	if (!boost::filesystem::exists(conf_path, error_code)) { 
+		last_error_ = "File at path '" + conf_path.string() + "' not exist";
+		return;
+	}
 	std::ifstream stream(conf_path.string().c_str());
 	fill_config(stream);
 }
 
 void setting_manager::init_config(std::string const & json) 
 {
-	boost::lock_guard<boost::mutex> guard(lock_);
-	std::istringstream json_stream(json);
+	boost::lock_guard<boost::mutex> guard(lock_);	
 	reset_configurations(); last_error_.clear();
+	if (json.empty()) {
+		last_error_ = "bad json passed";
+		return;
+	}
+	std::istringstream json_stream(json);
 	fill_config(json_stream);
 }
 
@@ -109,13 +118,20 @@ bool setting_manager::config_is_well()
 
 void setting_manager::fill_config(std::istream & json_stream) 
 {
-	boost::property_tree::ptree ptree_parser;
-	boost::property_tree::read_json(json_stream, ptree_parser);
-	key_storage_->for_each(
-		boost::bind(&t2h_core_details::set_key, 
-			boost::ref(ptree_parser), 
-			_1)
-		);
+	try 
+	{
+		boost::property_tree::ptree ptree_parser;
+		boost::property_tree::read_json(json_stream, ptree_parser);
+		key_storage_->for_each(
+			boost::bind(&t2h_core_details::set_key, 
+				boost::ref(ptree_parser), 
+				_1)
+			);
+	}
+	catch (boost::property_tree::json_parser_error const & expt) 
+	{
+		last_error_ = expt.what();
+	}
 }
 
 void setting_manager::reset_configurations() 

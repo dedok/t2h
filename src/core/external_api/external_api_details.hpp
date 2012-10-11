@@ -11,16 +11,23 @@
 
 namespace t2h_core {
 
+/**
+ * Settings for the core_handle
+ */
 struct core_handle_settings {
-	std::string config_path;
+	std::string config;			// config migth a path or a string(depends from config_load_from_file value)
+	bool config_load_from_file; // true mean load from file, in this case config sould be a valid file path with JSON config inside.
 };
 
+/**
+ * core_handle 
+ */
 class core_handle : public boost::noncopyable {
 public :
 	explicit core_handle(core_handle_settings const & settings);
 	~core_handle();
 	
-	bool initialize();	
+	bool initialize();
 	void destroy();
 	void wait();
 	
@@ -34,8 +41,8 @@ public :
 		{ return sets_manager_; } 
 
 private :
-	bool init_support_system();
-	bool init_core_services();
+	void init_support_system();
+	void init_core_services();
 	
 	torrent_core_ptr init_torrent_core();
 	http_server_core_ptr init_http_server();

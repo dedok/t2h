@@ -13,6 +13,11 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 	add_definitions(-DT2H_DEBUG)
 endif()
 
+if(DEFINED T2H_INT_WORKAROUND)
+	message(STATUS "Enable int workaraund")
+	add_definitions(-DT2H_INT_WORKAROUND)
+endif()
+
 # Generic_config allow to setup envt. for the libraries, envt_config allow to setup paths to libraries
 include(${CMAKE_SOURCE_DIR}/cmake_extra/${PLATFORM_TYPE}/generic_config.cmake OPTIONAL)
 include(${CMAKE_SOURCE_DIR}/cmake_extra/${PLATFORM_TYPE}/envt_config.cmake OPTIONAL)

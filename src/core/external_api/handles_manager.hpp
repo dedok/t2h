@@ -8,6 +8,9 @@
 
 namespace details {
 
+/**
+ * Glogal thread safe handle manager
+ */
 template <class UnderlaingHandle>
 class handles_manager : boost::noncopyable {
 public :
