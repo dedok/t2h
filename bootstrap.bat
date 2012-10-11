@@ -7,6 +7,7 @@
 :: Glob vars
 
 set build_dir=
+set want_eiw=no
 set want_clean=no
 set error_message=
 set program_name=%0
@@ -33,6 +34,7 @@ for %%A in (%*) do (
 	if "%%A" == "--rel-with-deb-info" set build_type=RelWithDebInfo
 	if "%%A" == "--help" goto usage
 	if "%%A" == "--clean" set want_clean=yes
+	if "%%A" == "--eiw" set want_eiw=yes
 	)
 
 set build_dir=%CD%\%out_build_type%_%build_type%_build
@@ -56,6 +58,7 @@ goto run_cmake
 :: bootstrap helpers
 
 :run_cmake
+	set cmake_extra=
 	if exist %export_vars_script% ( 
 		:: NOTE export_vars_script_output must echo cmake args.
 		if exist %CD%\export_vars_script_output del %CD%\export_vars_script_output
@@ -67,8 +70,9 @@ goto run_cmake
 		echo cmake envt. args set to "%cmake_envt_args%"
 		echo.
 	)
+	if "%want_eiw%"=="yes" set cmake_extra=-DT2H_INT_WORKAROUND:BOOL=TRUE
 	set cmake_ending_args=-G"%cmake_generator_type%" -B%build_dir% -DCMAKE_BUILD_TYPE=%build_type%
-	cmake %cmake_ending_args% %cmake_extra_args% -H%cmake_source% %cmake_envt_args%
+	cmake %cmake_ending_args% %cmake_extra_args% -H%cmake_source% %cmake_envt_args% %cmake_extra%
 	if %errorlevel% EQU 0 goto end
 	set error_message=cmake command failed
 goto failed_exit
@@ -96,6 +100,7 @@ goto failed_exit
 	echo.
 	echo Optinons
 	echo.
+	echo    --eiw                                                  On int workaraund
 	echo    --help                                                 Print usage message and exit with code 0
 	echo    --static / --shared(default)                           The library out type
 	echo    --debug(default) / --release / --rel-with-deb-info     Build type

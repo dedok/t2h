@@ -26,6 +26,8 @@ string(REGEX REPLACE "EH*[s]" "EHa" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 # add libtorrent windows definitions
 if (CMAKE_BUILD_TYPE MATCHES Debug)
 	add_definitions(-DTORRENT_DEBUG)
+else()
+	add_definitions(-DNDEBUG)
 endif()
 
 add_definitions(
