@@ -22,6 +22,8 @@ Options:
    --help, -h                 display usage and exit 
 
    --shared=[yes|no]          create an shared core library [detauld=Yes]
+ 
+   --enable-int-workaraund    on int workaraund 
 
    --build-type=[D|R|R]       set build type [default=Debug]
 	                         
@@ -71,7 +73,7 @@ abort() { # clean-up build, print error message and exit with code 1
 eval_cmake_with_static_lib() { # execute cmake command with situable args for static build
 	local tc_file=$TOOLCHAINS_DIR/$TOOLCHAIN_MACOSX_UNIVERSAL_FILE
 	local t2h_evnt_vars="-DBOOST_ROOT=$BOOST_ROOT -DLIBTORRENT_ROOT=$LIBTORRENT_ROOT"
-	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1 $t2h_evnt_vars"
+	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1 $t2h_evnt_vars $3"
 	local cmake_eval_cmd="cmake -H$REPO_ROOT/src -B$REPO_ROOT/$2 $cmake_basic_args"
 	echo "Command: $cmake_eval_cmd" && {
 		(eval $cmake_eval_cmd) || abort "cmake command fail"
@@ -82,7 +84,7 @@ eval_cmake_with_static_lib() { # execute cmake command with situable args for st
 eval_cmake_with_shared_lib() { # execute cmake command with situable args for shared build
 	local tc_file=$TOOLCHAINS_DIR/$TOOLCHAIN_MACOSX_UNIVERSAL_FILE
 	local t2h_evnt_vars="-DBOOST_ROOT=$BOOST_ROOT -DLIBTORRENT_ROOT=$LIBTORRENT_ROOT"
-	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1 -DT2H_CORE_SHARED:BOOL=TRUE $t2h_evnt_vars"
+	local cmake_basic_args="-DCMAKE_TOOLCHAIN_FILE=$tc_file -DCMAKE_BUILD_TYPE=$1 -DT2H_CORE_SHARED:BOOL=TRUE $t2h_evnt_vars $3"
 	local cmake_eval_cmd="cmake -H$REPO_ROOT/src -B$REPO_ROOT/$2 $cmake_basic_args"
 	echo "Command: $cmake_eval_cmd" && {
 		(eval $cmake_eval_cmd) || abort "cmake command fail"
@@ -91,11 +93,15 @@ eval_cmake_with_shared_lib() { # execute cmake command with situable args for sh
 	#
 
 create_build() { # run macosx cmake command
+	local extra_args=
+	[ x$3 = "xyes" ] \
+		&& extra_args="-DT2H_INT_WORKAROUND:BOOL=TRUE"
 	[ x$2 = "xyes" ] && {
-		eval_cmake_with_shared_lib $1 $BUILD_SHARED_DIR
+		eval_cmake_with_shared_lib $1 $BUILD_SHARED_DIR $extra_args
 		return
 		}
-	eval_cmake_with_static_lib $1 $BUILD_STATIC_DIR
+		#
+	eval_cmake_with_static_lib $1 $BUILD_STATIC_DIR $extra_args
 	}
 	#
 
@@ -116,6 +122,7 @@ BUILD_LIST=
 WANT_CLEAR=
 WANT_SHARED=no
 IS_IPAD_BUILD=
+ENABLE_INT_WORKARAUND=no
 
 [ -e $(pwd)/$ENVT_EX_SCRIPT ] && {
 	source $(pwd)/$ENVT_EX_SCRIPT
@@ -141,6 +148,9 @@ for option ;do
 		--shared=*)
 			WANT_SHARED=`expr "x$option" : "x--shared=\(.*\)"`
 			;;
+		--enable-int-workaraund | -eiw)
+			ENABLE_INT_WORKARAUND=yes
+			;;
 		* )
 			abort "unrecognized option: $option , type --help | --h to see available options"
 			;;
@@ -149,7 +159,7 @@ for option ;do
 
 [ x$WANT_CLEAR = "xyes" ] && clear_build
 
-create_build $BUILD_TYPE $WANT_SHARED || \
+create_build $BUILD_TYPE $WANT_SHARED $ENABLE_INT_WORKARAUND || \
 	abort "$(basename) failed for details see ${LOG_FILE}."
 
 configure_repo

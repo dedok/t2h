@@ -43,14 +43,26 @@ core_handle::~core_handle()
 
 bool core_handle::initialize() 
 {
-	bool state = init_support_system();
-	if ((sets_manager_ = setting_manager::shared_manager()) && state) {	
-		sets_manager_->load_config(boost::filesystem::path(settings_.config_path));
-		if (sets_manager_->config_is_well())
-			state = init_core_services();
+	bool state = false;
+	try 
+	{
+		if ((sets_manager_ = setting_manager::shared_manager())) 
+		{
+			init_support_system();
+			if (settings_.config_load_from_file) 
+				sets_manager_->load_config(boost::filesystem::path(settings_.config));
+			else
+				sets_manager_->init_config(settings_.config);
+
+			if ((state = sets_manager_->config_is_well()))
+				init_core_services();
+		} 
 	} 
+	catch (std::exception const & expt) 
+	{ 
+		return false; 
+	}
 	
-	if (!state) destroy();
 	return state;
 }
 
@@ -69,20 +81,12 @@ void core_handle::wait()
  * Private core_handle api
  */
 
-bool core_handle::init_support_system() 
+void core_handle::init_support_system() 
 {
-	try 
-	{
-		LOG_INIT(details::log_settings)
-	} 
-	catch (std::exception const &) 
-	{
-		return false;
-	}
-	return true;
+	LOG_INIT(details::log_settings)
 }
 
-bool core_handle::init_core_services() 
+void core_handle::init_core_services() 
 {
 	bool state = false;
 	torrent_core_ptr torrent_core;
@@ -99,8 +103,6 @@ bool core_handle::init_core_services()
 		torrent_core->stop_service();
 		http_server->stop_service();
 	} 
-	
-	return state;
 }
 
 torrent_core_ptr core_handle::init_torrent_core() 

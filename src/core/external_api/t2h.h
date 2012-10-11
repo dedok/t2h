@@ -5,36 +5,37 @@
 #include "core_version.hpp"
 
 /**
- * Versions variants
+ * Types and definitios
  */
 
 #define T2H_VERSION CORE_VERSION_HEX
 #define T2H_VERSION_STRING CORE_VERSION_STRING
 
-/**
- * t2h types ... etc
- */
+#define INVALID_T2H_HANDLE -1 
+#define INVALID_TORRENT_ID -1
 
-#define INVALID_TORRENT_ID 0x1001 
-
-struct t2h_handle {
-	unsigned int id;
-};
-
-typedef struct t2h_handle * t2h_handle_t;
+typedef T2H_HANDLE_TYPE t2h_handle;
+typedef t2h_handle t2h_handle_t;
 
 /**
  * Create and init t2h handle.
  *
  * @param $config 
  *	JSON config for valid initialization.
- * @param $coroutine
- *	Optional argument. Pointer to couroutine struct(for details see type defenition of t2h_completions).
- * 
  * @return
- * 	pointer to valid object, otherwise NULL.
+ * 	handle object, otherwise INVALID_T2H_HANDLE.
  */
 T2H_STD_API_(t2h_handle_t) t2h_init(char const * config);
+
+/**
+ * Create and init t2h handle.
+ *
+ * @param $config 
+ *	file path to JSON config for valid initialization.
+ * @return
+ * 	handle object, otherwise INVALID_T2H_HANDLE.
+ */
+T2H_STD_API_(t2h_handle_t) t2h_init_2(char const * config_file_path);
 
 /**
  * Close t2h service.
@@ -48,7 +49,7 @@ T2H_STD_API_(t2h_handle_t) t2h_init(char const * config);
 T2H_STD_API t2h_close(t2h_handle_t handle);
 
 /**
- * Bloking wait t2h service end of work.
+ * Bloking wait for t2h service end of work.
  *
  * @param $handle
  *	Handle to valid t2h object.

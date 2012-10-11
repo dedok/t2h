@@ -95,7 +95,7 @@ int main(int argc, char ** argv)
 #endif
 		program_options options = get_options(argc, argv);
 	
-		core_handle.handle = t2h_init(options.config_path.c_str());
+		core_handle.handle = t2h_init_2(options.config_path.c_str());
 		if (!core_handle.handle)
 			die("failed to start torrent to http core", 2);
 

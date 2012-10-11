@@ -5,7 +5,6 @@
 #endif
 
 #include <limits>
-#include <cstdint>
 #include <iostream>
 #include <boost/cstdint.hpp>
 #include <boost/test/minimal.hpp>
@@ -43,15 +42,18 @@ int test_main(int argc, char ** argv)
 #if defined(UNIX) || defined(APPLE)
 	PRINT_TYPE_SIZE(ssize_t)
 #endif
+
 	PRINT_TYPE_SIZE(std::size_t)
 	PRINT_TYPE_SIZE(unsigned int)
 	PRINT_TYPE_SIZE(size_t)
 	PRINT_TYPE_SIZE(T2H_SIZE_TYPE)
 	
+#if !defined(T2H_INT_WORKAROUND)
 	UINT_MAX_CHECK_ENTITY(MAX_TYPE(std::size_t), == MAX_TYPE(T2H_SIZE_TYPE))
 	UINT_MAX_CHECK_ENTITY(MAX_TYPE(size_t), == MAX_TYPE(T2H_SIZE_TYPE))
 	UINT_MAX_CHECK_ENTITY(MAX_TYPE(unsigned int), <= MAX_TYPE(T2H_SIZE_TYPE))
-	
+#endif //T2H_INT_WORKAROUND
+
 	return 0;
 }
 
