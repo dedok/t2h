@@ -13,6 +13,11 @@
 #include <boost/noncopyable.hpp>
 #include <boost/property_tree/ptree_fwd.hpp>
 
+#if defined(WIN32)
+#	pragma warning(push)
+# 	pragma warning(disable : 4700) 
+#endif
+
 namespace t2h_core {
 
 namespace t2h_core_details {
@@ -106,6 +111,9 @@ typedef setting_manager::ptr_type setting_manager_ptr;
 
 } // namespace t2h_core
 
+#if defined(WIN32)
+#	pragma warning(pop)
+#endif
 
 #endif
 

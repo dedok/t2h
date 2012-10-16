@@ -8,6 +8,7 @@
 #if defined(WIN32)
 #	pragma warning(push)
 #	pragma warning(disable : 4101) 
+# 	pragma warning(disable : 4700) 
 #endif
 
 #define ADD_KEY_TYPE(x_, y_)					\

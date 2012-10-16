@@ -5,6 +5,11 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#if defined(WIN32)
+#	pragma warning(push)
+# 	pragma warning(disable : 4700) 
+#endif
+
 namespace utility {
 
 template <class T>
@@ -49,6 +54,10 @@ std::string get_random_string(std::size_t dist_max = 8);
 boost::posix_time::time_duration get_current_time();
 
 } // namespace utility
+
+#if defined(WIN32)
+#	pragma warning(pop)
+#endif
 
 #endif
 
