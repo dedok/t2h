@@ -9,6 +9,14 @@
 namespace utility {
 
 struct http_request {
+	enum http_method_type { 
+		mget = 0x1,
+		mpost = 0x2,
+		mhead = 0x3,
+		munknown = mhead + 0x1
+	}; 
+
+	http_method_type mtype;
 	std::string method;
 	std::string uri;
 	int http_version_major;
@@ -16,7 +24,10 @@ struct http_request {
 	header_list_type headers;
 };
 
+void http_request_set_mtype(http_request & req);
+
 bool http_request_get_range_header(http_request const & req, http_header & header);
+
 
 } // namespace utility
 

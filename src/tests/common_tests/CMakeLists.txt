@@ -6,3 +6,7 @@ target_link_libraries(logger_test common ${Boost_LIBRARIES})
 add_executable(http_reply_test EXCLUDE_FROM_ALL http_reply_test.cpp)
 target_link_libraries(http_reply_test common ${Boost_LIBRARIES})
 
+# Notification center test
+add_executable(nc_test EXCLUDE_FROM_ALL notification_center_test.cpp)
+target_link_libraries(nc_test common ${Boost_LIBRARIES})
+

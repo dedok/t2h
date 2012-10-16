@@ -7,6 +7,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/network)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utility)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/syslogger)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/http_utility)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/notification_model)
 
 set(COMMON_HEADERS ${COMMON_HEADERS} base_service.hpp services_manager.hpp)
 set(COMMON_SOURCES ${COMMON_SOURCES} base_service.cpp services_manager.cpp)

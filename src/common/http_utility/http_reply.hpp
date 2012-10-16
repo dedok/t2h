@@ -9,7 +9,24 @@
 
 namespace utility {
 
-class http_reply : private  boost::noncopyable {
+/**
+ *	Server fingerprint have follow format :
+ *	REPLY HTTP TYPE\r\n
+ *	Server: fingerprint::name/fingerprint::version (OS type)\r\n
+ *	REPLY HTTP HEADERS\r\n
+ *	REPLY CONTENT
+ */
+struct fingerprint {
+	std::string name;			// server name
+	std::string version;		// string version represintation
+	std::size_t hex_version;	// hex_version of the string version
+	bool enable_fingerprint;	// enable/disable finger print at the end of http reply message(true default)
+};
+
+/**
+ * htpp reply
+ */
+class http_reply : private boost::noncopyable {
 public :
 	typedef std::vector<char> buffer_type;
 	typedef buffer_type::iterator buffer_iter_type;
@@ -43,12 +60,12 @@ public :
 		unknown_error,
 	};
 
-	explicit http_reply(buffer_type & buffer);
+	http_reply(fingerprint & fp_ref, buffer_type & buffer);
 	~http_reply();
 
 	void add_header(std::string const & name, std::string const & value);	
 	void add_header(http_header const & header);
-
+	
 	bool add_content_from_file(boost::filesystem::path const & file_path, boost::int64_t from, boost::int64_t to);
 	bool add_content_directly(char const * content, std::size_t content_size);	
 	
@@ -60,11 +77,13 @@ public :
 	void reset_buffer();
 	
 	void set_no_auto_generate_headers(bool state) const;
+	void enable_fingerprint(bool state = true);
 
 private :
 	void add_crlf_directly();
 	void add_header_directly(std::string const & name, std::string const & value);
 	void add_header_directly(http_header const & header);
+	void add_headers();
 
 	formating_result fill_content_from_file();
 
@@ -78,7 +97,8 @@ private :
 
 	status_type status_;
 	header_list_type headers_;
-	buffer_type & buf_ref_;	
+	buffer_type & buf_ref_;
+	fingerprint mutable & fp_ref_;
 	bool mutable no_auto_generate_headers_;
 };
 

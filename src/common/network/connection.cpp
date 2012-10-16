@@ -44,14 +44,16 @@ void connection::handle_read(boost::system::error_code const & error, std::size_
 	if (!error) {
 		base_transport_ev_handler::recv_result const recv_result 
 			= ev_handler_->on_recv(recv_buffer_, bytes_transferred, reply_buffer_);
-		
+			
 		switch (recv_result) {
 			case base_transport_ev_handler::bad_data : case base_transport_ev_handler::sent_answ :
 				boost::asio::async_write(socket_, boost::asio::buffer(reply_buffer_),
-				strand_.wrap(
-					boost::bind(&connection::handle_write, shared_from_this(),
-					boost::asio::placeholders::error)));
+					strand_.wrap(boost::bind(&connection::handle_write, shared_from_this(),
+						boost::asio::placeholders::error)));
 				break;
+			// TODO Do a more correct base_transport_ev_handler::more_data event, may be I sould to replace 
+			// 		call of asio_native_socket::async_read_some with own non-read call
+			// 		(all data avaliable at this moment in the recv_buffer_)?
 			case base_transport_ev_handler::more_data :
 				socket_.async_read_some(boost::asio::buffer(recv_buffer_),
 				strand_.wrap(

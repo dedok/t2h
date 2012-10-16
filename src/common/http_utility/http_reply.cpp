@@ -16,8 +16,13 @@ namespace utility {
 /**
  * Public http_reply api
  */
-http_reply::http_reply(http_reply::buffer_type & buffer) 
-	: status_(service_unavailable), headers_(), buf_ref_(buffer), file_info_(), no_auto_generate_headers_(false)
+http_reply::http_reply(fingerprint & fp, http_reply::buffer_type & buffer) 
+	: status_(service_unavailable), 
+	headers_(), 
+	buf_ref_(buffer), 
+	fp_ref_(fp), 
+	file_info_(), 
+	no_auto_generate_headers_(false)
 {
 	file_info_.file_path = "";
 	file_info_.from = file_info_.to = file_info_.size_for_reading = 0;
@@ -64,8 +69,14 @@ bool http_reply::add_content_directly(char const * content, std::size_t content_
 	if (!content || content_size == 0) 
 		return false;	
 	
-	try {
+	try 
+	{
+		// Adding reply(status) type and headers first
+		status_strings::cast_to_buffer(status_, buf_ref_);
+		add_headers();	
 		add_crlf_directly();
+
+		// Adding content as last
 		std::size_t const prev_buf_size = buf_ref_.size();
 		std::size_t new_buf_size = prev_buf_size + content_size;
 		buf_ref_.resize(new_buf_size);
@@ -75,10 +86,12 @@ bool http_reply::add_content_directly(char const * content, std::size_t content_
 		{
 			buf_ref_.at(it) = content[it_];
 		}
-	} catch (std::exception const &) {
+	} 
+	catch (std::exception const &) 
+	{
+		reset_buffer();
 		return false;	
 	} 
-
 	return true;
 }	
 
@@ -99,7 +112,7 @@ http_reply::formating_result http_reply::format_partial_content(
 	try 
 	{
 		if (!add_content_from_file(req_path, start, end))
-			return unknown_error;
+			return result;
 		
 		if (!no_auto_generate_headers_) {
 			std::string const range_value = 
@@ -113,7 +126,7 @@ http_reply::formating_result http_reply::format_partial_content(
 			add_header_directly("Content-Range", range_value);
 			add_header_directly("Content-Length", 
 				safe_lexical_cast<std::string>(file_info_.size_for_reading));
-			// TODO add mime type into http header
+			// TODO add mime type http header to reply
 			//add_header_directly("Content-Type", "");
 		}
 		
@@ -121,8 +134,10 @@ http_reply::formating_result http_reply::format_partial_content(
 	} 
 	catch (std::exception const &)
 	{
-		return unknown_error;
+		reset_buffer();
+		return io_error;
 	}
+	buf_ref_.push_back('\0');
 	return result;
 }
 
@@ -134,9 +149,8 @@ void http_reply::stock_reply(http_reply::status_type status)
 	std::string const content = stock_replies::cast_to_string(status);
 	std::size_t const content_size = content.size();
 	if (!no_auto_generate_headers_) {
-		status_strings::cast_to_buffer(status, buf_ref_);
-		add_header_directly("Content-Length", safe_lexical_cast<std::string>(content_size));
-		add_header_directly("Content-Type", "text/html");
+		add_header("Content-Length", safe_lexical_cast<std::string>(content_size));
+		add_header("Content-Type", "text/html");
 	}
 	add_content_directly(content.c_str(), content_size);
 } 
@@ -151,6 +165,11 @@ void http_reply::reset_buffer()
 void http_reply::set_no_auto_generate_headers(bool state) const 
 {
 	no_auto_generate_headers_ = state;
+}
+
+void http_reply::enable_fingerprint(bool state) 
+{
+	fp_ref_.enable_fingerprint = state;
 }
 
 /**
@@ -198,6 +217,19 @@ void http_reply::add_header_directly(std::string const & name, std::string const
 	add_crlf_directly();
 }
 
+void http_reply::add_headers() 
+{
+	if (!headers_.empty()) {
+		for (header_list_type::const_iterator first = headers_.begin(), last = headers_.end(); 
+			first != last; 
+			++first) 
+		{
+			add_header_directly(*first);
+		}
+		headers_.clear();
+	}
+}
+
 void http_reply::add_crlf_directly() 
 {
 	std::copy(misc_strings::crlf.begin(), misc_strings::crlf.end(), 
@@ -226,3 +258,4 @@ http_reply::formating_result http_reply::fill_content_from_file()
 }
 
 } // namespace utility
+

@@ -1,12 +1,12 @@
 #ifndef HTTP_REQUEST_PARSER_HPP_INCLUDED
 #define HTTP_REQUEST_PARSER_HPP_INCLUDED
 
+#include "http_request.hpp"
+
 #include <boost/tuple/tuple.hpp>
 #include <boost/logic/tribool.hpp>
 
 namespace utility {
-
-struct http_request;
 
 /**
  * Http protocol parser.
@@ -63,9 +63,11 @@ public:
 		boost::tribool result = boost::indeterminate;
 		while (begin != end) {
 			result = consume(req, *begin++);
-			if (result || !result)
-				return boost::make_tuple(result, begin);	
-		}
+			if (result || !result) { 
+				http_request_set_mtype(req);	
+				return boost::make_tuple(result, begin);
+			} // result
+		} // while
 		return boost::make_tuple(boost::tribool(boost::indeterminate), begin);
 	}
 

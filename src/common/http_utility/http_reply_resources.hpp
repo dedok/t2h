@@ -32,8 +32,16 @@ MAKE_CONST_STRING(service_unavailable, "HTTP/1.1 503 Service Unavailable\r\n")
 
 static inline void cast_helper(http_reply::buffer_type & buffer, std::string const & message) 
 {
-	buffer.resize(buffer.size() + message.size());
-	buffer.insert(buffer.end(), message.begin(), message.end());
+	http_reply::buffer_type::size_type const b_size = buffer.size();	
+	std::string::size_type const m_size = message.size();
+	http_reply::buffer_type::size_type const new_b_size = b_size + m_size;
+	buffer.resize(new_b_size);
+	for (http_reply::buffer_type::size_type it = 0, _it = 0; 
+		it < new_b_size && _it < m_size; 
+		++it, ++_it)
+	{
+		buffer.at(it) = message.at(_it);
+	}
 }
 
 void cast_to_buffer(http_reply::status_type status, http_reply::buffer_type & buffer)
