@@ -23,7 +23,7 @@ notification_unit::notification_unit(notification_unit_param const & param) :
 	stop_work_(true),
 	p_(param)
 {
-	BOOST_ASSERT(p_.recv) 
+	BOOST_ASSERT(p_.recv);
 	boost::hash<std::string> unit_name_hasher;	
 	unit_name_ = p_.recv->get_name();
 	unit_id_ = unit_name_hasher(unit_name_);
@@ -83,12 +83,12 @@ void notification_unit::notify_receiver()
 			last = notifications_.end();
 		first != last; ++first) 
 	{
-		if (first->get_state() != base_notification::ignore || 
-			first->get_state() != base_notification::done) 
+		if ((*first)->get_state() != base_notification::ignore || 
+			(*first)->get_state() != base_notification::done) 
 		{
 			p_.recv->on_notify(*first);
 			if(p_.change_state_auto)
-				first->set_state(base_notification::done);
+				(*first)->set_state(base_notification::done);
 		} // (test)get_state
 		notifications_.erase(first);
 	}

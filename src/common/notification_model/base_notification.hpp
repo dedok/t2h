@@ -5,6 +5,9 @@
 
 namespace common {
 
+/**
+ *	base_notification base notification iface
+ */
 class base_notification {
 public :
 	typedef boost::shared_ptr<base_notification> ptr_type;
@@ -19,7 +22,7 @@ public :
 		unknown = done + 0x1	// stub
 	};
 	
-	base_notification(int notification_type_) : notification_type(notification_type_) { }
+	explicit base_notification(int notification_type_) : notification_type(notification_type_) { }
 	virtual ~base_notification() { }
 	
 	virtual notification_state get_state() const = 0;

@@ -45,7 +45,7 @@ public :
 	explicit notification_center(notification_center_config const & config);
 	~notification_center();
 	
-	void change_configuration(notification_center const & config);
+	void change_configuration(notification_center_config const & config);
 
 	boost::tuple<std::size_t, bool> add_notification_receiver(notification_receiver_ptr receiver);
 	void remove_notification_receiver(std::size_t id);

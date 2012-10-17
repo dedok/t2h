@@ -17,7 +17,7 @@ struct notification_unit_param {
 	bool execute_all_notification_at_exit;		// execute all events in queue before retur control from notification_unit::dtor
 	std::size_t notification_check_timeout;		// test queue timeout in MS
 	std::size_t max_notifications;				// max notification in queue
-	notification_receiver recv;					// notification receiver
+	notification_receiver_ptr recv;				// notification receiver
 };
 
 /**
@@ -51,7 +51,7 @@ private :
 	inline bool copy_pending_notifications() 
 	{ 
 		boost::lock_guard<boost::mutex> guard(pn_lock_); 
-		return copy_pending_notifications_unsafe() 
+		return copy_pending_notifications_unsafe(); 
 	}
 
 	void notify_receiver();
