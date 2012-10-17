@@ -15,7 +15,6 @@ namespace t2h_core { namespace details {
 /**
  * Private hidden torrent_ex_info api
  */
-
 static inline void replace_slashes(std::string & path) 
 {
 	std::string const slashes = "/";
@@ -24,11 +23,14 @@ static inline void replace_slashes(std::string & path)
 		++first)
 	{
 		if (path.at(first) == '/') {
-			std::cout << first << std::endl;
+			path.insert(first + 1, slashes);
+			first+=2;
+		} else if (path.at(first) == '\\') {
+			path.at(first) = '/';
 			path.insert(first + 1, slashes);
 			first+=2;
 		} // if
-	}
+	} // for
 }
 
 /**
