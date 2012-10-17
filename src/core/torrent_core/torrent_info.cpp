@@ -17,20 +17,20 @@ namespace t2h_core { namespace details {
  */
 static inline void replace_slashes(std::string & path) 
 {
-	std::string const slashes = "/";
+	std::string const slashes = "\\";
 	for(std::string::size_type first = 0; 
 		first < path.size(); 
 		++first)
 	{
 		if (path.at(first) == '/') {
+			path.at(first) = '\\';
 			path.insert(first + 1, slashes);
 			first+=2;
 		} else if (path.at(first) == '\\') {
-			path.at(first) = '/';
 			path.insert(first + 1, slashes);
 			first+=2;
-		} // if
-	} // for
+		}
+	}
 }
 
 /**
