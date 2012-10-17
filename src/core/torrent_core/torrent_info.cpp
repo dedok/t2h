@@ -98,33 +98,22 @@ std::string torrent_info_to_json(
 	torrent_ex_info_ptr const ex_info, 
 	boost::function<std::string(std::string const &)> on_path_process) 
 {
-	std::stringstream json_text_stream;
-	boost::property_tree::ptree json_root;
-	boost::property_tree::ptree out_json;
+	std::string result;
 	try 
 	{
 		libtorrent::torrent_info const & info = ex_info->handle.get_torrent_info();
 		int const last = info.num_files();
 		for (int it = 0; it < last; ++it) {
-			boost::property_tree::ptree json_child;
 			std::string const path = on_path_process(
 				libtorrent::combine_path(ex_info->torrent_params.save_path, info.file_at(it).path));
-
-			json_child.put("size", info.file_at(it).size);
-			json_child.put("path", path);
-			json_child.put("id", it);
-			json_root.push_back(std::make_pair("", json_child));
-		}	
-		
-		out_json.put_child(
-			boost::property_tree::ptree::path_type("torrent_info"),
-			json_root);
-
-		boost::property_tree::write_json(json_text_stream, out_json);
-	} 
-	catch (std::exception const & expt) { /**/ }
-	
-	return json_text_stream.str();
+			result += "{\n\"size\": " + utility::safe_lexical_cast<std::string>(info.file_at(it).size) + ",\n";
+			result += "\"path\": \"" +  path + "\",\n";
+			result += "\"id\": " + utility::safe_lexical_cast<std::string>(it); 
+			(it != last - 1) ? result += "\n},\n" : result += "\n}\n";
+		} // for
+	}	
+	catch (std::exception const & expt) { return std::string(); }
+	return std::string("[\n" + result + "]");
 }
 
 } } // namesapce t2h_core, details
@@ -132,3 +121,4 @@ std::string torrent_info_to_json(
 #if defined(WIN32)
 #	pragma warning(pop)
 #endif
+

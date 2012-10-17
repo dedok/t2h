@@ -406,7 +406,7 @@ bool torrent_core::init_torrent_core_settings()
 	boost::system::error_code error;
 	try 
 	{
-		boost::filesystem::path tc_root = params_.setting_manager->get_value<std::string>("tc_root");
+		boost::filesystem::path tc_root = params_.setting_manager->get_value<std::string>("doc_root");
 		if (!boost::filesystem::exists(tc_root, error) && 
 			boost::filesystem::is_directory(tc_root, error)) 
 		{
