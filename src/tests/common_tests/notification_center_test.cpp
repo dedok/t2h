@@ -7,7 +7,7 @@
 /**
  * Helpers
  */
-#define TEST_COUNTER_MAX 1000	// generated events	size value
+#define TEST_COUNTER_MAX 500	// generated events	size value
 #define WAIT_TIMEOUT 5			// waitng for a good result timeout value(in ms)
 
 // create custom event(+custom data)
@@ -25,11 +25,13 @@ struct event_##name 																	\
 };																						
 
 // 
-#define CHECK_ENTITY(x) 		\
-do {							\
-	environment_init();			\
-	BOOST_CHECK(x);				\
-	environment_reset();		\
+#define CHECK_ENTITY(x) 									\
+do {														\
+	environment_init();										\
+	std::cout << "Start test case " << #x << std::endl;		\
+	BOOST_CHECK(x);											\
+	std::cout << "End of test case" << #x << std::endl;		\
+	environment_reset();									\
 } while(0);				
 
 /**
@@ -72,10 +74,6 @@ struct check_recv_t1 : public common::notification_receiver {
 	{ 
 		if (notification && envt.on) { 
 			event_tcount_ptr ev = common::notification_cast<event_tcount>(notification);
-			{ // envt::executed_events lock zone
-			boost::lock_guard<boost::mutex> guard(envt.lock);
-			envt.executed_events++;
-			} // envt::executed_events lock zone end
 			if (ev->data == excpected_count_value) {
 				boost::lock_guard<boost::mutex> guard(envt.lock);
 				envt.current_test_succ = true;
@@ -102,7 +100,6 @@ static bool wait_for_finish(int expected_event_execution_value)
 		if (!envt.on) break;
 	}
 	boost::lock_guard<boost::mutex> guard(envt.lock);
-	std::cout << expected_event_execution_value << " <>  " << envt.executed_events << std::endl;
 	return (envt.current_test_succ && expected_event_execution_value == envt.executed_events);
 }
 
@@ -116,13 +113,50 @@ static inline bool check_events_recv()
 	common::notification_receiver_ptr recv(new check_recv_t1());
 	boost::tie(id, state) = envt.center->add_notification_receiver(recv);
 	if (!state) return false;
+	
 	for (int count = 0; count != TEST_COUNTER_MAX + 1; ++count) {
 		event_tcount_ptr event(new event_tcount());
 		event->data = count;
 		envt.center->send_message(recv->get_name(), event);
-	}
-	return wait_for_finish(TEST_COUNTER_MAX + 1);
+	} // for
+	
+	state = wait_for_finish(TEST_COUNTER_MAX + 1);
+	envt.center->remove_notification_receiver(recv->get_name());
+
+	return state;
 } 
+
+static inline bool multi_threaded_check_events_recv() 
+{
+	std::list<boost::thread *> threads;
+	bool state = false; std::size_t id = 0;
+	common::notification_receiver_ptr recv(new check_recv_t1());
+	boost::tie(id, state) = envt.center->add_notification_receiver(recv);
+	if (!state) return false;
+		
+	for (int count = 0; count != TEST_COUNTER_MAX + 1; ++count) {
+		event_tcount_ptr event(new event_tcount());
+		event->data = count;
+		threads.push_back(new 
+			boost::thread(&common::notification_center::send_message, 
+				envt.center, recv->get_name(), event));
+		std::cout << __FUNCTION__ << std::endl; 
+		if (threads.size() == 10) {
+			std::cout << __FUNCTION__ << std::endl; 
+			std::for_each(threads.begin(), threads.end(), 
+				boost::bind(&boost::thread::join, _1));
+			threads.clear();
+		} // threads.size() 
+	} // for
+	
+	std::for_each(threads.begin(), threads.end(), 
+		boost::bind(&boost::thread::join, _1));
+
+	state = wait_for_finish(TEST_COUNTER_MAX + 1);
+	envt.center->remove_notification_receiver(recv->get_name());
+	
+	return state;
+}
 
 /**
  * Entry point
@@ -133,6 +167,8 @@ try
 {
 	environment_init();
 	CHECK_ENTITY(check_events_recv())
+	CHECK_ENTITY(multi_threaded_check_events_recv())
+	std::cout << "End ..." << std::endl;
 	environment_destroy();
 	return EXIT_SUCCESS;
 } 
@@ -155,14 +191,14 @@ void environment_init()
 		envt.center = new common::notification_center(ncc);
 	} 
 	envt.current_test_succ = envt.on = false;
-	envt.executed_events = TEST_COUNTER_MAX;
+	envt.executed_events = TEST_COUNTER_MAX + 1;
 }
 
 void environment_reset() 
 {
 	boost::lock_guard<boost::mutex> guard(envt.lock);	
 	envt.current_test_succ = envt.on = false;
-	envt.executed_events = TEST_COUNTER_MAX;
+	envt.executed_events = TEST_COUNTER_MAX + 1;
 }
 
 void environment_destroy() 

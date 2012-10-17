@@ -13,6 +13,25 @@
 namespace t2h_core { namespace details {
 
 /**
+ * Private hidden torrent_ex_info api
+ */
+
+static inline void replace_slashes(std::string & path) 
+{
+	std::string const slashes = "/";
+	for(std::string::size_type first = 0; 
+		first < path.size(); 
+		++first)
+	{
+		if (path.at(first) == '/') {
+			std::cout << first << std::endl;
+			path.insert(first + 1, slashes);
+			first+=2;
+		} // if
+	}
+}
+
+/**
  * Public torrent_ex_info api
  */
 
@@ -104,8 +123,9 @@ std::string torrent_info_to_json(
 		libtorrent::torrent_info const & info = ex_info->handle.get_torrent_info();
 		int const last = info.num_files();
 		for (int it = 0; it < last; ++it) {
-			std::string const path = on_path_process(
+			std::string path = on_path_process(
 				libtorrent::combine_path(ex_info->torrent_params.save_path, info.file_at(it).path));
+			replace_slashes(path);
 			result += "{\n\"size\": " + utility::safe_lexical_cast<std::string>(info.file_at(it).size) + ",\n";
 			result += "\"path\": \"" +  path + "\",\n";
 			result += "\"id\": " + utility::safe_lexical_cast<std::string>(it); 
