@@ -6,7 +6,7 @@ message(STATUS "Setup extra depends for ${PLATFORM_TYPE}")
 
 # T2H library definitions
 if (DEFINED T2H_CORE_SHARED)
-	add_definitions(-DT2H_EXPORT)
+	add_definitions(-DT2H_EXPORT -DT2H_SHARED)
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Debug) 
