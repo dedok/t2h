@@ -49,6 +49,17 @@ static char const * json_config =
 "\"tc_root\" : \"test/path\" "
 "\n}";
 
+static char const * json_config_2 =
+"{\n"
+"\"workers\" : \"4\",\n"
+"\"server_port\" : \"8080\",\n"
+"\"server_addr\" : \"127.0.0.1\",\n" 
+"\"doc_root\" : \"test/path\",\n" 
+"\"tc_port_start\" : \"6881\",\n"
+"\"tc_port_end\" : \"6889\", \n"
+"\"tc_max_alert_wait_time\" : \"4\", \n"
+"\"tc_max_async_download_size\" : \"5000000\""
+"\n}";
 
 void prepare_test_envt(); 
 void clear_test_envt();
@@ -81,9 +92,13 @@ try
 	if (!smp->config_is_well())
 		panic(std::string("Load config failed, with reason : " + smp->get_last_error()));
 	DEFAULT_AFTER_INIT_TEST_CASES(smp)	
+	
+	smp->init_config(envt::json_config_2);
+	if (!smp->config_is_well())
+		panic(std::string("Load config failed, with reason : " + smp->get_last_error()));
+	CHECK_ENTITY(std::string, smp->get_value<std::string>("tc_root"), == smp->get_value<std::string>("doc_root"));
 
 	envt::clear_test_envt();
-
 	return 0;
 }
 catch (std::exception const & expt) 

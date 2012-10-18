@@ -70,10 +70,18 @@ int sequential_torrent_controller::availables_categories() const
 			alert::stats_notification));
 } 
 
-void sequential_torrent_controller::set_session(libtorrent::session * session_ref) 
+bool sequential_torrent_controller::set_session(libtorrent::session * session_ref) 
 {
-	update_settings();
-	session_ref_ = session_ref;
+	try
+	{
+		update_settings();
+		session_ref_ = session_ref;
+	}
+	catch (std::exception const & expt) 
+	{
+		return false;
+	}
+	return true;
 }
 
 void sequential_torrent_controller::set_shared_buffer(details::shared_buffer * shared_buffer_ref) 

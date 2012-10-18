@@ -52,7 +52,13 @@ bool torrent_core::launch_service()
 		
 		shared_buffer_ = new details::shared_buffer();
 
-		params_.controller->set_session(core_session_);
+		if (!params_.controller->set_session(core_session_)) {
+			TCORE_WARNING("can not init torrent_core engine, settings not valid or ill formet")
+			delete core_session_; core_session_ = NULL;
+			delete shared_buffer_; shared_buffer_ = NULL;
+			return false;
+		}
+
 		params_.controller->set_shared_buffer(shared_buffer_);
 
 		if (!init_core_session()) {
@@ -406,7 +412,7 @@ bool torrent_core::init_torrent_core_settings()
 	boost::system::error_code error;
 	try 
 	{
-		boost::filesystem::path tc_root = params_.setting_manager->get_value<std::string>("doc_root");
+		boost::filesystem::path tc_root = params_.setting_manager->get_value<std::string>("tc_root");
 		if (!boost::filesystem::exists(tc_root, error) && 
 			boost::filesystem::is_directory(tc_root, error)) 
 		{

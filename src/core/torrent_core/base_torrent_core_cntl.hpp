@@ -31,7 +31,7 @@ public :
 	
 	virtual int availables_categories() const = 0;
 	
-	virtual void set_session(libtorrent::session * session_ref) = 0;
+	virtual bool set_session(libtorrent::session * session_ref) = 0;
 	virtual void on_setup_core_session(libtorrent::session_settings & settings) = 0;
 
 	virtual void set_shared_buffer(details::shared_buffer * buffer) = 0;

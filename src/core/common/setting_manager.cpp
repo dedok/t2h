@@ -11,11 +11,11 @@
 # 	pragma warning(disable : 4700) 
 #endif
 
-#define ADD_KEY_TYPE(x_, y_)					\
+#define ADD_KEY_TYPE(x_, y_, r_, s_)			\
 struct key_##x_									\
 	: public t2h_core_details::base_key 		\
 {												\
-	key_##x_() : base_key(#x_, y_) { }			\
+	key_##x_() : base_key(#x_, y_, r_, s_) { }	\
 };												\
 
 namespace t2h_core {
@@ -23,28 +23,28 @@ namespace t2h_core {
 namespace t2h_core_details {
 
 // http server keys, with some defaults values
-ADD_KEY_TYPE(workers, "4")
-ADD_KEY_TYPE(doc_root, "")
-ADD_KEY_TYPE(server_addr, "")
-ADD_KEY_TYPE(server_port, "80")
+ADD_KEY_TYPE(workers, "4", "", false)
+ADD_KEY_TYPE(doc_root, "", "", true)
+ADD_KEY_TYPE(server_addr, "", "", true)
+ADD_KEY_TYPE(server_port, "80", "", false)
 
 // torrent core keys, with some defaults values
-ADD_KEY_TYPE(tc_port_start, "")
-ADD_KEY_TYPE(tc_port_end, "")
-ADD_KEY_TYPE(tc_max_alert_wait_time, "15")
-ADD_KEY_TYPE(tc_max_async_download_size, "5242880")
-ADD_KEY_TYPE(tc_root, "")
-ADD_KEY_TYPE(tc_futures_timeout, "3")
-ADD_KEY_TYPE(tc_partial_files_download, "true")
-ADD_KEY_TYPE(tc_max_connections_per_torrent, "50")
-ADD_KEY_TYPE(tc_max_uploads, "-1")
-ADD_KEY_TYPE(tc_upload_limit, "0")
-ADD_KEY_TYPE(tc_download_limit, "0")
-ADD_KEY_TYPE(tc_sequential_download, "true")
-ADD_KEY_TYPE(tc_resolve_countries, "true")
-ADD_KEY_TYPE(tc_resolve_checkout, "20")
-ADD_KEY_TYPE(tc_auto_error_resolving, "true")
-ADD_KEY_TYPE(tc_loadable_session, "true")
+ADD_KEY_TYPE(tc_port_start, "", "", true)
+ADD_KEY_TYPE(tc_port_end, "", "", true)
+ADD_KEY_TYPE(tc_max_alert_wait_time, "15", "", false)
+ADD_KEY_TYPE(tc_max_async_download_size, "5242880", "", false)
+ADD_KEY_TYPE(tc_root, "", "doc_root", false)
+ADD_KEY_TYPE(tc_futures_timeout, "3", "", false)
+ADD_KEY_TYPE(tc_partial_files_download, "true", "", false)
+ADD_KEY_TYPE(tc_max_connections_per_torrent, "50", "", false)
+ADD_KEY_TYPE(tc_max_uploads, "-1", "", false)
+ADD_KEY_TYPE(tc_upload_limit, "0", "", false)
+ADD_KEY_TYPE(tc_download_limit, "0", "", false)
+ADD_KEY_TYPE(tc_sequential_download, "true", "", false)
+ADD_KEY_TYPE(tc_resolve_countries, "true", "", false)
+ADD_KEY_TYPE(tc_resolve_checkout, "20", "", false)
+ADD_KEY_TYPE(tc_auto_error_resolving, "true", "", false)
+ADD_KEY_TYPE(tc_loadable_session, "true", "", false)
 
 static inline void set_key(boost::property_tree::ptree & parser, 
 			setting_manager::key_base_ptr key) 
@@ -53,6 +53,12 @@ static inline void set_key(boost::property_tree::ptree & parser,
 	{
 		key->value = parser.get<std::string>(key->name);
 	} 
+	catch (boost::property_tree::json_parser_error const & expt) 
+	{
+		if (key->req && key->default_value.empty())
+			throw boost::property_tree::json_parser_error(expt);
+		key->value.clear();
+	}
 	catch (std::exception const & expt) 
 	{
 		key->value.clear();
