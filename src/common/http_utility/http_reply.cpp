@@ -74,7 +74,7 @@ bool http_reply::add_content_directly(char const * content, std::size_t content_
 		// Adding reply(status) type and headers first
 		status_strings::cast_to_buffer(status_, buf_ref_);
 		add_headers();	
-		add_crlf_directly();
+		add_crlf_directly(); 
 
 		// Adding content as last
 		std::size_t const prev_buf_size = buf_ref_.size();
@@ -129,7 +129,7 @@ http_reply::formating_result http_reply::format_partial_content(
 			// TODO add mime type http header to reply
 			//add_header_directly("Content-Type", "");
 		}
-		
+		add_crlf_directly();
 		result = fill_content_from_file();
 	} 
 	catch (std::exception const &)
@@ -137,7 +137,6 @@ http_reply::formating_result http_reply::format_partial_content(
 		reset_buffer();
 		return io_error;
 	}
-	buf_ref_.push_back('\0');
 	return result;
 }
 
@@ -240,19 +239,20 @@ http_reply::formating_result http_reply::fill_content_from_file()
 {
 	//TODO fix types compability
 	namespace io = boost::iostreams;
+	
 	formating_result result = file_not_exist; 
 	char * buffer_ptr = NULL;
 	std::ios::openmode const open_mode = std::ios::in | std::ios::binary;
 	io::file_descriptor_source file_handle(file_info_.file_path.string(), open_mode);
+	
 	if (file_handle.is_open()) {
 		if (io::seek(file_handle, file_info_.from, BOOST_IOS::beg) >= 0) {
 			std::size_t const prev_buff_size = buf_ref_.size();
-			buf_ref_.resize(prev_buff_size + file_info_.size_for_reading);
+			buf_ref_.resize(prev_buff_size + file_info_.size_for_reading - 1);
 			buffer_ptr = &buf_ref_.at(prev_buff_size);
 			(io::read(file_handle, buffer_ptr, file_info_.size_for_reading) != -1) ?
 				result = formating_succ : result = io_error;	
 		} // !if
-		return result;
 	} // !if
 	
 	return result;

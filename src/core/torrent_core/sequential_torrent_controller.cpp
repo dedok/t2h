@@ -63,10 +63,10 @@ int sequential_torrent_controller::availables_categories() const
 			~(alert::dht_notification +
 #if defined(T2H_CORE_NO_DETAILED_PROGRESS_NOTIFICATIONS)
 			alert::progress_notification +
-#endif
+#endif // T2H_CORE_NO_DETAILED_PROGRESS_NOTIFICATIONS
 #if defined(T2H_DEBUG) && defined(T2H_DEEP_DEBUG)
 			alert::debug_notification +
-#endif
+#endif // T2H_DEEP_DEBUG
 			alert::stats_notification));
 } 
 
