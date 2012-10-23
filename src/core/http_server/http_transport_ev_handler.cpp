@@ -1,5 +1,5 @@
 #include "http_transport_ev_handler.hpp"
-#include "http_utility.hpp"
+#include "replies_types.hpp"
 #include "http_server_core_config.hpp"
 
 /** 
@@ -41,17 +41,16 @@ transport_ev_handler::recv_result transport_ev_handler::on_recv(
 	
 	HCORE_TRACE("processing recv data")
 
-	http_reply serv_reply(fp_, answ_data);
 	http_request client_request;
 
 	boost::tribool result = parse_recv(client_request, recv_data, recv_data_size);
 	if (result)  
-		return proceed_execute_data(client_request, serv_reply);
+		return proceed_execute_data(client_request, answ_data);
 	else if (!result) {
 		HCORE_WARNING("parsing of the recv data failed")
-		return error(serv_reply, http_reply::bad_request);
+		return error(answ_data, http_reply::bad_request);
 	}
-	return more_data(serv_reply);
+	return more_data(answ_data);
 }
 
 void transport_ev_handler::on_error(int error) 
@@ -77,9 +76,7 @@ transport_ev_handler::ptr_type transport_ev_handler::clone()
  * Private transport_ev_handler api 
  */
 boost::tribool transport_ev_handler::parse_recv(
-	utility::http_request & request, 
-	buffer_type const & data, 
-	std::size_t data_size)
+	utility::http_request & request, buffer_type const & data, std::size_t data_size)
 {
 	boost::tribool result;
 	request_parser_.reset_state();
@@ -89,7 +86,7 @@ boost::tribool transport_ev_handler::parse_recv(
 }
 
 transport_ev_handler::recv_result transport_ev_handler::proceed_execute_data(
-	utility::http_request const & req, utility::http_reply & serv_reply) 
+	utility::http_request const & req, buffer_type & reply_buf) 
 {
 	using namespace utility;
 	
@@ -97,24 +94,23 @@ transport_ev_handler::recv_result transport_ev_handler::proceed_execute_data(
 	
 	if (!url_decode(req.uri, request_path)) {
 		HCORE_WARNING("uri decode failed with data '%s'", req.uri.c_str())
-		return error(serv_reply, http_reply::bad_request);
+		return error(reply_buf, http_reply::bad_request);
 	}
 	
 	if (is_root(request_path))  
-		return root_request(serv_reply);
+		return root_request(reply_buf);
 	
 	request_path = (doc_root_ / request_path).string();
 		
 	if (!is_valid_path(request_path)) {
 		HCORE_WARNING("request_path '%s' not exist ", request_path.c_str())
-		return error(serv_reply, http_reply::not_found);
+		return error(reply_buf, http_reply::not_found);
 	}
 
-	return dispatch_client_request(request_path, req, serv_reply);
+	return dispatch_client_request(request_path, req, reply_buf);
 }
 
-transport_ev_handler::recv_result transport_ev_handler::more_data(
-	utility::http_reply & serv_reply) 
+transport_ev_handler::recv_result transport_ev_handler::more_data(buffer_type & reply_buf) 
 {
 	using namespace utility; 
 	// TODO impl this funtionality
@@ -122,9 +118,10 @@ transport_ev_handler::recv_result transport_ev_handler::more_data(
 }
 
 transport_ev_handler::recv_result transport_ev_handler::error(
-	utility::http_reply & serv_reply, utility::http_reply::status_type status) 
+	buffer_type & reply_buf, utility::http_reply::status_type status) 
 {
 	using namespace utility;
+	http_reply serv_reply(reply_buf);
 	serv_reply.stock_reply(status);
 	return base_transport_ev_handler::bad_data;
 }
@@ -135,31 +132,29 @@ transport_ev_handler::recv_result transport_ev_handler::error(
 transport_ev_handler::recv_result transport_ev_handler::dispatch_client_request(
 	std::string const & req_path, 
 	utility::http_request const & req, 
-	utility::http_reply & serv_reply) 
+	buffer_type & reply_buf) 
 {
 	using namespace utility;
 
 	switch (req.mtype) 
 	{
 		case http_request::mget :
-			return on_mget_request(req_path, req, serv_reply);
+			return on_mget_request(req_path, req, reply_buf);
 		case http_request::mhead :
-			return on_mhead_request(req_path, req, serv_reply);
+			return on_mhead_request(req_path, reply_buf);
 		case http_request::mpost : 
-			return on_mpost_request(req_path, req, serv_reply);
+			return on_mpost_request(req_path, req, reply_buf);
 		case http_request::munknown : break; 
 		default : break;
 	} // switch
 
 	// Follow code should never happens	
 	HCORE_WARNING("req.mtype == http_request::munknown for '%s'", req_path.c_str())
-	return error(serv_reply, http_reply::bad_request);
+	return error(reply_buf, http_reply::bad_request);	
 }
 
 transport_ev_handler::recv_result transport_ev_handler::on_mget_request(
-	std::string const & request_path, 
-	utility::http_request const & req, 
-	utility::http_reply & serv_reply)
+	std::string const & request_path, utility::http_request const & req, buffer_type & reply_buf)
 {
 	using namespace utility;
 	
@@ -174,68 +169,59 @@ transport_ev_handler::recv_result transport_ev_handler::on_mget_request(
 			HCORE_WARNING(
 				"ill formed data, parsing of the 'Range' header failed, req. bytes: s '%i' e '%i'"
 				, (int)bytes_begin, (int)bytes_end)
-			return error(serv_reply, http_reply::bad_request);
+			return error(reply_buf, http_reply::bad_request);
 		}
 	} else // http_request_get_range_header
-		boost::tie(bytes_begin, bytes_end) = get_file_size_range(request_path); 
+		boost::tie(bytes_begin, bytes_end) = get_file_size_range(request_path);
 	
-	http_reply::formating_result const state = 
-		serv_reply.format_partial_content(request_path, bytes_begin, bytes_end);
-	switch (state)
-	{
-		case http_reply::formating_succ :
-			/* Mean all goes well */
-			break;
-		break;
-		case http_reply::io_error : case http_reply::buffer_error : case http_reply::unknown_error :
-			HCORE_WARNING("get content data failed, with state '%i', req. path '%s', req. bytes: s '%i' e '%i'", 
-				(int)state, request_path.c_str(), (int)bytes_begin, (int)bytes_end)
-			return error(serv_reply, http_reply::internal_server_error);
-		default : /* Shoud never happen */ 
-			return error(serv_reply, http_reply::not_implemented);
-	} // switch
+	details::partial_content_reply_param const pcr_param = 
+		details::create_partial_content_param(request_path, boost::filesystem::file_size(request_path), bytes_begin, bytes_end);
+	details::partial_content_reply pcr_reply(reply_buf, pcr_param);
+
+	if (!pcr_reply.do_formatting_reply()) {
+		HCORE_WARNING("preparing reply failed for req. path '%s'", request_path.c_str())
+		return error(reply_buf, http_reply::internal_server_error);
+	}
 
 	return base_transport_ev_handler::sent_answ;
 }
 
-transport_ev_handler::recv_result transport_ev_handler::on_mhead_request(
-	std::string const & req_path, 
-	utility::http_request const & req, 
-	utility::http_reply & serv_reply) 
+transport_ev_handler::recv_result 
+	transport_ev_handler::on_mhead_request(std::string const & req_path, buffer_type & reply_buf) 
 {
 	using namespace utility;
-	// TODO impl this funtionality
-	return error(serv_reply, http_reply::not_implemented);
+	boost::system::error_code ec;
+	details::head_reply_param hr_param = { req_path, boost::filesystem::file_size(req_path, ec) };
+	if (!ec) {
+		details::head_reply reply(reply_buf, hr_param);
+		return (!reply.do_formatting_reply()) ?
+			error(reply_buf, http_reply::internal_server_error) :
+			base_transport_ev_handler::sent_answ;
+	}
+	return error(reply_buf, http_reply::not_found);
 }
 
 transport_ev_handler::recv_result transport_ev_handler::on_mpost_request(
 	std::string const & req_path, 
 	utility::http_request const & req, 
-	utility::http_reply & serv_reply) 
+	buffer_type & reply_buf) 
 {
 	using namespace utility;
 	// TODO impl this funtionality
-	return error(serv_reply, http_reply::not_implemented);
+	return error(reply_buf, http_reply::not_implemented);
 }
 
 /**
  * Private helpers
  */
-transport_ev_handler::recv_result 
-	transport_ev_handler::root_request(utility::http_reply & serv_reply) const 
+transport_ev_handler::recv_result transport_ev_handler::root_request(buffer_type & reply_buf)  
 {
 	using namespace utility;
-	
-	// TODO add better answer on root request
-	serv_reply.set_status(http_reply::ok);
-	std::string const root_request_content = "<html><body>t2h http server status : OK</body></html>";
-	std::string::size_type const rrc_size = root_request_content.size(); 
-	serv_reply.add_header("Content-Length", utility::safe_lexical_cast<std::string>(rrc_size));
-	serv_reply.add_header("Content-Type", "text/html");
-	if (!serv_reply.add_content_directly(root_request_content.c_str(), rrc_size))
-		serv_reply.stock_reply(http_reply::internal_server_error);
-
-	return base_transport_ev_handler::sent_answ;
+	details::root_reply_param rr_param;
+	details::root_reply reply(reply_buf, rr_param);
+	return (!reply.do_formatting_reply()) ?
+		error(reply_buf, http_reply::internal_server_error) :
+		base_transport_ev_handler::sent_answ;
 }
 
 bool transport_ev_handler::is_root(std::string const & path) const 

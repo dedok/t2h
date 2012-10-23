@@ -31,22 +31,21 @@ private :
 	boost::tribool parse_recv(utility::http_request & request, 
 					buffer_type const & data, std::size_t data_size);
 	
-	recv_result proceed_execute_data(utility::http_request const & req, utility::http_reply & serv_reply);
-	recv_result more_data(utility::http_reply & answ_data);
-	recv_result error(utility::http_reply & serv_reply, utility::http_reply::status_type status);
+	recv_result proceed_execute_data(utility::http_request const & req, buffer_type & serv_reply);
+	recv_result more_data(buffer_type & answ_data);
+	recv_result error(buffer_type & serv_reply, utility::http_reply::status_type status);
 	
 	/* request(s) dipatching */
 	recv_result dispatch_client_request(
-		std::string const & req_path, utility::http_request const & req, utility::http_reply & serv_reply); 
+		std::string const & req_path, utility::http_request const & req, buffer_type & serv_reply); 
 	recv_result on_mpost_request(
-		std::string const & req_path, utility::http_request const & req, utility::http_reply & serv_reply);
-	recv_result on_mhead_request(
-		std::string const & req_path, utility::http_request const & req, utility::http_reply & serv_reply);
+		std::string const & req_path, utility::http_request const & req, buffer_type & serv_reply);
+	recv_result on_mhead_request(std::string const & req_path, buffer_type & serv_reply);
 	recv_result on_mget_request(
-		std::string const & req_path, utility::http_request const & req, utility::http_reply & serv_reply);
-
+		std::string const & req_path, utility::http_request const & req, buffer_type & serv_reply);
+	recv_result root_request(buffer_type & serv_reply);
+	
 	/* helpers */
-	recv_result root_request(utility::http_reply & serv_reply) const;
 	bool is_root(std::string const & path) const; 
 	bool is_valid_path(std::string const & path) const; 
 	boost::tuple<boost::int64_t, boost::int64_t> get_file_size_range(std::string const & path) const;

@@ -4,7 +4,6 @@
 #include "http_header.hpp"
 
 #include <boost/cstdint.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/noncopyable.hpp>
 
 namespace utility {
@@ -31,7 +30,10 @@ public :
 	typedef std::vector<char> buffer_type;
 	typedef buffer_type::iterator buffer_iter_type;
 	typedef buffer_type::const_iterator const_buffer_iter_type;
-
+	
+	/**
+	 *
+	 */
 	enum status_type {
 		ok = 200,
 		created = 201,
@@ -52,54 +54,43 @@ public :
 		service_unavailable = 503
 	};
 	
-	enum formating_result {
-		formating_succ = 0x1,	
-		file_not_exist,
-		io_error,
-		buffer_error,
-		unknown_error,
-	};
-
-	http_reply(fingerprint & fp_ref, buffer_type & buffer);
-	~http_reply();
-
-	void add_header(std::string const & name, std::string const & value);	
-	void add_header(http_header const & header);
+	http_reply(buffer_type & buffer);
+	virtual ~http_reply();
 	
-	bool add_content_from_file(boost::filesystem::path const & file_path, boost::int64_t from, boost::int64_t to);
-	bool add_content_directly(char const * content, std::size_t content_size);	
+	/**
+	 *
+	 */
+	virtual bool do_formatting_reply() 
+		{ return false; }
 	
-	void set_status(status_type status);
-	status_type get_status() const;
+	virtual bool stock_reply(status_type status);
+	/**
+	 *
+	 */		
+	bool add_status(status_type status);
+	bool add_header(std::string const & name, std::string const & value);	
+	bool add_header(http_header const & header);
+	bool add_content(char const * content, std::size_t content_size);
+	void add_crlf();
 
-	formating_result format_partial_content(boost::filesystem::path const & req_path, boost::int64_t start, boost::int64_t end);
-	void stock_reply(status_type status);
+	/**
+	 *
+	 */
+	inline buffer_type & get_buffer() { return buf_ref_; }
+	inline buffer_type const & get_buffer() const { return buf_ref_; }
+
 	void reset_buffer();
-	
-	void set_no_auto_generate_headers(bool state) const;
-	void enable_fingerprint(bool state = true);
+	void enable_buf_realocation(bool state = true);
+
+protected :
+	bool mutable enable_buf_realocation_;
 
 private :
-	void add_crlf_directly();
 	void add_header_directly(std::string const & name, std::string const & value);
 	void add_header_directly(http_header const & header);
-	void add_headers();
 
-	formating_result fill_content_from_file();
-
-	struct {
-		boost::filesystem::path file_path;
-		boost::int64_t file_size;
-		boost::int64_t from;
-		boost::int64_t to;
-		boost::int64_t size_for_reading;
-	} file_info_;
-
-	status_type status_;
-	header_list_type headers_;
 	buffer_type & buf_ref_;
-	fingerprint mutable & fp_ref_;
-	bool mutable no_auto_generate_headers_;
+
 };
 
 } // namespace utlility

@@ -25,3 +25,7 @@ target_link_libraries(link_test_cpp ${link_depends})
 add_executable(external_type_test EXCLUDE_FROM_ALL external_type_test.cpp)
 target_link_libraries(external_type_test ${link_depends})
 
+# http server replies test
+add_executable(hc_replies_test EXCLUDE_FROM_ALL hc_replies_test.cpp)
+target_link_libraries(hc_replies_test ${link_depends})
+

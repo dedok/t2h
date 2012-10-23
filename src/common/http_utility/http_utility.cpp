@@ -53,7 +53,7 @@ bool url_decode(std::string const & in, std::string & out)
 
 boost::tuple<boost::int64_t, boost::int64_t, bool> parse_range_header(http_header const & header) 
 {
-	boost::tuple<boost::int64_t, boost::int64_t, bool> result(0, -1, false);
+	boost::tuple<boost::int64_t, boost::int64_t, bool> result(0, 0, false);
 
 	std::size_t first = std::string::npos, 
 		last = std::string::npos, end = header.value.size();
@@ -63,8 +63,11 @@ boost::tuple<boost::int64_t, boost::int64_t, bool> parse_range_header(http_heade
 	if ((last = header.value.find_last_of("-")) == std::string::npos)
 		return result;
 	
-	result.get<0>() = cast_string_range_to_int(header.value, first + 1, last);	
-	result.get<1>() = cast_string_range_to_int(header.value, last + 1, end);
+	result.get<0>() = cast_string_range_to_int(header.value, first + 1, last);
+	if (last + 1 < end) {
+		if (header.value.at(last + 1) != '*')
+			result.get<1>() = cast_string_range_to_int(header.value, last + 1, end);
+	} // if
 	result.get<2>() = true;
 
 	return result;
