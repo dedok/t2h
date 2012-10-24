@@ -23,7 +23,6 @@ partial_content_reply::~partial_content_reply()
 
 }
 
-
 bool partial_content_reply::do_formatting_reply() 
 {
 	using namespace utility;
@@ -31,12 +30,11 @@ bool partial_content_reply::do_formatting_reply()
 	if (!ready_for_reply())
 		return false;
 	
-	boost::int64_t const bstart = param_.bytes_start - 1, bend = param_.bytes_end - 1;
 	std::string const range_value = 
-		"bytes " + safe_lexical_cast<std::string>(bstart < 0 ? 0 : bstart) + "-" + 
-		safe_lexical_cast<std::string>(bend < 0 ? 0 : bend) + "/" + 
+		"bytes " + safe_lexical_cast<std::string>(param_.bytes_start) + "-" + 
+		safe_lexical_cast<std::string>(param_.bytes_end) + "/" + 
 		safe_lexical_cast<std::string>(param_.file_size);
-	
+		
 	// TODO add mime type http header to reply
 	if (!http_reply::add_status(http_reply::partial_content))
 		return false;
@@ -52,7 +50,7 @@ bool partial_content_reply::do_formatting_reply()
 	{
 		return false;
 	}
-
+	
 	return fill_content_from_file();
 }
 
@@ -62,23 +60,16 @@ bool partial_content_reply::do_formatting_reply()
 
 bool partial_content_reply::ready_for_reply() 
 {
-	// Extra range testing then detect size_for_reading
-	std::cout <<param_.bytes_start << " <> " << param_.bytes_end << " <> " << param_.file_size << std::endl;
-	if (param_.bytes_start == param_.bytes_end || 
-		param_.bytes_end < 0 || param_.bytes_start < 0 ||
-		param_.file_size < param_.bytes_end || param_.bytes_end < param_.bytes_start)
-	{	
-		return false;
-	}
-	param_.size_for_reading = 1 * (param_.bytes_end - param_.bytes_start);	
-	return ((param_.size_for_reading <= 0) ? false : true);
+	if (param_.bytes_end >= param_.file_size) 
+		param_.bytes_end = param_.file_size;
+	param_.size_for_reading = (1 * (param_.bytes_end - param_.bytes_start)) + 1;
+	return ((param_.size_for_reading == 0) ? false : true);
 }
 
 bool partial_content_reply::fill_content_from_file() 
 {
 	using namespace utility;
 	namespace io = boost::iostreams;
-	
 	try 
 	{
 		http_reply::buffer_type & buf_ref = http_reply::get_buffer(); 
@@ -91,16 +82,12 @@ bool partial_content_reply::fill_content_from_file()
 				if (enable_buf_realocation_)
 					buf_ref.resize(prev_buff_size + param_.size_for_reading);
 				char * buffer_offset_start = &buf_ref.at(prev_buff_size);
-				return (io::read(file_handle, buffer_offset_start, param_.size_for_reading) != -1) ?
-					true : false;
+				if (io::read(file_handle, buffer_offset_start, param_.size_for_reading) > 0) 
+					return true; 
 			} // !if
 		} // !if
 	}
-	catch (std::exception const & expt) 
-	{
-		return false;
-	}
-
+	catch (std::exception const &) { }
 	return false;
 }
 
