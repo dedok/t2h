@@ -7,13 +7,7 @@
 
 namespace t2h_core {
 
-
-static inline common::notification_center_ptr core_notification_center() 
-{
-	static common::notification_center_config config = { 1000, false };
-	static common::notification_center_ptr center(new common::notification_center(config));
-	return center;
-}
+common::notification_center_ptr core_notification_center(); 
 
 } // namespace t2h_core
 

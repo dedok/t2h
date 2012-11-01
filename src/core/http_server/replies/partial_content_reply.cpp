@@ -1,11 +1,23 @@
 #include "partial_content_reply.hpp"
 #include "misc_utility.hpp"
+#include "mime_types.hpp"
 
 #include <boost/iostreams/operations.hpp>  
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp> 
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/posix_time/posix_time_io.hpp>
+
 namespace t2h_core { namespace details {
+
+/**
+ *
+ */
+static inline void get_date_time(std::string & out) 
+{
+	// TODO impl this
+}
 
 /**
  * Public partial_content_reply
@@ -35,21 +47,26 @@ bool partial_content_reply::do_formatting_reply()
 		safe_lexical_cast<std::string>(param_.bytes_end) + "/" + 
 		safe_lexical_cast<std::string>(param_.file_size);
 		
-	// TODO add mime type http header to reply
+	// TODO add Date as header
 	if (!http_reply::add_status(http_reply::partial_content))
 		return false;
 
+	//std::string date_time;
+	//get_date_time(date_time);
+	//if (!http_reply::add_status("Date", date_time)
+	//	return false;
+	
 	if (!http_reply::add_header("Accept-Ranges", "bytes"))
 		return false;
 
 	if (!http_reply::add_header("Content-Range", range_value))
 		return false;
 	
-	if (!http_reply::add_header("Content-Length", 
-			safe_lexical_cast<std::string>(param_.size_for_reading)))
-	{
+	if (!http_reply::add_header("Content-Length", safe_lexical_cast<std::string>(param_.size_for_reading)))
 		return false;
-	}
+
+	if (!http_reply::add_header("Content-Type", mime_types::get_file_extension(param_.file_path)))
+		return false;
 	
 	return fill_content_from_file();
 }

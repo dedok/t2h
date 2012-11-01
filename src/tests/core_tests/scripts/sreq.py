@@ -10,7 +10,7 @@ import urllib2
 def send_get_req(host, port, req, out, bytes_range):
 	try :
 		params=""
-		headers={"Range": "bytes=" + bytes_range, "Connection" : "close"}
+		headers={"Range": "bytes=" + str(bytes_range), "Connection" : "close"}
 		http_conn = httplib.HTTPConnection(host, port)
 		http_conn.connect()
 
@@ -79,7 +79,7 @@ def parse_argv(argv):
 	if argv != None:
 		try: 
 			opts, args = getopt.getopt(argv[1:], "h:p:g:d:o:r:u:b",
-				["host=", "port=", "get", "head", "of=", "pr=", "usage", "br"])
+				["host=", "port=", "get", "head", "of=", "pr=", "usage", "br="])
 			for o, a in opts :
 				if o in "--usage" :
 					print_usage_and_exit()
@@ -95,12 +95,12 @@ def parse_argv(argv):
 					out = a
 				if o in "--pr=" :
 					req = a
-				if o in "br":
+				if o in "--br=":
 					brange = a
 			#
 		except getopt.error, msg:
 			print "Error while parsing command line arguments : ",  msg
-	
+
 	values=[host, port, req, out, brange]
 	if all(v == None for v in values) and action == None :
 		return (None, None)

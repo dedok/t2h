@@ -7,10 +7,29 @@
 #include "http_request.hpp"        
 #include "http_request_parser.hpp" 
 
+#include <boost/cstdint.hpp>
+
 namespace utility {
 
+struct range_header 
+{
+	enum { 
+		all = -2, 
+		bad = -3 
+	};
+	
+	boost::int64_t bstart_1;
+	boost::int64_t bend_1;
+
+	boost::int64_t bstart_2;
+	boost::int64_t bend_2;
+};
+
 bool url_decode(std::string const & in, std::string & out);
-boost::tuple<boost::int64_t, boost::int64_t, bool> parse_range_header(http_header const & header);
+
+boost::tuple<bool, http_header> http_get_header(std::string const & name);
+
+bool http_translate_range_header(range_header & rheader, header_list_type const & headers);
 
 }
 

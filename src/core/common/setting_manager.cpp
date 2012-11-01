@@ -27,14 +27,15 @@ ADD_KEY_TYPE(workers, "4", "", false)
 ADD_KEY_TYPE(doc_root, "", "", true)
 ADD_KEY_TYPE(server_addr, "", "", true)
 ADD_KEY_TYPE(server_port, "80", "", false)
-
-// torrent core keys, with some defaults values
 ADD_KEY_TYPE(tc_port_start, "", "", true)
 ADD_KEY_TYPE(tc_port_end, "", "", true)
+
+// torrent core keys, with some defaults values
+ADD_KEY_TYPE(hc_max_sync_timeout, "10", "", false)
 ADD_KEY_TYPE(tc_max_alert_wait_time, "15", "", false)
 ADD_KEY_TYPE(tc_max_async_download_size, "5242880", "", false)
 ADD_KEY_TYPE(tc_root, "", "doc_root", false)
-ADD_KEY_TYPE(tc_futures_timeout, "3", "", false)
+ADD_KEY_TYPE(tc_futures_timeout, "10", "", false)
 ADD_KEY_TYPE(tc_partial_files_download, "true", "", false)
 ADD_KEY_TYPE(tc_max_connections_per_torrent, "50", "", false)
 ADD_KEY_TYPE(tc_max_uploads, "-1", "", false)
@@ -42,7 +43,7 @@ ADD_KEY_TYPE(tc_upload_limit, "0", "", false)
 ADD_KEY_TYPE(tc_download_limit, "0", "", false)
 ADD_KEY_TYPE(tc_sequential_download, "true", "", false)
 ADD_KEY_TYPE(tc_resolve_countries, "true", "", false)
-ADD_KEY_TYPE(tc_resolve_checkout, "20", "", false)
+ADD_KEY_TYPE(tc_resolve_checkout, "6", "", false)
 ADD_KEY_TYPE(tc_auto_error_resolving, "true", "", false)
 ADD_KEY_TYPE(tc_loadable_session, "true", "", false)
 
@@ -156,6 +157,7 @@ void setting_manager::init_keys_storage()
 	key_storage_->reg<key_doc_root>("doc_root");
 	key_storage_->reg<key_server_addr>("server_addr");
 	key_storage_->reg<key_server_port>("server_port");
+	key_storage_->reg<key_hc_max_sync_timeout>("hc_max_sync_timeout");
 
 	// torrent core settings 
 	key_storage_->reg<key_tc_port_start>("tc_port_start");

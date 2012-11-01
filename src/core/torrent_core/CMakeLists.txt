@@ -9,6 +9,7 @@ set(T2H_HEADERS ${T2H_HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/torrent_info.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/torrent_core_future.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/torrent_core_macros.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/torrent_core_event_handler.hpp
 # details
 	${DETAILS_PATH}/base_resolver.hpp
 	${DETAILS_PATH}/error_resolvers_types.hpp

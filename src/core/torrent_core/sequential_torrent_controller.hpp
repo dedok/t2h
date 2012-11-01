@@ -42,18 +42,17 @@ struct static_settings {
 class sequential_torrent_controller : public base_torrent_core_cntl {
 public :
 	sequential_torrent_controller();
-	explicit sequential_torrent_controller(setting_manager_ptr setting_manager);
 	virtual ~sequential_torrent_controller();
+	
+	virtual void set_event_handler(torrent_core_event_handler_ptr event_handler);
+	virtual void set_setting_manager(setting_manager_ptr sets_manager);
+	virtual bool set_session(libtorrent::session * session_ref);
 	
 	virtual int availables_categories() const;
 	
-	virtual bool set_session(libtorrent::session * session_ref);
 	virtual void on_setup_core_session(libtorrent::session_settings & settings);
-
 	virtual void set_shared_buffer(details::shared_buffer * buffer_ref);
-
 	virtual bool add_torrent(details::torrent_ex_info_ptr ex_info);
-
 	virtual void dispatch_alert(libtorrent::alert * alert);
 
 private :
@@ -75,8 +74,10 @@ private :
 	/** Others funtions */	
 	void setup_torrent(libtorrent::torrent_handle & handle);
 	void update_settings();
-	
-	setting_manager_ptr setting_manager_;
+	void torrent_remove(libtorrent::torrent_handle & handle);
+
+	setting_manager_ptr setting_manager_;	
+	torrent_core_event_handler_ptr event_handler_;
 	libtorrent::session * session_ref_;
 	details::shared_buffer * shared_buffer_ref_;
 	details::static_settings mutable settings_;

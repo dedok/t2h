@@ -26,9 +26,6 @@ struct http_request {
 
 void http_request_set_mtype(http_request & req);
 
-bool http_request_get_range_header(http_request const & req, http_header & header);
-
-
 } // namespace utility
 
 #endif 

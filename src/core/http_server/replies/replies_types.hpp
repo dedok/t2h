@@ -5,6 +5,7 @@
 #include "partial_content_reply.hpp"
 #include "head_reply.hpp"
 #include "root_reply.hpp"
+#include "send_content_reply.hpp"
 
 #endif
 

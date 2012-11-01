@@ -95,9 +95,9 @@ struct check_recv_t1 : public common::notification_receiver {
 
 static bool wait_for_finish(int expected_event_execution_value) 
 {
-	for (;;sleep(1)) {
+	for (int ticks = 0; ;sleep(1), ++ticks) {
 		boost::lock_guard<boost::mutex> guard(envt.lock);
-		if (!envt.on) break;
+		if (!envt.on || ticks >= WAIT_TIMEOUT) break;
 	}
 	boost::lock_guard<boost::mutex> guard(envt.lock);
 	return (envt.current_test_succ && expected_event_execution_value == envt.executed_events);
@@ -134,15 +134,13 @@ static inline bool multi_threaded_check_events_recv()
 	boost::tie(id, state) = envt.center->add_notification_receiver(recv);
 	if (!state) return false;
 		
-	for (int count = 0; count != TEST_COUNTER_MAX + 1; ++count) {
+	for (int count = 0; count != 20; ++count) {
 		event_tcount_ptr event(new event_tcount());
 		event->data = count;
 		threads.push_back(new 
 			boost::thread(&common::notification_center::send_message, 
 				envt.center, recv->get_name(), event));
-		std::cout << __FUNCTION__ << std::endl; 
 		if (threads.size() == 10) {
-			std::cout << __FUNCTION__ << std::endl; 
 			std::for_each(threads.begin(), threads.end(), 
 				boost::bind(&boost::thread::join, _1));
 			threads.clear();

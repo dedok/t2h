@@ -1,6 +1,7 @@
 #include "syslogger.hpp"
 #include "torrent_core.hpp"
 #include "sequential_torrent_controller.hpp"
+#include "http_transport_ev_handler.hpp"
 
 #include <iostream>
 
@@ -9,7 +10,7 @@ static char const * json_config =
 "\"workers\" : \"4\",\n"
 "\"server_port\" : \"8080\",\n"
 "\"server_addr\" : \"127.0.0.1\",\n" 
-"\"doc_root\" : \"test/path\",\n" // not needed for this test 
+"\"doc_root\" : \"tc_root\",\n" // not needed for this test 
 "\"tc_root\" : \"tc_root\", \n"
 "\"tc_port_start\" : \"6881\",\n"
 "\"tc_port_end\" : \"6889\", \n"
@@ -29,6 +30,41 @@ static inline void die(std::string const & message, int ec)
 	std::exit(ec);
 }
 
+#define PRINT_ std::cout << __FUNCTION__ << " " 
+
+class event_handler : public t2h_core::torrent_core_event_handler {
+public :
+
+	event_handler() { }
+	virtual ~event_handler() { }	
+
+	virtual void on_file_remove(std::string const & file_path) 
+	{
+		PRINT_ << "file path : " << file_path << std::endl;
+	}
+	
+	virtual void on_file_add(std::string const & file_path, boost::int64_t file_size) 
+	{
+		PRINT_ << "file path : " << file_path << " file size : " << file_size << std::endl;
+	}
+
+	virtual void on_pause(std::string const & file_path) 
+	{
+		PRINT_ << "file path : " << file_path << std::endl;
+	}
+
+	virtual void on_file_complete(std::string const & file_path, boost::int64_t avaliable_bytes) 
+	{
+		PRINT_ << "file path : " << file_path << " avaliable_bytes : " << avaliable_bytes << std::endl;
+	}
+
+	virtual void on_progress_update(std::string const & file_path, boost::int64_t avaliable_bytes) 
+	{
+		PRINT_ << " file path : " << file_path << " avaliable_bytes : " << avaliable_bytes << std::endl;
+	}
+
+};
+
 int main(int argc, char ** argv) 
 {
 	using namespace t2h_core; 
@@ -38,12 +74,15 @@ int main(int argc, char ** argv)
 	LOG_INIT(log_settings)
 	
 	setting_manager_ptr sm = setting_manager::shared_manager();
-	base_torrent_core_cntl_ptr stc(new sequential_torrent_controller(sm));
+	base_torrent_core_cntl_ptr stc(new sequential_torrent_controller());
+	torrent_core_event_handler_ptr ev(new event_handler());
+
 	sm->init_config(json_config);
 		
 	torrent_core_params params;
 	params.setting_manager = sm; 
 	params.controller = stc;
+	params.event_handler = ev;
 
 	if (!sm->config_is_well())
 		die(sm->get_last_error(), -1);

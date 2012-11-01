@@ -40,9 +40,10 @@ static inline void log_state_update_alerts(libtorrent::torrent_status const & st
  * Public sequential_torrent_controller api
  */
 
-sequential_torrent_controller::sequential_torrent_controller(setting_manager_ptr setting_manager) : 
+sequential_torrent_controller::sequential_torrent_controller() : 
 	base_torrent_core_cntl(), 
-	setting_manager_(setting_manager), 
+	setting_manager_(),
+	event_handler_(),
 	session_ref_(NULL), 	
 	shared_buffer_ref_(NULL),
 	settings_()
@@ -82,6 +83,16 @@ bool sequential_torrent_controller::set_session(libtorrent::session * session_re
 		return false;
 	}
 	return true;
+}
+
+void sequential_torrent_controller::set_event_handler(torrent_core_event_handler_ptr event_handler) 
+{
+	event_handler_ = event_handler;
+}
+
+void sequential_torrent_controller::set_setting_manager(setting_manager_ptr sets_manager) 
+{
+	setting_manager_ = sets_manager;
 }
 
 void sequential_torrent_controller::set_shared_buffer(details::shared_buffer * shared_buffer_ref) 
@@ -177,8 +188,6 @@ void sequential_torrent_controller::update_settings()
 
 void sequential_torrent_controller::on_metadata_recv(libtorrent::metadata_received_alert * alert) 
 {	
-	TCORE_TRACE("Torrent '%s' recv. metadata", alert->handle.get_torrent_info().name().c_str())
-
 	std::vector<char> buffer;
 	libtorrent::torrent_handle & handle = alert->handle;
 	libtorrent::torrent_info const & torrent_info = handle.get_torrent_info();
@@ -200,13 +209,12 @@ void sequential_torrent_controller::on_metadata_recv(libtorrent::metadata_receiv
 
 void sequential_torrent_controller::on_add_torrent(libtorrent::add_torrent_alert * alert) 
 {
-	TCORE_TRACE("Torrent '%s' adding", alert->handle.save_path().c_str())
-
 	using details::future_cast;
-	using libtorrent::torrent_handle;	
+	using libtorrent::torrent_info;	
+	using libtorrent::torrent_handle;
 	using details::add_torrent_future_ptr;
-	using details::scoped_future_promise_init;
-	
+	using details::scoped_future_promise_init;	
+
 	torrent_handle handle = alert->handle;		
 	details::add_torrent_future_ptr add_future;
 	
@@ -219,18 +227,28 @@ void sequential_torrent_controller::on_add_torrent(libtorrent::add_torrent_alert
 	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(handle.save_path());
 	if (!ex_info) {
 		TCORE_WARNING("Torrent '%s' add failed, can not find extended info", handle.save_path().c_str())
-		session_ref_->remove_torrent(handle);
+		torrent_remove(handle);
 		return;
 	}
 
 	if (!ex_info->future) {
 		TCORE_WARNING("Torrent '%s' have not future promise", handle.save_path().c_str())
-		shared_buffer_ref_->remove(handle.save_path());	
-		session_ref_->remove_torrent(handle);
+		torrent_remove(handle);
 		return;
 	} 
 	
-	details::scoped_future_release future_done_release(ex_info->future);	
+	int index = 0;
+	torrent_info const & ti = handle.get_torrent_info();
+	for (torrent_info::file_iterator first = ti.begin_files(); 
+		first != ti.end_files(); 
+		++first, ++index) 
+	{
+			details::file_info const fi = 
+			details::file_info_add(ex_info->avaliables_files, ti.files().at(first), ti, handle, index);
+		event_handler_->on_file_add(fi.path, fi.size);
+	} // for
+	
+	details::scoped_future_release future_release(ex_info->future);	
 	details::add_torrent_future_ptr atf_ptr = details::future_cast<details::add_torrent_future>(ex_info->future);
 	setup_torrent(handle);
 	atf_ptr->handle = handle;
@@ -239,12 +257,24 @@ void sequential_torrent_controller::on_add_torrent(libtorrent::add_torrent_alert
 void sequential_torrent_controller::on_finished(libtorrent::torrent_finished_alert * alert) 
 {
 	TCORE_TRACE("Torrent finished '%s'", alert->handle.save_path().c_str())
-	std::string const path = alert->handle.save_path();	
 } 
 
 void sequential_torrent_controller::on_pause(libtorrent::torrent_paused_alert * alert) 
 {
-	TCORE_TRACE("Torrent '%s' paused", alert->handle.save_path().c_str())
+	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(alert->handle.save_path());
+	if (!ex_info) {
+		TCORE_WARNING("paused failed, args '%s'", alert->handle.save_path().c_str())
+		torrent_remove(alert->handle);
+		return;
+	}
+
+	for (details::file_info::list_type::const_iterator first = ex_info->avaliables_files.begin(), 
+				last = ex_info->avaliables_files.end();
+		first != last; 
+		++first) 
+	{
+		event_handler_->on_pause(first->path);
+	}
 }
 
 void sequential_torrent_controller::on_update(libtorrent::state_update_alert * alert) 
@@ -265,6 +295,7 @@ void sequential_torrent_controller::on_update(libtorrent::state_update_alert * a
 #endif
 		if (!(ex_info = shared_buffer_ref_->get(it->handle.save_path()))) {
 			TCORE_WARNING("Can not find extended info for torrent '%s'", it->handle.save_path().c_str())
+			torrent_remove(it->handle);
 			continue;
 		}
 		// TODO improve auto resolving logic
@@ -293,21 +324,59 @@ void sequential_torrent_controller::on_torrent_status_changes(details::torrent_e
 
 void sequential_torrent_controller::on_piece_finished(libtorrent::piece_finished_alert * alert) 
 {
-	TCORE_TRACE("Torrent '%s' finished download piece '%i'", 
-		alert->handle.save_path().c_str(), alert->piece_index)
+	// TODO may be ib case of failure better way it resresh torrent not remove?
+	details::file_info info;	
+	bool update_state = false;
+
+	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(alert->handle.save_path());
+	if (!ex_info) {
+		TCORE_WARNING("get extended info failed, args '%s', '%i'", alert->handle.save_path().c_str(), alert->piece_index)
+		torrent_remove(alert->handle);
+		return;
+	} // if
+
+	boost::tie(update_state, info) = details::file_info_update(ex_info->avaliables_files, alert->piece_index);
+	if (update_state) 
+		event_handler_->on_progress_update(info.path, info.avaliable_bytes);
 }
 
 void sequential_torrent_controller::on_file_complete(libtorrent::file_completed_alert * alert)
 {
-	TCORE_TRACE("Torrent '%s' complete download file '%i'", alert->handle.save_path().c_str(), alert->index)
+	details::file_info info;
+	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(alert->handle.save_path());
+	if (!ex_info) {
+		TCORE_WARNING("get extended info failed, args '%s', '%i'", alert->handle.save_path().c_str(), alert->index)
+		torrent_remove(alert->handle);
+		return;
+	} // if
+
+	// add update file_info
+	if (details::file_info_search_by_index(ex_info->avaliables_files, alert->index, info))  
+		event_handler_->on_file_complete(info.path, info.size);
 }
 
 void sequential_torrent_controller::on_deleted(libtorrent::torrent_deleted_alert * alert) 
 {
-	TCORE_TRACE("Torrent '%s' deleted", alert->handle.save_path().c_str())
-	std::string const path = alert->handle.save_path();
-	shared_buffer_ref_->remove(path);
+	torrent_remove(alert->handle);
 }
+
+void sequential_torrent_controller::torrent_remove(libtorrent::torrent_handle & handle)
+{
+	using details::file_info;
+	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(handle.save_path());
+	if (ex_info) {
+		for (file_info::list_type::const_iterator first = ex_info->avaliables_files.begin(), 
+				last = ex_info->avaliables_files.end();
+			first != last; 
+			++first) 
+		{
+			event_handler_->on_file_remove(first->path);
+		} // for
+		shared_buffer_ref_->remove(handle.save_path());
+	} // if
+	session_ref_->remove_torrent(handle);
+}
+
 
 void sequential_torrent_controller::on_state_change(libtorrent::state_changed_alert * alert) 
 {

@@ -1,7 +1,8 @@
 #include "external_api_details.hpp"
 
-#include "sequential_torrent_controller.hpp"
 #include "syslogger.hpp"
+#include "hc_event_source_adapter.hpp"
+#include "sequential_torrent_controller.hpp"
 
 #if defined(WIN32)
 #	pragma warning(push)
@@ -111,18 +112,15 @@ torrent_core_ptr core_handle::init_torrent_core()
 	torrent_core_params tcore_params;
 	try 
 	{
-		base_torrent_core_cntl_ptr torrent_controller(new sequential_torrent_controller(sets_manager_));
 		tcore_params.setting_manager = sets_manager_; 
-		tcore_params.controller = torrent_controller;
+		tcore_params.controller.reset(new sequential_torrent_controller());
+		tcore_params.event_handler.reset(new details::hc_event_source_adapter());
+		
 		tcore.reset(new torrent_core(tcore_params));
-		if (!tcore->launch_service())
-			return torrent_core_ptr();
+		return (!tcore->launch_service()) ? torrent_core_ptr() : tcore;
 	} 
-	catch (std::exception const & expt) 
-	{
-		return torrent_core_ptr(); 
-	}
-	return tcore;
+	catch (std::exception const & expt) { }
+	return torrent_core_ptr();
 }
 
 http_server_core_ptr core_handle::init_http_server() 
@@ -131,13 +129,9 @@ http_server_core_ptr core_handle::init_http_server()
 	try 
 	{
 		http_server.reset(new http_server_core(sets_manager_));
-		if (!http_server->launch_service())
-			return http_server_core_ptr();
+		return (!http_server->launch_service()) ? http_server_core_ptr() : http_server;
 	} 
-	catch (std::exception const & expt)
-	{
-		return http_server_core_ptr();
-	}
+	catch (std::exception const & expt){ }
 	return http_server;
 }
 
@@ -146,3 +140,4 @@ http_server_core_ptr core_handle::init_http_server()
 #if defined(WIN32)
 #	pragma warning(pop)
 #endif
+

@@ -2,10 +2,11 @@
 #define TORRENT_CORE_HPP_INCLUDED
 
 #include "base_service.hpp"
+#include "shared_buffer.hpp"
 #include "setting_manager.hpp"
 #include "torrent_core_config.hpp"
 #include "base_torrent_core_cntl.hpp"
-#include "shared_buffer.hpp"
+#include "torrent_core_event_handler.hpp"
 
 #if defined(__GNUG__)
 #	pragma GCC system_header
@@ -40,6 +41,7 @@ struct torrent_core_settings {
 struct torrent_core_params {
 	setting_manager_ptr setting_manager;
 	base_torrent_core_cntl_ptr controller;
+	torrent_core_event_handler_ptr event_handler;
 };
 
 /**

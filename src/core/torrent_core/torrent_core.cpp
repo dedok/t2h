@@ -51,6 +51,10 @@ bool torrent_core::launch_service()
 								params_.controller->availables_categories());
 		
 		shared_buffer_ = new details::shared_buffer();
+		
+		params_.controller->set_event_handler(params_.event_handler);
+		params_.controller->set_setting_manager(params_.setting_manager);
+		params_.controller->set_shared_buffer(shared_buffer_);
 
 		if (!params_.controller->set_session(core_session_)) {
 			TCORE_WARNING("can not init torrent_core engine, settings not valid or ill formet")
@@ -58,9 +62,7 @@ bool torrent_core::launch_service()
 			delete shared_buffer_; shared_buffer_ = NULL;
 			return false;
 		}
-
-		params_.controller->set_shared_buffer(shared_buffer_);
-
+	
 		if (!init_core_session()) {
 			TCORE_WARNING("can not init torrent_core engine, settings not valid or ill formet")
 			delete core_session_; core_session_ = NULL;
@@ -244,9 +246,10 @@ std::string torrent_core::start_torrent_download(torrent_core::size_type torrent
 	if (ex_info) {
 		libtorrent::torrent_info const & info = ex_info->handle.get_torrent_info();
 		if (info.num_files() > file_id && file_id >= 0) {
-			ex_info->handle.file_priority(file_id, details::file_ex_info::normal_prior);
+			ex_info->handle.file_priority(file_id, details::file_info::normal_prior);
 			ex_info->handle.force_reannounce();	
 			core_session_->post_torrent_updates();
+			libtorrent::torrent_info const & info = ex_info->handle.get_torrent_info();
 			return std::string(ex_info->sandbox_dir_name + "/" + info.file_at(file_id).path);
 		} // if
 	} // if
@@ -273,7 +276,7 @@ void torrent_core::pause_download(torrent_core::size_type torrent_id, int file_i
 	if (ex_info) {
 		libtorrent::torrent_info const & info = ex_info->handle.get_torrent_info();
 		if (info.num_files() > file_id && file_id >= 0) {
-			ex_info->handle.file_priority(file_id, details::file_ex_info::off_prior);
+			ex_info->handle.file_priority(file_id, details::file_info::off_prior);
 			core_session_->post_torrent_updates();
 		} // if
 	} // if
@@ -297,7 +300,7 @@ void torrent_core::resume_download(torrent_core::size_type torrent_id, int file_
 		libtorrent::torrent_info const & native_info = ex_info->handle.get_torrent_info();
 		ex_info->handle.resume();
 		if (native_info.num_files() > file_id && file_id >= 0) {
-			ex_info->handle.file_priority(file_id, details::file_ex_info::normal_prior);
+			ex_info->handle.file_priority(file_id, details::file_info::normal_prior);
 			core_session_->post_torrent_updates();
 		} // if
 	} // if
