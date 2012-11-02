@@ -34,27 +34,37 @@ static void replace_slashes(std::string & path)
 	}
 }
 
-static bool file_info_update_avaliable_bytes(file_info & fi) 
-{
-	int pieces_processed_in_seq = 0;
-	for (std::size_t first = fi.last_in_seq; 
-		first != fi.pieces_state.size(); 
-		++first) 
-	{
-		if (fi.pieces_state.at(first) != file_info::piece_avaliable)
-			break;
-		
-		boost::int64_t const bytes_av = fi.avaliable_bytes + fi.block_size; 
-		(bytes_av < fi.size) ? fi.avaliable_bytes = bytes_av : fi.avaliable_bytes = fi.size;
-		fi.last_in_seq = first;
-		
-		++pieces_processed_in_seq;
-	} // for
-	return (pieces_processed_in_seq >= fi.max_pieces_processed ? true : false);
-}
-
 static inline bool file_info_piece_in_range(file_info const & fi, int piece) 
 	{ return (piece >= fi.pieces_range_first && piece <= fi.pieces_range_last); }
+
+static void file_info_set_pieces_priority_(file_info & info, libtorrent::torrent_handle & handle) 
+{
+	int const req_range_last = info.pieces_download_offset_min + info.pieces_download_offset;
+	int const last = (req_range_last > info.pieces_range_last) ? info.pieces_range_last : req_range_last;
+	for (int it = info.pieces_download_offset_min; it > last; ++it)
+		handle.piece_priority(it, file_info::max_prior);
+	info.pieces_download_offset_min = last;
+}
+
+static void file_info_clear_priority(file_info & finfo, libtorrent::torrent_handle & handle) 
+{
+	for (int it = finfo.pieces_range_first, last = finfo.pieces_range_last; it > last; ++it)
+		handle.piece_priority(it, file_info::off_prior);
+}
+
+static inline int file_info_get_download_offset(file_info const & info, int max_partial_download_size) 
+{		
+	int size = info.block_size;
+	if (max_partial_download_size > info.size)
+		return info.pieces;
+	
+	int const dow_offset = max_partial_download_size / info.block_size;
+	if (dow_offset >= info.pieces)
+		return info.pieces;
+	
+	return dow_offset;
+}
+
 
 /**
  * Public file_info api
@@ -64,43 +74,42 @@ file_info file_info_add(file_info::list_type & flist,
 						libtorrent::file_entry const & fe, 
 						libtorrent::torrent_info const & ti,
 						libtorrent::torrent_handle const & handle,
-						int file_index) 
+						int file_index,
+						int max_partial_download_size) 
 {
 	using namespace libtorrent;
 
-	file_info info;
-	
-	info.pieces_processed = 0;
-	info.file_index = file_index;
+	file_info info;	
+
 	int const pieces_range_first = ti.map_file(file_index, 0, 0).piece;
 	int const pieces_range_last = ti.map_file(file_index, (std::max)(size_type(fe.size) - 1, size_type(0)), 0).piece;
-	int const pieces = (pieces_range_last - pieces_range_first) + 1;
-	info.pieces_state.resize(pieces); info.block_size = ti.piece_length();
-	info.max_pieces_processed = (pieces < 5) ? pieces : 5;
-	info.pieces_range_first = pieces_range_first; info.pieces_range_last = pieces_range_last;
-	for (int piece_count = pieces_range_first, count = 0; 
-		count < pieces; 
-		++count, ++piece_count) 
-	{
-		info.pieces_state.at(count) = piece_count;
-	}
+	int const block_size = handle.status().block_size;
 	
-	std::string const full_file_path = 
-			(boost::filesystem::path(handle.save_path()) / boost::filesystem::path(fe.path)).string(); 
-	info.path = full_file_path, info.size = fe.size, info.avaliable_bytes = info.last_in_seq = 0;	
-	flist.push_back(info);
+	/* initialize file information */
+	info.file_index = file_index;
+	info.path = (boost::filesystem::path(handle.save_path()) / boost::filesystem::path(fe.path)).string(); 
+	info.size = fe.size; 
+	info.block_size = (block_size > info.size) ? info.size : block_size;
 
+	/* initialize file pieces information */
+	info.pieces = (pieces_range_last - pieces_range_first) + 1;
+	info.pieces_download_offset_min = info.pieces_range_first = pieces_range_first; 
+	info.pieces_range_last = pieces_range_last;
+	info.pieces_download_offset = file_info_get_download_offset(info, max_partial_download_size); 
+	info.pieces_download_count = info.avaliable_bytes = info.total_pieces_download_count = 0;
+	flist.push_back(info);
 	return info;
-}
+} 
 
 file_info file_info_add_by_index(file_info::list_type & flist, 
 								libtorrent::torrent_info const & ti, 
 								libtorrent::torrent_handle const & handle,
-								int file_index) 
+								int file_index,
+								int max_partial_download_size) 
 {
 	using namespace libtorrent;	
 	file_entry const & fe = ti.file_at(file_index);	
-	return file_info_add(flist, fe, ti, handle, file_index);	
+	return file_info_add(flist, fe, ti, handle, file_index, max_partial_download_size);	
 }
 
 bool file_info_bin_search(file_info::list_type const & flist, int piece, file_info & info) 
@@ -145,35 +154,46 @@ bool file_info_search_by_index(file_info::list_type const & flist, int index, fi
 	return false;
 }
 
-boost::tuple<bool, file_info> file_info_update(file_info::list_type & flist, int piece) 
+void file_info_set_pieces_priority(
+	file_info::list_type & flist, libtorrent::torrent_handle & handle, int index, bool clear_priority_first) 
 {
 	for (file_info::list_type::iterator first = flist.begin(), last = flist.end();
 		first != last; 
 		++first)
 	{
-		if (file_info_piece_in_range(*first, piece)) {
-			std::vector<int>::iterator item = 
-				std::find(first->pieces_state.begin(), first->pieces_state.end(), piece);
-			if (item != first->pieces_state.end()) {
-				++first->pieces_processed;
-				*item = file_info::piece_avaliable;
-				if (first->pieces_processed >= first->max_pieces_processed) {
-					first->pieces_processed = 0;
-					bool const seq_is_ready = file_info_update_avaliable_bytes(*first);
-					return boost::make_tuple(seq_is_ready, file_info(*first));
-				} // if
-			}
-			break;
+		if (first->file_index == index) {
+			if (clear_priority_first)
+				file_info_clear_priority(*first, handle);
+			file_info_set_pieces_priority_(*first, handle);
+			return;
+		}
+	} // for
+}
+
+boost::tuple<bool, file_info> 
+	file_info_update(file_info::list_type & flist, libtorrent::torrent_handle & handle, int piece) 
+{
+	for (file_info::list_type::iterator first = flist.begin(), last = flist.end();
+		first != last; 
+		++first)
+	{
+		if (file_info_piece_in_range(*first, piece)) {	
+			++first->pieces_download_count;
+			if (first->total_pieces_download_count < first->pieces) 
+				++first->total_pieces_download_count;
+
+			if (first->pieces_download_count > first->pieces_download_offset || 
+				first->total_pieces_download_count == first->pieces) 
+			{	
+				first->avaliable_bytes = first->total_pieces_download_count * first->block_size;
+				file_info_set_pieces_priority_(*first, handle);
+				first->pieces_download_count = 0;
+				return boost::make_tuple(true, file_info(*first));
+			} // if
 		} // if
 	} // for
 	return boost::make_tuple(false, file_info());
 }
-
-file_info file_info_update(file_info::list_type & flist) 
-{
-
-}
-
 
 void file_info_remove(file_info::list_type & flist, std::string const & path) 
 {

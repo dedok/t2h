@@ -21,7 +21,7 @@ struct static_settings {
 	std::string tc_root;							// Working root, must be a full path
 	bool auto_error_resolving;						// Auto error detencting and resolving
 	std::size_t resolve_checkout;					// Resolving check out duration for each torrent in queue, in seconds
-	boost::int64_t max_async_download_size; 		// Not used for now, in kilobytes
+	int max_partial_download_size;					//
 	bool partial_files_download;					// Allow to partrial files download
 	bool sequential_download;						// Allow sequential download
 	bool resolve_countries;							// Allow to use resolve countries

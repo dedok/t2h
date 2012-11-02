@@ -246,6 +246,7 @@ std::string torrent_core::start_torrent_download(torrent_core::size_type torrent
 	if (ex_info) {
 		libtorrent::torrent_info const & info = ex_info->handle.get_torrent_info();
 		if (info.num_files() > file_id && file_id >= 0) {
+			details::file_info_set_pieces_priority(ex_info->avaliables_files, ex_info->handle, file_id, true);
 			ex_info->handle.file_priority(file_id, details::file_info::normal_prior);
 			ex_info->handle.force_reannounce();	
 			core_session_->post_torrent_updates();

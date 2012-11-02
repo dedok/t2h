@@ -4,6 +4,7 @@
 #include "http_transport_ev_handler.hpp"
 
 #include <iostream>
+#include <boost/filesystem.hpp>
 
 static char const * json_config = 
 "{\n"
@@ -14,8 +15,7 @@ static char const * json_config =
 "\"tc_root\" : \"tc_root\", \n"
 "\"tc_port_start\" : \"6881\",\n"
 "\"tc_port_end\" : \"6889\", \n"
-"\"tc_max_alert_wait_time\" : \"10\", \n" // mseconds
-"\"tc_max_async_download_size\" : \"5242880\"" // 5 mb 
+"\"tc_max_alert_wait_time\" : \"10\"" // mseconds
 "\n}";
 
 static syslogger_settings const log_settings = {
@@ -45,22 +45,28 @@ public :
 	
 	virtual void on_file_add(std::string const & file_path, boost::int64_t file_size) 
 	{
-		PRINT_ << "file path : " << file_path << " file size : " << file_size << std::endl;
+#if PRINT_ADD_EVENT
+		PRINT_ << "File path : " << file_path << std::endl 
+			<< "File size : " << file_size << std::endl;
+#endif
 	}
 
 	virtual void on_pause(std::string const & file_path) 
 	{
-		PRINT_ << "file path : " << file_path << std::endl;
+		PRINT_ << "File path : " << file_path << std::endl;
 	}
 
 	virtual void on_file_complete(std::string const & file_path, boost::int64_t avaliable_bytes) 
 	{
-		PRINT_ << "file path : " << file_path << " avaliable_bytes : " << avaliable_bytes << std::endl;
+		PRINT_ << "File path : " << file_path << std::endl 
+			<< "Avaliable_bytes : " << avaliable_bytes << std::endl;
 	}
 
 	virtual void on_progress_update(std::string const & file_path, boost::int64_t avaliable_bytes) 
 	{
-		PRINT_ << " file path : " << file_path << " avaliable_bytes : " << avaliable_bytes << std::endl;
+		boost::system::error_code ec;
+		PRINT_ << "Real file size : " << boost::filesystem::file_size(file_path, ec) << std::endl 
+				<< "File path : " << file_path << " avaliable_bytes : " << avaliable_bytes << std::endl;
 	}
 
 };
@@ -103,7 +109,7 @@ int main(int argc, char ** argv)
 
 		int file_id = 0;
 		for (;;) {
-			std::cout << "Path to : " << core.start_torrent_download(torrent_id, file_id) << std::endl;
+			std::cout << "Start download, path to : " << core.start_torrent_download(torrent_id, file_id) << std::endl;
 			std::cin.get(); ++file_id;
 		} // ! for
 	}

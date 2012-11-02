@@ -34,21 +34,22 @@ struct file_info {
 	 */
 	typedef std::list<file_info> list_type;
 	
-	static int const piece_avaliable = -2;
-	static std::size_t const off_prior = 0;
-	static std::size_t const normal_prior = 1;
-	static std::size_t const max_prior = 5;			
+	static int const off_prior = 0;
+	static int const normal_prior = 1;
+	static int const max_prior = 5;	
+	static int const over_max_prior = 7;
 	
+	int pieces;										// Pieces number in file
+	int total_pieces_download_count;				//
+	int pieces_download_count;						// Count of downloaded pieces(not total)
+	int pieces_download_offset;						// 
+	int pieces_download_offset_min;					//
 	boost::int64_t avaliable_bytes;					// Bytes which was downloaded and saved to the HDD(eg current size)
-	short max_pieces_processed:10;					//
-	short pieces_processed:10;						//
-	std::vector<int> pieces_state;					// The piece state in pieces range [start+first, first+last) for current file
-	int pieces_range_first;							//
-	int pieces_range_last;							//
+	int pieces_range_first;							// File piece range start offset
+	int pieces_range_last;							// File piece range end offset 
 	std::string path;								// Path to file(UTF8)
 	boost::int64_t size;							// Size of file(eg real/expected file size)
 	std::size_t block_size;							// Size of each pices(exclude last one)
-	int last_in_seq;								// The last sequential_torren
 	int file_index;									// File index, could be very useful in need to get some extended info from libtorrent::torrent_info::file_at
 };
 
@@ -60,22 +61,29 @@ file_info file_info_add(file_info::list_type & flist,
 						libtorrent::file_entry const & fe, 
 						libtorrent::torrent_info const & ti,
 						libtorrent::torrent_handle const & handle,
-						int file_index); 
+						int file_index,
+						int max_partial_download_size); 
 
 file_info file_info_add_by_index(file_info::list_type & flist, 
-								libtorrent::torrent_info const & info,
-								libtorrent::torrent_info const & handle,
-								int file_index); 
+								libtorrent::torrent_info const & info, 
+								int file_index,
+								int max_partial_download_size); 
 
 void file_info_remove(file_info::list_type & flist, std::string const & path);
 void file_info_remove(file_info::list_type & flist, int piece); 
 void file_info_reset(file_info::list_type & flist); 
 
 bool file_info_bin_search(file_info::list_type const & flist, int piece, file_info & info); 
-bool file_info_search(file_info::list_type const & flist, std::string const & path, file_info & info); 
+bool file_info_search(file_info::list_type const & flist, std::string const path, file_info & info); 
 bool file_info_search_by_index(file_info::list_type const & flist, int index, file_info & info);
 
-boost::tuple<bool, file_info> file_info_update(file_info::list_type & flist, int piece); 
+void file_info_set_pieces_priority(file_info::list_type & flist, 
+									libtorrent::torrent_handle & handle, 
+									int index, 
+									bool clear_priority_first = false);
+
+boost::tuple<bool, file_info> 
+	file_info_update(file_info::list_type & flist, libtorrent::torrent_handle & handle, int piece); 
 
 /**
  * Torrent extended informantion & functionality

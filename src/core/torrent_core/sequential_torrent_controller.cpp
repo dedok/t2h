@@ -168,7 +168,7 @@ void sequential_torrent_controller::setup_torrent(libtorrent::torrent_handle & h
 
 void sequential_torrent_controller::update_settings() 
 {
-	settings_.max_async_download_size = setting_manager_->get_value<boost::int64_t>("tc_max_async_download_size");
+	settings_.max_partial_download_size = setting_manager_->get_value<int>("tc_max_partial_download_size");
 	settings_.tc_root = setting_manager_->get_value<std::string>("tc_root");
 	settings_.auto_error_resolving = setting_manager_->get_value<bool>("tc_auto_error_resolving");
 	settings_.resolve_checkout = setting_manager_->get_value<std::size_t>("tc_resolve_checkout");
@@ -223,7 +223,7 @@ void sequential_torrent_controller::on_add_torrent(libtorrent::add_torrent_alert
 		return;
 	}
 
-	// TODO may be need to re-add torrent in follow two cases?	
+	// TODO may be need to re-add torrent in two follow cases?	
 	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(handle.save_path());
 	if (!ex_info) {
 		TCORE_WARNING("Torrent '%s' add failed, can not find extended info", handle.save_path().c_str())
@@ -243,8 +243,13 @@ void sequential_torrent_controller::on_add_torrent(libtorrent::add_torrent_alert
 		first != ti.end_files(); 
 		++first, ++index) 
 	{
-			details::file_info const fi = 
-			details::file_info_add(ex_info->avaliables_files, ti.files().at(first), ti, handle, index);
+		details::file_info const fi = 
+			details::file_info_add(ex_info->avaliables_files, 
+				ti.files().at(first), 
+				ti, 
+				handle, 
+				index,
+				settings_.max_partial_download_size);
 		event_handler_->on_file_add(fi.path, fi.size);
 	} // for
 	
@@ -335,8 +340,8 @@ void sequential_torrent_controller::on_piece_finished(libtorrent::piece_finished
 		return;
 	} // if
 
-	boost::tie(update_state, info) = details::file_info_update(ex_info->avaliables_files, alert->piece_index);
-	if (update_state) 
+	boost::tie(update_state, info) = details::file_info_update(ex_info->avaliables_files, alert->handle, alert->piece_index);
+	if (update_state)  
 		event_handler_->on_progress_update(info.path, info.avaliable_bytes);
 }
 

@@ -33,7 +33,7 @@ ADD_KEY_TYPE(tc_port_end, "", "", true)
 // torrent core keys, with some defaults values
 ADD_KEY_TYPE(hc_max_sync_timeout, "10", "", false)
 ADD_KEY_TYPE(tc_max_alert_wait_time, "15", "", false)
-ADD_KEY_TYPE(tc_max_async_download_size, "5242880", "", false)
+ADD_KEY_TYPE(tc_max_partial_download_size, "5242880", "", false)
 ADD_KEY_TYPE(tc_root, "", "doc_root", false)
 ADD_KEY_TYPE(tc_futures_timeout, "10", "", false)
 ADD_KEY_TYPE(tc_partial_files_download, "true", "", false)
@@ -163,7 +163,7 @@ void setting_manager::init_keys_storage()
 	key_storage_->reg<key_tc_port_start>("tc_port_start");
 	key_storage_->reg<key_tc_port_end>("tc_port_end");
 	key_storage_->reg<key_tc_max_alert_wait_time>("tc_max_alert_wait_time");
-	key_storage_->reg<key_tc_max_async_download_size>("tc_max_async_download_size");
+	key_storage_->reg<key_tc_max_partial_download_size>("tc_max_partial_download_size");
 	key_storage_->reg<key_tc_root>("tc_root");
 	key_storage_->reg<key_tc_futures_timeout>("tc_futures_timeout");
 	key_storage_->reg<key_tc_partial_files_download>("tc_partial_files_download");
