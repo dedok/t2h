@@ -28,19 +28,23 @@ namespace t2h_core { namespace details {
 /**
  *	File extended information
  */
+
 struct file_info {
 	/**
-	 *	
+	 *	list of files for each torrent
 	 */
 	typedef std::list<file_info> list_type;
 	
+	/**
+	 * pieces and files priority states
+	 */
 	static int const off_prior = 0;
 	static int const normal_prior = 1;
 	static int const max_prior = 5;	
 	static int const over_max_prior = 7;
 	
 	int pieces;										// Pieces number in file
-	int total_pieces_download_count;				//
+	int total_pieces_download_count;				// Cound of downloaded pieces
 	int pieces_download_count;						// Count of downloaded pieces(not total)
 	int pieces_download_offset;						// 
 	int pieces_download_offset_min;					//

@@ -221,8 +221,10 @@ transport_ev_handler::recv_result transport_ev_handler::on_mget_request(
 	} else {
 		/* If range header not in request just send all bytes of file */
 		details::send_content_reply_param const scrp = { request_path, boost::filesystem::file_size(request_path, fs_error) };
-		if (fs_error)
+		if (fs_error) {
+			HCORE_WARNING("path '%s' not exist", request_path.c_str())
 			return error(reply_buf, http_reply::not_found);
+		}
 		details::send_content_reply sc_reply(reply_buf, scrp);
 		if (!sc_reply.do_formatting_reply()) {
 			HCORE_WARNING("preparing reply failed for req. path '%s'", request_path.c_str())
