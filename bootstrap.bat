@@ -58,7 +58,7 @@ goto run_cmake
 :: bootstrap helpers
 
 :run_cmake
-	set cmake_extra=
+	set cmake_extra=-DT2H_INT_WORKAROUND:BOOL=TRUE
 	if exist %export_vars_script% ( 
 		:: NOTE export_vars_script_output must echo cmake args.
 		if exist %CD%\export_vars_script_output del %CD%\export_vars_script_output
@@ -67,7 +67,7 @@ goto run_cmake
 		del export_vars_script_output
 		echo.
 		echo Found "%export_vars_script%", 
-		echo cmake envt. args set to "%cmake_envt_args%"
+		echo cmake envt. args set to "%cmake_envt_args%" %cmake_extra%
 		echo.
 	)
 	if "%want_eiw%"=="yes" set cmake_extra=-DT2H_INT_WORKAROUND:BOOL=TRUE

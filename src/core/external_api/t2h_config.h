@@ -13,6 +13,7 @@
 /**
  * Set up call conversion for the current platform 
  */
+#define T2H_EXTERNAL_API_CALL_CONVERION __cdecl
 #if defined(WIN32) || defined(WIN64) || defined(__CYGWIN__)
 #	if !defined(T2H_EXTERNAL_API_CALL_CONVERION)
 #		define EXPORT_API __stdcall
@@ -21,24 +22,26 @@
 #	endif
 #else 
 #	define EXPORT_API
-#endif// WINXX
+#endif // WINXX
 
 /**
  * Set up export functions signature for the current platform
  */
-#if defined(WIN32) || defined(WIN64) || defined(__CYGWIN__)
+#if (defined(WIN32) || defined(WIN64) || defined(__CYGWIN__)) && defined(T2H_SHARED)
 #	if defined(T2H_EXPORT) && !defined(T2H_IMPORT)
 #		define T2H_SPEC __declspec(dllexport)
 #	else
 #		define T2H_SPEC __declspec(dllimport)
-#	endif  
-#else 
-#	if __GNUC__ >= 4
-#		define T2H_SPEC __attribute__ ((visibility ("default")))
-#	else
-#		error "Too old gcc detected, min support version is gcc 4.0"
-#	endif // __GNUC__
+#	endif   
 #endif // WINXX
+
+#if defined(__GNUC__) && __GNUC__ >= 4
+#	define T2H_SPEC __attribute__ ((visibility ("default")))
+#endif // __GNUC__
+
+#if !defined(T2H_SPEC)
+#	define T2H_SPEC
+#endif // T2H_SPEC
 
 /**
  *	Set up for the current platform T2H_TORRENT_ID_TYPE_ and T2H_SIZE_TYPE types
@@ -64,7 +67,7 @@
 #	endif // WINX
 #endif // T2H_INT_WORKAROUND
 
-// TODO test this cases with ObjC compiler
+// TODO Test this cases with ObjC compiler under Mac OS X
 #if defined(__cplusplus)
 #	define EXTERN_C extern "C" 
 #else
@@ -76,4 +79,3 @@
 #define T2H_STD_API T2H_STD_API_(void)
 
 #endif
-

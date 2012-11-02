@@ -11,4 +11,3 @@ EXPORTS
 	t2h_resume_download PRIVATE
 	t2h_delete_torrent PRIVATE
 	t2h_stop_download PRIVATE
-	
