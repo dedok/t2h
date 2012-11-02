@@ -13,7 +13,7 @@
  * details/hidden api and types
  */
 
-#if (defined(WIN32) || defined(WIN64)) && defined(T2H_EXPORT)
+#if (defined(WIN32) || defined(WIN64)) && defined(T2H_SHARED)
 #	define T2H_SHARED_EXPORT_FUNCDNAME comment(linker, "/EXPORT:" __FUNCTION__ "=" __FUNCDNAME__)
 #else
 #	define T2H_SHARED_EXPORT_FUNCDNAME
@@ -318,4 +318,3 @@ T2H_STD_API t2h_stop_download(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id)
 #undef T2H_PASSED_HANDLES_CHECK
 #undef T2H_RETURN_IF
 #undef T2H_SHARED_EXPORT_FUNCDNAME
-
