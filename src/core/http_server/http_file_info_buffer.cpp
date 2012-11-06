@@ -45,7 +45,9 @@ void file_info_buffer::remove_info(std::string const & path)
 	boost::lock_guard<boost::mutex> guard(lock_);
 	infos_type::iterator found = infos_.find(path);
 	if (found != infos_.end()) {
+#if defined(T2H_DEEP_DEBUG)
 		HCORE_TRACE("removing file info entry '%s'", found->second->file_path.c_str())
+#endif // T2H_DEEP_DEBUG
 		infos_.erase(found);	
 	}
 }
@@ -55,12 +57,16 @@ void file_info_buffer::update_info(hc_file_info_ptr info)
 	boost::lock_guard<boost::mutex> guard(lock_);
 	infos_type::iterator found = infos_.find(info->file_path);
 	if (found == infos_.end()) {
+#if defined(T2H_DEEP_DEBUG)
 		HCORE_TRACE("adding new file info entry '%s'", info->file_path.c_str())
+#endif // T2H_DEEP_DEBUG
 		infos_[info->file_path] = info;
 		return;
 	}
+#if defined(T2H_DEEP_DEBUG)
 	HCORE_TRACE("updating existing file info entry '%s', bytes avaliable '"SL_SSIZE_T"'", 
 		info->file_path.c_str(), info->avaliable_bytes)
+#endif // T2H_DEEP_DEBUG
 	found->second->file_size = info->file_size;
 	found->second->avaliable_bytes = info->avaliable_bytes;
 	found->second->waiter.notify_all();
@@ -75,6 +81,4 @@ hc_file_info_ptr file_info_buffer::get_info(std::string const & path) const
 	return hc_file_info_ptr();
 }
 
-
 } } // namespace t2h_core, details
-
