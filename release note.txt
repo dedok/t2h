@@ -1,0 +1,52 @@
+version 1.2.9.2
+
+http core
+	--add full get/head support(HTTP 1.1);
+	--improve sync. with filesystem and;
+	--fix ill formed reply(partial request);
+	--add mime type support;
+	--add async. notification model between http core and torrent core;
+	--fix IO exception inside partial request reply;
+
+torrent core
+	--improve sequential download algo.;
+	--add aync. notification model between http core and torrent core;
+	--performance tuning overl libtorrent;
+	--add file information buffer(for each torrent in torrents queue);
+	--add session serialization;
+
+libcommon
+	--Improve notification center;
+
+settings_manager(settings)
+	--add new keys tc_max_partial_download_size, hc_max_sync_timeout;
+	--add alias key features;
+
+tests
+	--add http reply test;
+	--add http request test;
+	--add http server test;
+	--add notification center test;
+	
+version 1.0.1.1
+
+http core 
+	--fixed http server reply under windows(Zeros bug);
+	--add root request, example client : GET ... http://XXX/ -> server : ... 200 ok;
+	--Range header in client GET request is not required
+	(if Range header not present in client GET req. server will return from file start to end in reply);
+	--fixed torrent_info_to_json function result;
+	--fixed logging order in transport_ev_handler async operations;
+	--several small improvments;
+
+libcommon 
+	--fixed asio_tansport_impl session_shutdown crash in case of IO error;
+	--add notification_center object(for future improvments);
+
+settings_manager(settings)
+	--key tc_root as default value = doc_root;
+
+full_model
+	--fixed crash on NULL value return from get_torrent_files();
+
+ 
