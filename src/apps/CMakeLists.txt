@@ -4,9 +4,6 @@ if (T2H_CORE_SHARED)
 	set(link_depends t2h_core ${Boost_LIBRARIES})
 else()
 	set(link_depends common t2h_core ${libtorrent_LIBS} ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES})	
-	# Http server application
-	add_executable(http_server EXCLUDE_FROM_ALL http_server.cpp)
-	target_link_libraries(http_server common t2h_core ${link_depends})
 endif()
 
 # Full model application

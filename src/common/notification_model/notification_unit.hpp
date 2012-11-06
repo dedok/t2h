@@ -66,7 +66,7 @@ private :
 	boost::mutex mutable pn_lock_;
 	boost::condition_variable waiters_;
 	boost::thread * execution_loop_thread_;
-	bool stop_work_;
+	volatile bool stop_work_;
 
 	notification_unit_param p_;
 };

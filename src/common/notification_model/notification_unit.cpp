@@ -31,13 +31,16 @@ notification_unit::notification_unit(notification_unit_param const & param) :
 
 notification_unit::~notification_unit() 
 {
-	boost::lock_guard<boost::mutex> guard(pn_lock_);
+	pn_lock_.lock();
 	if (execution_loop_thread_) {
-		stop_work_ = true;
+		stop_work_ = true;	
 		waiters_.notify_all();
+		pn_lock_.unlock();
 		execution_loop_thread_->join();
+		pn_lock_.lock();
 		delete execution_loop_thread_;
 	} // execution_loop_thread_
+	pn_lock_.unlock();
 }
 
 void notification_unit::add_notification(notification_ptr notification) 

@@ -59,7 +59,7 @@ void file_info_buffer::update_info(hc_file_info_ptr info)
 		infos_[info->file_path] = info;
 		return;
 	}
-	HCORE_TRACE("updating existing file info entry '%s', bytes avaliable '%i'", 
+	HCORE_TRACE("updating existing file info entry '%s', bytes avaliable '"SL_SSIZE_T"'", 
 		info->file_path.c_str(), info->avaliable_bytes)
 	found->second->file_size = info->file_size;
 	found->second->avaliable_bytes = info->avaliable_bytes;

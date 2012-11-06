@@ -10,6 +10,7 @@ target_link_libraries(http_reply_test common ${Boost_LIBRARIES})
 add_executable(nc_test EXCLUDE_FROM_ALL notification_center_test.cpp)
 target_link_libraries(nc_test common ${Boost_LIBRARIES})
 
+# htpp header parser test
 add_executable(hhp_test EXCLUDE_FROM_ALL http_header_parser_test.cpp)
 target_link_libraries(hhp_test common ${Boost_LIBRARIES})
 

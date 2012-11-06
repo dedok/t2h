@@ -128,13 +128,14 @@ public :
 			first != last;
 			++first)
 		{
-			sleep(1);
-			boost::int64_t const offset = first->size / 10;
+			boost::int64_t const offset = first->size / 30;
 			boost::int64_t cur_offset = offset;
 			while (cur_offset < first->size) {	
+				sleep(1);
 				cur_offset += offset;
 				if (cur_offset > first->size)
 					cur_offset = first->size;
+				std::cout << " file path : " << first->path << " file size  : "  << cur_offset << std::endl;
 				event_sender_.on_progress_update(first->path, cur_offset);
 			} // while
 			event_sender_.on_file_complete(first->path, first->size);
@@ -195,6 +196,7 @@ int main(int argc, char* argv[])
 
 	try 
 	{
+		common::notification_center_ptr nc = t2h_core::core_notification_center();
 		core_notification_source cns;
 		setting_manager->load_config(po.config_path);
 		http_server.reset(new t2h_core::http_server_core(setting_manager));

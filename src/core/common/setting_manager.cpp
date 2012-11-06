@@ -31,7 +31,7 @@ ADD_KEY_TYPE(tc_port_start, "", "", true)
 ADD_KEY_TYPE(tc_port_end, "", "", true)
 
 // torrent core keys, with some defaults values
-ADD_KEY_TYPE(hc_max_sync_timeout, "10", "", false)
+ADD_KEY_TYPE(hc_max_sync_timeout, "120", "", false)
 ADD_KEY_TYPE(tc_max_alert_wait_time, "15", "", false)
 ADD_KEY_TYPE(tc_max_partial_download_size, "5242880", "", false)
 ADD_KEY_TYPE(tc_root, "", "doc_root", false)
