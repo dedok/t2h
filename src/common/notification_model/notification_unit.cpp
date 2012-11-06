@@ -73,7 +73,7 @@ bool notification_unit::copy_pending_notifications_unsafe()
 	
 	for (notification_ptr event; pending_notifications_.size() != 0;) {
 		event = pending_notifications_.front();
-		BOOST_ASSERT(!event)
+		BOOST_ASSERT(event != NULL);
 		notifications_.push_back(event);
 		pending_notifications_.pop_front();
 	}
@@ -85,7 +85,7 @@ void notification_unit::notify_receiver()
 {
 	for (notification_ptr event; pending_notifications_.size() != 0;) {
 		event = notifications_.front();
-		BOOST_ASSERT(!event)
+		BOOST_ASSERT(event != NULL);
 		if (event->get_state() != base_notification::ignore || 
 			event->get_state() != base_notification::done) 
 		{

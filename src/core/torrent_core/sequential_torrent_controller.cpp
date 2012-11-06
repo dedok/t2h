@@ -78,7 +78,7 @@ bool sequential_torrent_controller::set_session(libtorrent::session * session_re
 		update_settings();
 		session_ref_ = session_ref;
 	}
-	catch (std::exception const & expt) 
+	catch (std::exception const &) 
 	{
 		return false;
 	}
