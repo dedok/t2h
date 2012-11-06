@@ -71,20 +71,20 @@ bool notification_unit::copy_pending_notifications_unsafe()
 	if (pending_notifications_.empty())
 		return false;
 	
-	for (notification_ptr event; pending_notifications_.size() != 0;) {
-		event = pending_notifications_.front();
+	while (!pending_notifications_.empty()) {
+		notification_ptr event = pending_notifications_.front();
 		BOOST_ASSERT(event != NULL);
 		notifications_.push_back(event);
 		pending_notifications_.pop_front();
-	}
+	} // while
 	
 	return true;
 }
 
 void notification_unit::notify_receiver() 
 {
-	for (notification_ptr event; pending_notifications_.size() != 0;) {
-		event = notifications_.front();
+	while (!notifications_.empty()) {
+		notification_ptr event = notifications_.front();
 		BOOST_ASSERT(event != NULL);
 		if (event->get_state() != base_notification::ignore || 
 			event->get_state() != base_notification::done) 
@@ -94,7 +94,7 @@ void notification_unit::notify_receiver()
 				event->set_state(base_notification::done);
 		} // if 
 		notifications_.pop_front();
-	}
+	} // while
 }
 
 void notification_unit::execution_loop() 

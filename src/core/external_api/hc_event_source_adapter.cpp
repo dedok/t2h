@@ -5,8 +5,7 @@
 
 #define SEND_NOTIFICATION(recv_name, n) 								\
 do {																	\
-	common::notification_center_ptr nc = core_notification_center();	\
-	nc->send_message(recv_name, n);										\
+	notification_center_->send_message(recv_name, n);					\
 }while(0);																
 
 namespace t2h_core { namespace details {
@@ -15,7 +14,9 @@ namespace t2h_core { namespace details {
  * Public hc_event_source_adapter api
  */
 hc_event_source_adapter::hc_event_source_adapter() 
-	: torrent_core_event_handler(), recv_name_("hcore_notification_recv") 
+	: torrent_core_event_handler(), 
+	recv_name_("hcore_notification_recv"),
+	notification_center_(core_notification_center())
 { 
 }
 

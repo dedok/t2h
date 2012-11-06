@@ -135,7 +135,6 @@ public :
 				cur_offset += offset;
 				if (cur_offset > first->size)
 					cur_offset = first->size;
-				std::cout << " file path : " << first->path << " file size  : "  << cur_offset << std::endl;
 				event_sender_.on_progress_update(first->path, cur_offset);
 			} // while
 			event_sender_.on_file_complete(first->path, first->size);

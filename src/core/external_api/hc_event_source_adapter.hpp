@@ -2,6 +2,7 @@
 #define HC_EVENT_SOURCE_ADAPTER_HPP_INCLUDED
 
 #include "torrent_core_event_handler.hpp"
+#include "core_notification_center.hpp"
 
 namespace t2h_core { namespace details {
 
@@ -23,6 +24,7 @@ public :
 
 private :
 	std::string const recv_name_;
+	common::notification_center_ptr notification_center_;
 
 };
 
