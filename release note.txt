@@ -1,3 +1,14 @@
+version 1.2.9.5
+
+libcommon
+	--fixed hangs in dtor of common::notification_unit(dead lock in dtor and copy_pending_notifications)
+
+tests
+	--update and improve tests: http_server, notification_center
+
+settings manager
+	--update default value for hc_max_sync_timeout(120 sec)
+
 version 1.2.9.2
 
 http core
