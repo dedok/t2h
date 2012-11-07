@@ -34,6 +34,18 @@ static void replace_slashes(std::string & path)
 	}
 }
 
+static void normalize_slashes(std::string & path) 
+{
+#if defined(WIN32)
+	for (std::size_t it = 0, last = path.size(); it < last; ++it) {
+		if (path.at(it) == '\\')
+			path.at(it) = '/';
+	} 
+#endif // WIN32
+}
+
+static void replace_slashes(std::string & path)
+
 static inline bool file_info_piece_in_range(file_info const & fi, int piece) 
 	{ return (piece >= fi.pieces_range_first && piece <= fi.pieces_range_last); }
 
@@ -87,7 +99,8 @@ file_info file_info_add(file_info::list_type & flist,
 	
 	/* initialize file information */
 	info.file_index = file_index;
-	info.path = (boost::filesystem::path(handle.save_path()) / boost::filesystem::path(fe.path)).string(); 
+	info.path = handle.save_path() + "/" + fe.path; 
+	normalize_slashes(info.path);
 	info.size = fe.size; 
 	info.block_size = (block_size > info.size) ? info.size : block_size;
 
@@ -128,11 +141,13 @@ bool file_info_bin_search(file_info::list_type const & flist, int piece, file_in
 
 bool file_info_search(file_info::list_type const & flist, std::string const & path, file_info & info) 
 {
+	std::string path_ = path;
+	normalize_slashes(path_);
 	for (file_info::list_type::const_iterator first = flist.begin(), last = flist.end();
 		first != last; 
 		++first)
 	{
-		if (first->path == path) {
+		if (first->path == path_) {
 			info = *first;
 			return true;
 		}
