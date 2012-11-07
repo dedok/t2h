@@ -11,14 +11,15 @@
 #define HTTP_SERVER_LOG_PREFIX "HTTP SERVER CORE"
 #define HFUNCTION_PREFIX __FUNCTION__
 
-#define HCORE_LOG_MAX_MESSAGE_SIZE 4096*3
+#define HCORE_LOG_MAX_MESSAGE_SIZE SYS_LOGGER_MAX_MESSAGE_SIZE
 
 #define HCORE_LOG_GENERIC(log_type, ...)																		\
 do {																											\
-	char vat_[HCORE_LOG_MAX_MESSAGE_SIZE];																		\
+	char * vat_ = new char[HCORE_LOG_MAX_MESSAGE_SIZE];															\
 	std::memset(vat_, '\0', HCORE_LOG_MAX_MESSAGE_SIZE);														\
 	std::sprintf(vat_, __VA_ARGS__);																			\
 	log_type("%s [%s] %s %s", HTTP_SERVER_LOG_PREFIX, CORE_VERSION_STRING, HFUNCTION_PREFIX, vat_)				\
+	delete vat_; vat_ = NULL;																					\
 } while(0); 
 
 #if defined (T2H_DEBUG)

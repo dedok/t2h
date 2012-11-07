@@ -23,12 +23,13 @@
 
 #define SYS_LOGGER_MAX_MESSAGE_SIZE 256 * sizeof(char)
 
-#define TEMPLATE_SYS_LOG_NOTIFY_(log_type, ...)					\
-do {															\
-	char message_[SYS_LOGGER_MAX_MESSAGE_SIZE + 1];				\
-	std::memset(message_, '\0', SYS_LOGGER_MAX_MESSAGE_SIZE);	\
-	std::sprintf(message_, __VA_ARGS__);						\
-	log_type(message_);											\
+#define TEMPLATE_SYS_LOG_NOTIFY_(log_type, ...)						\
+do {																\
+	char * message_ = new char[SYS_LOGGER_MAX_MESSAGE_SIZE + 1];	\
+	std::memset(message_, '\0', SYS_LOGGER_MAX_MESSAGE_SIZE);		\
+	std::sprintf(message_, __VA_ARGS__);							\
+	log_type(message_);												\
+	delete message_; message_ = NULL;								\
 } while(0); 
 
 #define DEBUG

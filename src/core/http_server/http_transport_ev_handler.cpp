@@ -197,6 +197,9 @@ transport_ev_handler::recv_result transport_ev_handler::on_mget_request(
 	boost::system::error_code fs_error;
 	
 	if (http_translate_range_header(rheader, req.headers)) {
+#if defined(T2H_DEBUG)
+	HCORE_TRACE("Partial content request, for path '%s'", request_path.c_str())
+#endif // T2H_DEBUG
 		/*	Sync with file system, follow logic has two bad cases : 
 		 	first is file not in buffer(means not exist), second sync with filesystem failed */	
 		bool sync_state = false;
@@ -219,6 +222,9 @@ transport_ev_handler::recv_result transport_ev_handler::on_mget_request(
 			return error(reply_buf, http_reply::internal_server_error);
 		} // if
 	} else {
+#if defined(T2H_DEBUG)
+		HCORE_TRACE("Request, for path '%s'", request_path)
+#endif // T2H_DEBUG
 		/* If range header not in request just send all bytes of file */
 		details::send_content_reply_param const scrp = { request_path, boost::filesystem::file_size(request_path, fs_error) };
 		if (fs_error) {
