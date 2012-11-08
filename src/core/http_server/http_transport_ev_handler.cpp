@@ -4,13 +4,9 @@
 #include "hcore_notification_recv.hpp" 
 #include "core_notification_center.hpp"
 
-#define VALIDATE_RANGE_HEADER(rh, info)						\
-do {														\
-	if (rheader.bstart_1 == utility::range_header::all)		\
-		rheader.bstart_1 = 0;								\
-	if (rheader.bend_1 == utility::range_header::all)		\
-		rheader.bend_1 = info->file_size;					\
-} while(0);	
+#include <boost/assert.hpp>
+
+#define T2H_CONTENT_REQUEST_SYNCED
 
 /** 
  * Public transport_ev_handler api 
@@ -30,15 +26,23 @@ static inline void t2h_http_fingerprint(utility::fingerprint & fp)
 transport_ev_handler::transport_ev_handler(setting_manager_ptr setting_manager) 
 	: base_transport_ev_handler(), 
 	setting_manager_(setting_manager), 
-	request_parser_(), 
-	doc_root_(),
-	fp_(),
+	settings_(),	
+	request_parser_(),
 	hcore_recv_()
-{
+{	
+	BOOST_ASSERT(setting_manager_ != NULL);
+	
+	settings_.doc_root = setting_manager_->get_value<std::string>("doc_root");
+	BOOST_ASSERT(settings_.doc_root.size() != 0);
+
+	settings_.max_allowed_size_for_reply = 1 * (boost::int64_t)setting_manager_->get_value<std::size_t>("hc_max_allowed_size_for_reply");
+	BOOST_ASSERT(settings_.max_allowed_size_for_reply != 0);
+	
+	settings_.max_sync_timeout = setting_manager_->get_value<std::size_t>("hc_max_sync_timeout");	
+	details::t2h_http_fingerprint(settings_.fp);
+
 	hcore_recv_ = common::notification_receiver_ptr(new hcore_notification_recv(*this));
 	core_notification_center()->add_notification_receiver(hcore_recv_);
-	doc_root_ = setting_manager_->get_value<std::string>("doc_root");
-	details::t2h_http_fingerprint(fp_);
 }
 
 transport_ev_handler::~transport_ev_handler() 
@@ -47,14 +51,12 @@ transport_ev_handler::~transport_ev_handler()
 }
 
 transport_ev_handler::recv_result transport_ev_handler::on_recv(
-	buffer_type const & recv_data, 
+	base_transport_ev_handler::recv_buffer_type const & recv_data, 
 	std::size_t recv_data_size, 
 	buffer_type & answ_data) 
 {
 	using namespace utility;
 	
-	HCORE_TRACE("processing recv data")
-
 	http_request client_request;
 
 	boost::tribool result = parse_recv(client_request, recv_data, recv_data_size);
@@ -115,7 +117,7 @@ void transport_ev_handler::on_file_update(
  * Private transport_ev_handler api 
  */
 boost::tribool transport_ev_handler::parse_recv(
-	utility::http_request & request, buffer_type const & data, std::size_t data_size)
+	utility::http_request & request, base_transport_ev_handler::recv_buffer_type const & data, std::size_t data_size)
 {
 	boost::tribool result;
 	request_parser_.reset_state();
@@ -142,7 +144,7 @@ transport_ev_handler::recv_result transport_ev_handler::proceed_execute_data(
 	if (is_root(request_path))  
 		return root_request(reply_buf);
 	
-	request_path = (doc_root_ / request_path).string();	
+	request_path = settings_.doc_root + request_path;
 	return dispatch_client_request(request_path, req, reply_buf);
 }
 
@@ -193,19 +195,18 @@ transport_ev_handler::recv_result transport_ev_handler::on_mget_request(
 {
 	using namespace utility;
 
-	range_header rheader;			
-	boost::system::error_code fs_error;
+	range_header rheader;
+	bool sync_state = false;
+	details::hc_file_info_ptr file_info;
 	
 	if (http_translate_range_header(rheader, req.headers)) {
 #if defined(T2H_DEBUG)
 	HCORE_TRACE("Partial content request, for path '%s'", request_path.c_str())
 #endif // T2H_DEBUG
 		/*	Sync with file system, follow logic has two bad cases : 
-		 	first is file not in buffer(means not exist), second sync with filesystem failed */	
-		bool sync_state = false;
-		details::hc_file_info_ptr file_info;
-
-		boost::tie(sync_state, file_info) = validate_and_sync_request_with_buffer(rheader, request_path); 
+		 	first is file not in buffer(means not exist ot was not added via notification center), 
+			second is sync with filesystem failed(network problem etc...) */	
+		boost::tie(sync_state, file_info) = sync_request_with_buffer(rheader, request_path); 
 		if (!sync_state && !file_info) {
 			HCORE_WARNING("'%s' path not found", request_path.c_str())
 			return error(reply_buf, http_reply::not_found);
@@ -222,10 +223,35 @@ transport_ev_handler::recv_result transport_ev_handler::on_mget_request(
 			return error(reply_buf, http_reply::internal_server_error);
 		} // if
 	} else {
+
 #if defined(T2H_DEBUG)
-		HCORE_TRACE("Request, for path '%s'", request_path)
+		HCORE_TRACE("Content request, for path '%s'", request_path.c_str())
 #endif // T2H_DEBUG
-		/* If range header not in request just send all bytes of file */
+
+#if defined(T2H_CONTENT_REQUEST_SYNCED)
+		/*  If client request a file content but the content a large for sending in single reply, 
+		 	so just do a reply via partial request(From begining to allowed_size_for_reading). */
+		rheader.bstart_1 = rheader.bend_1 = range_header::all;
+		boost::tie(sync_state, file_info) = sync_request_with_buffer(rheader, request_path);
+		if (!sync_state && !file_info) {
+			HCORE_WARNING("'%s' path not found", request_path.c_str())
+			return error(reply_buf, http_reply::not_found);
+		} else if (!sync_state && file_info) {
+			HCORE_WARNING("for path '%s' sync with filesystem failed", request_path.c_str())
+			return error(reply_buf, http_reply::internal_server_error);
+		} // else if
+		
+		details::partial_content_reply_param const pcr_param 
+			= details::create_partial_content_param(request_path, file_info->file_size, rheader.bstart_1, rheader.bend_1);
+		details::partial_content_reply pcr_reply(reply_buf, pcr_param);
+		if (!pcr_reply.do_formatting_reply()) {
+			HCORE_WARNING("preparing reply failed for req. path '%s'", request_path.c_str())
+			return error(reply_buf, http_reply::internal_server_error);
+		} // if
+#else 
+		/*  If range header not have range header just send file; 
+			NOTE : Next behavior is off, because VLC player(last tested 2.0.2) has bug/weirdness at the GET request send; */
+		boost::system::error_code fs_error;
 		details::send_content_reply_param const scrp = { request_path, boost::filesystem::file_size(request_path, fs_error) };
 		if (fs_error) {
 			HCORE_WARNING("path '%s' not exist", request_path.c_str())
@@ -236,7 +262,8 @@ transport_ev_handler::recv_result transport_ev_handler::on_mget_request(
 			HCORE_WARNING("preparing reply failed for req. path '%s'", request_path.c_str())
 			return error(reply_buf, http_reply::internal_server_error);
 		} // if
-	} // else
+#endif // T2H_CONTENT_REQUEST_SYNCED
+	}// else
 
 	return base_transport_ev_handler::sent_answ;
 }
@@ -285,17 +312,31 @@ bool transport_ev_handler::is_root(std::string const & path) const
 		true : false;
 }
 
+void transport_ev_handler::validate_rheader(utility::range_header & rheader, details::hc_file_info_ptr info) 
+{	
+	if (rheader.bstart_1 == utility::range_header::all)		
+		rheader.bstart_1 = 0;									
+	if (rheader.bend_1 == utility::range_header::all)		
+		rheader.bend_1 = info->file_size;					
+
+	boost::int64_t const size_for_reading = (1 * (rheader.bend_1 - rheader.bstart_1)) + 1;
+	if (size_for_reading > settings_.max_allowed_size_for_reply) {
+		boost::int64_t const new_end_offset = rheader.bstart_1 + settings_.max_allowed_size_for_reply; 
+		rheader.bend_1 = (new_end_offset >= info->file_size ? info->file_size: new_end_offset);
+	}
+}
+
 boost::tuple<bool, details::hc_file_info_ptr> 
-	transport_ev_handler::validate_and_sync_request_with_buffer(utility::range_header & rheader, std::string const & req_path) 
+	transport_ev_handler::sync_request_with_buffer(utility::range_header & rheader, std::string const & req_path) 
 {
 	using details::hc_file_info_ptr;
 
 	hc_file_info_ptr info = file_info_buffer_.get_info(req_path);
-	if (info) { 
-		VALIDATE_RANGE_HEADER(rheader, info)
+	if (info) {  
+		validate_rheader(rheader, info);
 		return boost::make_tuple(
 					file_info_buffer_.wait_avaliable_bytes(	
-						req_path, rheader.bend_1, setting_manager_->get_value<std::size_t>("hc_max_sync_timeout")), 
+						req_path, rheader.bend_1, settings_.max_sync_timeout), 
 					info);
 	}
 	return boost::make_tuple(false, info);

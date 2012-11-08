@@ -30,7 +30,7 @@ private:
 	boost::asio::io_service::strand strand_;
 	boost::asio::ip::tcp::socket socket_;
 	base_transport_ev_handler_ptr ev_handler_;
-	base_transport_ev_handler::buffer_type recv_buffer_;
+	base_transport_ev_handler::recv_buffer_type recv_buffer_;
 	base_transport_ev_handler::buffer_type reply_buffer_;
 
 };

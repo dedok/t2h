@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <utility>
+#include <boost/array.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -27,12 +28,13 @@ public :
 
 	typedef char byte_type;
 	typedef boost::shared_ptr<base_transport_ev_handler> ptr_type;
-	typedef std::vector<char> buffer_type;
+	typedef boost::array<byte_type, 8192> recv_buffer_type;
+	typedef std::vector<byte_type> buffer_type;
 
 	base_transport_ev_handler();
 	virtual ~base_transport_ev_handler();
 
-	virtual recv_result on_recv(buffer_type const & recv_data, std::size_t recv_data_size, buffer_type & answ_data) = 0;
+	virtual recv_result on_recv(recv_buffer_type const & recv_data, std::size_t recv_data_size, buffer_type & answ_data) = 0;
 	virtual void on_close() = 0;
 	virtual void on_error(int error_code) = 0;
 

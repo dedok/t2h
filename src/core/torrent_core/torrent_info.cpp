@@ -44,8 +44,6 @@ static void normalize_slashes(std::string & path)
 #endif // WIN32
 }
 
-static void replace_slashes(std::string & path)
-
 static inline bool file_info_piece_in_range(file_info const & fi, int piece) 
 	{ return (piece >= fi.pieces_range_first && piece <= fi.pieces_range_last); }
 

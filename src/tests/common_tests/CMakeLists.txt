@@ -14,3 +14,7 @@ target_link_libraries(nc_test common ${Boost_LIBRARIES})
 add_executable(hhp_test EXCLUDE_FROM_ALL http_header_parser_test.cpp)
 target_link_libraries(hhp_test common ${Boost_LIBRARIES})
 
+# http request parser test
+add_executable(hrp_test EXCLUDE_FROM_ALL http_request_parser_test.cpp)
+target_link_libraries(hrp_test common ${Boost_LIBRARIES})
+

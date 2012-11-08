@@ -13,6 +13,20 @@
 
 namespace t2h_core {
 
+namespace details {
+
+/**
+ * Hidden settings of transport_ev_handler
+ */
+struct static_tevh_settings {
+	boost::int64_t max_allowed_size_for_reply;			// max allowe size for reading, means how many bytes allowed send via single reply 
+	std::size_t max_sync_timeout;						// max wait time for syncing with filesystem
+	std::string doc_root;								// doc root
+	utility::fingerprint fp;							// unique id of this web service
+}; 
+
+}
+
 /**
  * transport_ev_handler
  */
@@ -22,7 +36,7 @@ public :
 	virtual ~transport_ev_handler();
 
 	/* recv callbacks ifaces impl*/
-	virtual recv_result on_recv(buffer_type const & recv_data, std::size_t recv_data_size, buffer_type & answ_data);
+	virtual recv_result on_recv(recv_buffer_type const & recv_data, std::size_t recv_data_size, buffer_type & answ_data);
 	virtual void on_error(int error_code);	
 	virtual void on_close();
 
@@ -36,7 +50,7 @@ public :
 
 private :	
 	/* data workers */
-	boost::tribool parse_recv(utility::http_request & request, buffer_type const & data, std::size_t data_size);
+	boost::tribool parse_recv(utility::http_request & request, recv_buffer_type const & data, std::size_t data_size);
 	recv_result proceed_execute_data(utility::http_request const & req, buffer_type & serv_reply);
 	recv_result more_data(buffer_type & answ_data);
 	recv_result error(buffer_type & serv_reply, utility::http_reply::status_type status);
@@ -59,12 +73,12 @@ private :
 	bool is_root(std::string const & path) const; 
 	bool is_valid_path(std::string const & path) const; 
 	boost::tuple<bool, details::hc_file_info_ptr> 
-		 validate_and_sync_request_with_buffer(utility::range_header & rheader, std::string const & req_path);
-
+		 sync_request_with_buffer(utility::range_header & rheader, std::string const & req_path);
+	void validate_rheader(utility::range_header & rheader, details::hc_file_info_ptr info);
+	
 	utility::http_request_parser request_parser_;
 	setting_manager_ptr setting_manager_;
-	boost::filesystem::path doc_root_;
-	utility::fingerprint fp_;
+	details::static_tevh_settings settings_;
 	common::notification_receiver_ptr hcore_recv_; 
 	details::file_info_buffer file_info_buffer_;
 

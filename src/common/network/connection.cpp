@@ -13,7 +13,6 @@ connection::connection(
 		recv_buffer_(),
 		reply_buffer_()
 {
-	recv_buffer_.resize(8192);
 }
 
 connection::~connection() 
@@ -44,7 +43,6 @@ void connection::handle_read(boost::system::error_code const & error, std::size_
 	if (!error) {
 		base_transport_ev_handler::recv_result const recv_result 
 			= ev_handler_->on_recv(recv_buffer_, bytes_transferred, reply_buffer_);
-			
 		switch (recv_result) {
 			case base_transport_ev_handler::bad_data : case base_transport_ev_handler::sent_answ :
 				boost::asio::async_write(socket_, boost::asio::buffer(reply_buffer_),
