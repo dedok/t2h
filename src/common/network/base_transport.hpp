@@ -4,6 +4,7 @@
 
 #include "transport_context.hpp"
 
+#include <string>
 #include <exception>
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>

@@ -1,6 +1,7 @@
 #ifndef BASE_NOTIFICATION_HPP_INCLIDED
 #define BASE_NOTIFICATION_HPP_INCLIDED
 
+#include <string>
 #include <boost/shared_ptr.hpp>
 
 namespace common {

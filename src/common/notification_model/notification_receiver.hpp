@@ -3,6 +3,7 @@
 
 #include "base_notification.hpp"
 
+#include <string>
 #include <boost/shared_ptr.hpp>
 
 namespace common {

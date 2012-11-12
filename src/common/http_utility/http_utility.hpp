@@ -38,7 +38,12 @@ bool http_translate_range_header(range_header & rheader, char const * range_head
 
 bool http_translate_accept_header(range_header & rheader, char const * range_header);
 
-}
+std::string http_normalize_uri(std::string const & uri); 
+
+static inline std::string http_normalize_uri_c(char const * uri) 
+	{ return http_normalize_uri(std::string(uri)); } 
+
+} // namespace utility
 
 #endif
 

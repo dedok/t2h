@@ -39,8 +39,8 @@ inline static details::hsc_local_config hcs_from_setting_manager(setting_manager
 {
 	details::hsc_local_config const hcsc = { 
 		setting_manager->get_value<std::string>("doc_root"), 
-		1024*1000,
-		260
+		260,	
+		1024*1000
 	};
 	
 	boost::system::error_code error;
@@ -176,8 +176,6 @@ void http_server_core::on_get_partial_content_headers(
 	http_d.reply_header += "\r\nContent-Length: " + boost::lexical_cast<std::string>(content_size);
 	http_d.reply_header += "\r\n\r\n";
 	
-	std::cout <<"Reply : " << http_d.reply_header << std::endl;
-	
 	http_d.op_status = common::http_transport_event_handler::ok;
 }	
 	
@@ -191,7 +189,7 @@ void http_server_core::on_get_head_headers(http_data & http_d, char const * uri)
 
 }
 	
-	/* Operations with content data */
+/* Operations with content data */
 bool http_server_core::on_get_content_body(
 		common::http_transport_event_handler::http_data & http_d, 
 		boost::int64_t bytes_start, 
@@ -203,9 +201,9 @@ bool http_server_core::on_get_content_body(
 			
 	std::string const req_path = local_config_.doc_root + uri;
 	std::ios::openmode const open_mode = std::ios::in | std::ios::binary;
-	details::hc_file_info_ptr fi = file_info_buffer_->get_info(req_path);
-	
+	details::hc_file_info_ptr fi = file_info_buffer_->get_info(req_path);	
 	if (!fi) {
+		HCORE_WARNING("can not find item by path '%s'", req_path.c_str());
 		http_d.op_status = common::http_transport_event_handler::not_found;
 		return false;
 	} // if

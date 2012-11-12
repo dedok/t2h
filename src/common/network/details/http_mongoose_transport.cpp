@@ -74,6 +74,8 @@ static void * http_stok_reply(
 	using namespace utility;
 
 	std::string reply;
+	std::string const uri = utility::http_normalize_uri_c(ri->uri);
+	
 	switch (status) {
 		case http_transport_event_handler::io_error: case http_transport_event_handler::write_op_error :
 			reply = stock_replies::cast_to_string(http_reply::internal_server_error);
@@ -84,7 +86,8 @@ static void * http_stok_reply(
 	}
 
 	mg_write(conn, reply.c_str(), reply.size());
-	far_handler->error(status, ri->uri);
+	
+	far_handler->error(status, uri.c_str());
 	return NOT_NULL;
 }
 
@@ -98,8 +101,8 @@ static void * far_handler_on_range_request(
 	BOOST_ASSERT(ri != NULL);
 	
 	http_transport_event_handler::http_data pcd;
-
-	far_handler->on_get_partial_content_headers(pcd, rheader.bstart_1, rheader.bend_1, ri->uri);
+	std::string const uri = utility::http_normalize_uri_c(ri->uri);
+	far_handler->on_get_partial_content_headers(pcd, rheader.bstart_1, rheader.bend_1, uri.c_str());
 	if (pcd.op_status != http_transport_event_handler::ok) 
 		return http_stok_reply(conn, pcd.op_status, far_handler, ri);
 
@@ -108,10 +111,10 @@ static void * far_handler_on_range_request(
 		pcd.seek_offset_pos = rheader.bstart_1;
 		for (boost::int64_t bytes_writed = 0;;) {
 			has_data = 
-				far_handler->on_get_content_body(pcd, rheader.bstart_1, rheader.bend_1, bytes_writed, ri->uri);
+				far_handler->on_get_content_body(pcd, rheader.bstart_1, rheader.bend_1, bytes_writed, uri.c_str());
 			if ((bytes_writed = mg_write(conn, &pcd.io_buffer.at(0), pcd.last_readed)) <= 0) {
-				LC_WARNING("writing body data failed, for uri '%s'", ri->uri)
-				far_handler->error(http_transport_event_handler::write_op_error, ri->uri);
+				LC_WARNING("writing body data failed, for uri '%s'", uri.c_str())
+				far_handler->error(http_transport_event_handler::write_op_error, uri.c_str());
 				break;
 			} // if
 			if (!has_data)
@@ -119,7 +122,7 @@ static void * far_handler_on_range_request(
 		} // read & send loop
 		return NOT_NULL;
 	}
-	LC_WARNING("writing header data failed, for uri '%s'", ri->uri)
+	LC_WARNING("writing header data failed, for uri '%s'", uri.c_str())
 	return NULL;
 }
 
@@ -173,6 +176,7 @@ void http_mongoose_transport::establish_connection()
 		"document_root", config_.doc_root.c_str(),
 		"listening_ports", config_.port.c_str(),
 		"enable_directory_listing", "no",
+		"num_threads", "6",
 		NULL
 	};
 

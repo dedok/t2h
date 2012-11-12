@@ -156,5 +156,23 @@ bool http_translate_accept_header(range_header & rheader, char const * header)
 	return true; 
 }
 
+std::string http_normalize_uri(std::string const & uri) 
+{
+	std::string n_uri = uri;
+	std::size_t last = uri.size(); 
+	for (std::size_t first = 0; first < last; ++first) 
+	{
+		if (n_uri.at(first) == '+') {
+			n_uri.at(first) = ' ';
+			continue;
+		}
+#if defined(WIN32)
+		if (n_uri.at(first) == '\\')
+			n_uri.at(first) = '/';
+#endif // WIN32
+	}
+	return n_uri;
+}
+
 } // namespace utility
 

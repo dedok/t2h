@@ -1,6 +1,7 @@
 #ifndef TRANSPORT_CONTEXT_HPP_INCLUDED
 #define TRANSPORT_CONTEXT_HPP_INCLUDED
 
+#include <string>
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
 

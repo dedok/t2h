@@ -100,8 +100,6 @@ void notification_unit::notify_receiver()
 void notification_unit::execution_loop() 
 {
 	boost::unique_lock<boost::mutex> guard(lock_);
-	boost::system_time const check_timeout = 	
-		boost::get_system_time() + boost::posix_time::milliseconds(p_.notification_check_timeout);
 	for (bool has_pending_notifications = false;
 		;
 		has_pending_notifications = copy_pending_notifications()) 
@@ -112,8 +110,11 @@ void notification_unit::execution_loop()
 		} // stop_work_ lock zone ned
 		if (has_pending_notifications) 
 			notify_receiver();
-		else if (!has_pending_notifications) 	
+		else if (!has_pending_notifications) {
+			boost::system_time const check_timeout = 	
+				boost::get_system_time() + boost::posix_time::milliseconds(p_.notification_check_timeout);
 			waiters_.timed_wait(guard, check_timeout);
+		}
 	} // loop
 
 	if (p_.execute_all_notification_at_exit) {

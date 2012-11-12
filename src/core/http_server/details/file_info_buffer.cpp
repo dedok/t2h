@@ -8,7 +8,6 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #define T2H_DEEP_DEBUG
-
 #define HCORE_FIB_UPDATER_NAME "hcore_notification_recv";
 
 namespace t2h_core { namespace details {
@@ -50,21 +49,33 @@ bool file_info_buffer::wait_avaliable_bytes(
 
 	if ((finfo = get_info(file_path))) 
 	{
-		if (finfo->avaliable_bytes >= avaliable_bytes)
+		if (finfo->avaliable_bytes >= avaliable_bytes) {
+#if defined(T2H_DEEP_DEBUG)
+			HCORE_TRACE("for path '%s', bytes avaliable '%i', bytes requested '%i'", 
+				finfo->file_path.c_str(), finfo->avaliable_bytes, avaliable_bytes)
+#endif // T2H_DEEP_DEBUG			
 			return true;
-
+		}
 		boost::unique_lock<boost::mutex> guard(finfo->waiter_lock);
 		for (boost::system_time timeout; 
 			; 
 			timeout = boost::get_system_time() + seconds(secs)) 
-		{		
+		{	
+#if defined(T2H_DEEP_DEBUG)
+			HCORE_TRACE("for path '%s', bytes avaliable '%i', bytes requested '%i'", 
+				finfo->file_path.c_str(), finfo->avaliable_bytes, avaliable_bytes)
+#endif // T2H_DEEP_DEBUG
 			if (finfo->avaliable_bytes >= avaliable_bytes) {
 				state = true;
 				break;
 			}
 
-			if (!(state = finfo->waiter.timed_wait(guard, timeout))) 
+			if (!(state = finfo->waiter.timed_wait(guard, timeout))) { 
+#if defined(T2H_DEEP_DEBUG)
+				HCORE_WARNING("for path '%s' waiting bytes failed", finfo->file_path.c_str())
+#endif // T2H_DEEP_DEBUG			
 				break;
+			}
 		} // wait loop
 	} // state
 	

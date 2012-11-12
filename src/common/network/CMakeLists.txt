@@ -21,6 +21,7 @@ endif()
 
 set(COMMON_HEADERS
 	${COMMON_HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/base_transport.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/transport_types.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/transport_context.hpp
 	${IMPL_HEADERS}
