@@ -39,9 +39,6 @@ bool partial_content_reply::do_formatting_reply()
 {
 	using namespace utility;
 	
-	if (!ready_for_reply())
-		return false;
-	
 	std::string const range_value = 
 		"bytes " + safe_lexical_cast<std::string>(param_.bytes_start) + "-" + 
 		safe_lexical_cast<std::string>(param_.bytes_end) + "/" + 
@@ -62,7 +59,8 @@ bool partial_content_reply::do_formatting_reply()
 	if (!http_reply::add_header("Content-Range", range_value))
 		return false;
 	
-	if (!http_reply::add_header("Content-Length", safe_lexical_cast<std::string>(param_.size_for_reading)))
+	boost::int64_t const content_size = param_.content_size > 0 ? param_.content_size : param_.size_for_reading;
+	if (!http_reply::add_header("Content-Length", safe_lexical_cast<std::string>(content_size)))
 		return false;
 
 	if (!http_reply::add_header("Content-Type", mime_types::get_file_extension(param_.file_path)))
@@ -74,14 +72,6 @@ bool partial_content_reply::do_formatting_reply()
 /**
  * Private partial_content_reply api
  */
-
-bool partial_content_reply::ready_for_reply() 
-{
-	if (param_.bytes_end >= param_.file_size) 
-		param_.bytes_end = param_.file_size;
-	param_.size_for_reading = (1 * (param_.bytes_end - param_.bytes_start)) + 1;
-	return ((param_.size_for_reading == 0) ? false : true);
-}
 
 bool partial_content_reply::fill_content_from_file() 
 {

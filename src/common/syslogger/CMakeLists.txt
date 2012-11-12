@@ -1,6 +1,7 @@
 set(COMMON_HEADERS
 	${COMMON_HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/abstract_syslogger.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/lc_trace.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/syslogger.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/impl/${PLATFORM_TYPE}/syslogger_impl.hpp
 	PARENT_SCOPE

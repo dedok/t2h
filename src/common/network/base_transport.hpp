@@ -1,7 +1,8 @@
 #ifndef BASE_TRANSPORT_HPP_INCLUDED
 #define BASE_TRANSPORT_HPP_INCLUDED
 
-#include "base_transport_ev_handler.hpp"
+
+#include "transport_context.hpp"
 
 #include <exception>
 #include <boost/shared_ptr.hpp>
@@ -22,15 +23,18 @@ private :
 };
 
 struct transport_config {
+	std::string doc_root;
 	std::string ip_addr; 
 	std::string port;
 	std::size_t max_threads;
+	transport_context_ptr context;
 };
 
 class base_transport : private boost::noncopyable {
 public :
 	typedef boost::shared_ptr<base_transport> ptr_type;
-	base_transport(transport_config const & config, base_transport_ev_handler_ptr ev_handler);
+
+	explicit base_transport(transport_config const & config);
 	virtual ~base_transport();
 
 	virtual void initialize() = 0;
@@ -39,9 +43,6 @@ public :
 	virtual void stop_connection() = 0;
 	virtual void wait() = 0;
 
-	virtual void registr_event_handler(base_transport_ev_handler_ptr ev_handler) = 0;
-	virtual base_transport_ev_handler_ptr get_event_handler() = 0;
-	
 private :
 
 };

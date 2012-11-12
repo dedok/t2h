@@ -11,12 +11,17 @@ endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Debug) 
 	add_definitions(-DT2H_DEBUG)
+else()
+	add_definitions(-DNDEBUG)
 endif()
 
-if(DEFINED T2H_INT_WORKAROUND)
+if (DEFINED T2H_INT_WORKAROUND)
 	message(STATUS "Enable int workaraund")
 	add_definitions(-DT2H_INT_WORKAROUND)
 endif()
+
+set(USE_MONGOOSE_HTTP_TRANSPORT TRUE)
+add_definitions(-DLC_NO_USE_MONGOOSE_C_API -DNO_CGI -DLC_USE_CSF_TRANSLATOR)
 
 # Generic_config allow to setup envt. for the libraries, envt_config allow to setup paths to libraries
 include(${CMAKE_SOURCE_DIR}/cmake_extra/${PLATFORM_TYPE}/generic_config.cmake OPTIONAL)

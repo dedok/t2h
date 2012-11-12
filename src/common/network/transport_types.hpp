@@ -2,10 +2,13 @@
 #define TRANSPORT_TYPE_HPP_INCLUDED
 
 #include "base_transport.hpp"            
-#include "asio_socket_transport.hpp"
+#include "http_transport_context.hpp"
+#include "http_mongoose_transport.hpp"
 
 namespace common {
-	typedef details::asio_socket_transport asio_socket_transport;
+	
+	typedef details::http_mongoose_transport http_mongoose_transport;
+
 } // namespace common
 
 #endif

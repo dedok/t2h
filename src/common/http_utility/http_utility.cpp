@@ -106,9 +106,9 @@ bool http_range_header_value_parser(
 bool http_translate_range_header(range_header & rheader, header_list_type const & headers)
 {
 	http_header header;
-	bool state = false; 
+	bool state = false;
+
 	boost::tie(state, header) = http_get_header(headers, "Range");
-	
 	if (state) {
 		std::string::size_type const end = header.value.size();
 		std::string::size_type start = std::string::npos, delim_pos = std::string::npos;
@@ -124,8 +124,36 @@ bool http_translate_range_header(range_header & rheader, header_list_type const 
 		} else delim_pos = end;
 		if (state) 
 			return http_range_header_value_parser(rheader, header.value, start + 1, delim_pos, false);
-	}
+	} else {
+		boost::tie(state, header) = http_get_header(headers, "Accept");
+		if (state) {
+			// TODO fix this
+			rheader.bstart_1 = rheader.bend_1 = range_header::all;
+			return true;
+		}
+	} // if
+
 	return false;
+}
+
+bool http_translate_range_header(range_header & rheader, char const * header) 
+{
+	rheader.bstart_1 = rheader.bend_1 = rheader.bstart_2 = rheader.bend_1 = 0;
+#if defined (LC_USE_CSF_TRANSLATOR)
+	return (sscanf(header, 
+		"bytes=" LC_INTMAX_SF "-" LC_INTMAX_SF, 
+		&rheader.bstart_1, &rheader.bend_1) > 0 ? true : false);
+#else
+#	warning [libcommon] utility::http_translate_range_header implementation not exist 
+#endif // LIBCOMMON_USE_SSPRINTF_TRANSLATOR
+	return false;
+}
+
+bool http_translate_accept_header(range_header & rheader, char const * header) 
+{
+	// TODO add parsing of data
+	rheader.bstart_1 = rheader.bend_1 = range_header::all; 
+	return true; 
 }
 
 } // namespace utility

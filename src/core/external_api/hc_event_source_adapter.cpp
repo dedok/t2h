@@ -41,7 +41,6 @@ void hc_event_source_adapter::on_file_remove(std::string const & file_path)
 	remove_notification->file_path = file_path;
 	remove_notification->file_size = remove_notification->avaliable_bytes = 0;
 	SEND_NOTIFICATION(recv_name_, remove_notification)
-
 }
 
 void hc_event_source_adapter::on_file_complete(std::string const & file_path, boost::int64_t avaliable_bytes) 
@@ -59,7 +58,7 @@ void hc_event_source_adapter::on_progress_update(std::string const & file_path, 
 	core_file_change_notification_ptr update_notification(new core_file_change_notification());
 	update_notification->event_type = core_file_change_notification::file_update;
 	update_notification->file_path = file_path;
-	update_notification->file_size = update_notification->avaliable_bytes = avaliable_bytes;
+	update_notification->avaliable_bytes = avaliable_bytes;
 	SEND_NOTIFICATION(recv_name_, update_notification)
 }
 

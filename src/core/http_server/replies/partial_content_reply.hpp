@@ -16,13 +16,21 @@ struct partial_content_reply_param {
 	boost::int64_t bytes_start;					// [R] Read start offset 
 	boost::int64_t bytes_end;					// [R] Read end offset
 	boost::int64_t file_size;					// [R] Size of file(file_path var)
-	boost::int64_t size_for_reading;			// [-] Size for reading(1 * (bytes_end - bytes_start))
+	boost::int64_t size_for_reading;			// [R] Size for reading
+	boost::int64_t content_size;				// [O]
 };
 
 static inline partial_content_reply_param create_partial_content_param(
-	boost::filesystem::path const & path, boost::int64_t file_size, boost::int64_t bs, boost::int64_t be) 
+	boost::filesystem::path const & path, 
+	boost::int64_t file_size, 
+	boost::int64_t bs, 
+	boost::int64_t be, 
+	boost::int64_t sfr,
+	boost::int64_t cs = -1) 
 {
-	partial_content_reply_param param = { path, bs, be, file_size, 0 };
+	partial_content_reply_param const param = { 
+		path, bs, be, file_size, sfr, cs 
+	};
 	return param;
 }
 
@@ -38,8 +46,7 @@ public :
 
 private :
 	bool fill_content_from_file();
-	bool ready_for_reply();
-
+	
 	partial_content_reply_param mutable param_;
 
 };

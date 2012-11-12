@@ -24,7 +24,7 @@ char const * transport_exception::what() const throw()
  */
 
 base_transport::base_transport(
-	transport_config const & config, base_transport_ev_handler_ptr ev_handler) 
+	transport_config const & config) 
 { 
 }
 
