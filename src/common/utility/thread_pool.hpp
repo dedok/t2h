@@ -5,6 +5,7 @@
 #include <boost/thread.hpp>
 #include <boost/noncopyable.hpp>
 #include <iostream>
+
 namespace utility {
 
 namespace details {

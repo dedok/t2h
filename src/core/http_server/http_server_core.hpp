@@ -7,6 +7,8 @@
 #include "transport_types.hpp"
 #include "file_info_buffer.hpp"
 
+#include <boost/enable_shared_from_this.hpp>
+
 namespace t2h_core {
 
 namespace details {

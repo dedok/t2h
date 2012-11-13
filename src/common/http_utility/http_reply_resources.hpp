@@ -44,7 +44,7 @@ static inline void cast_helper(http_reply::buffer_type & buffer, std::string con
 	}
 }
 
-void cast_to_buffer(http_reply::status_type status, http_reply::buffer_type & buffer)
+static inline void cast_to_buffer(http_reply::status_type status, http_reply::buffer_type & buffer)
 {
 	switch (status) {
 		case http_reply::ok:
@@ -192,7 +192,7 @@ const char service_unavailable[] =
   "<body><h1>503 Service Unavailable</h1></body>"
   "</html>";
 
-std::string cast_to_string(http_reply::status_type status)
+static inline std::string cast_to_string(http_reply::status_type status)
 {
   switch (status)
   {

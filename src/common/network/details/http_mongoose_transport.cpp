@@ -10,6 +10,12 @@
 #define STD_EXCEPTION_HANDLE_START try {
 #define STD_EXCEPTION_HANDLE_END } catch (std::exception const & extp) { }
 
+#if defined(WIN32)
+#	pragma warning(push)
+#	pragma warning(disable : 4101)
+#	pragma warning(disable : 4551)
+#endif // WIN32
+
 namespace common { namespace details {
 
 /**
@@ -22,11 +28,8 @@ static inline bool mon_is_range_request(
 {
 	BOOST_ASSERT(ri != NULL);
 
-	if (strcmp(ri->http_version, "1.1") != 0 &
-		(strcmp(ri->request_method, "POST") != 0 | strcmp(ri->request_method, "GET") != 0))
-	{
+	if (strcmp(ri->http_version, "1.1") != 0 && strcmp(ri->request_method, "GET") != 0)
 		return false;
-	}
 
 	char const * range_header = mg_get_header(conn, "Range");
 	if (range_header) 
@@ -42,17 +45,17 @@ static inline bool mon_is_range_request(
 static inline bool mon_is_head_request(struct mg_connection * conn, struct mg_request_info const * ri) 
 {
 	BOOST_ASSERT(ri != NULL);
-
-	return ((strcmp(ri->http_version, "1.1") != 0 | (strcmp(ri->http_version, "1.0") != 0)) & 
+	bool const s = ((strcmp(ri->http_version, "1.1") != 0 | (strcmp(ri->http_version, "1.0") != 0)) & 
 		strcmp(ri->request_method, "HEAD") != 0);
+	return s;
 }
 
 static inline bool mon_is_content_requst(struct mg_connection * conn, struct mg_request_info const * ri) 
 {
 	BOOST_ASSERT(ri != NULL);
-	
-	return ((strcmp(ri->http_version, "1.1") != 0 | strcmp(ri->http_version, "1.0") != 0) & 
+	bool const s = ((strcmp(ri->http_version, "1.1") != 0 | strcmp(ri->http_version, "1.0") != 0) & 
 		(strcmp(ri->request_method, "GET") != 0  | strcmp(ri->request_method, "POST") != 0));
+	return s;
 }
 
 static void * mongoose_completion_routine(enum mg_event event, struct mg_connection * conn) 
@@ -266,6 +269,10 @@ void http_mongoose_transport::validate_config() const
 }
 
 } } // namespace common, details 
+
+#if defined(WIN32)
+#	pragma warning(pop)
+#endif // WIN32
 
 #undef NOT_NULL
 #undef STD_EXCEPTION_HANDLE_START

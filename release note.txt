@@ -1,3 +1,16 @@
+version 1.4.1.2
+
+libcommon
+	--added new http transport based on mongoose;
+	--fixed hang connection in http transport;
+	--added uri specs validator(for wrong slashes);
+	
+http_core
+	--update Partial-Content handling, buffered sending of http body;
+	--added more strong file information sync with torrent_core;
+	--add Date/ETag headers to Partial-Content reply;
+	--
+
 version 1.2.9.6
 
 libcommon

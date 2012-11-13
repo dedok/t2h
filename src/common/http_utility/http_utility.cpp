@@ -6,6 +6,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
+#if defined(WIN32)
+#	include <stdio.h>
+#endif // WIN32
+
 namespace utility {
 
 /**
@@ -188,9 +192,15 @@ std::string http_etag(boost::int64_t file_size, std::time_t const & last_write_t
 {
 	static const std::size_t etag_len = 1024*2;	
 	char etag[etag_len]; std::memset(etag, '\0', etag_len);
-	return (std::snprintf(etag, etag_len, "\"%lx.%" LC_INTMAX_SF "\"", 
+#if defined(WIN32)
+	return (_snprintf_s(etag, etag_len, "\"%lx.%" LC_INTMAX_SF "\"", 
 			(unsigned long) last_write_time, file_size) > 0)
 		? std::string() : etag;
+#else
+	return (snprintf(etag, etag_len, "\"%lx.%" LC_INTMAX_SF "\"", 
+			(unsigned long) last_write_time, file_size) > 0)
+		? std::string() : etag;
+#endif // WIN32
 }
 
 std::string http_etag(std::string const & file_path)
