@@ -4512,7 +4512,6 @@ static void close_socket_gracefully(struct mg_connection *conn) {
   do {
     n = pull(NULL, conn, buf, sizeof(buf));
   } while (n > 0);
-
   // Now we know that our FIN is ACK-ed, safe to close
   (void) closesocket(sock);
 }

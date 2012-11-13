@@ -1,6 +1,9 @@
 #include "http_utility.hpp"
 
+#include <ctime>
+#include <cstdio>
 #include <sstream>
+#include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
 namespace utility {
@@ -139,13 +142,9 @@ bool http_translate_range_header(range_header & rheader, header_list_type const 
 bool http_translate_range_header(range_header & rheader, char const * header) 
 {
 	rheader.bstart_1 = rheader.bend_1 = rheader.bstart_2 = rheader.bend_1 = 0;
-#if defined (LC_USE_CSF_TRANSLATOR)
-	return (sscanf(header, 
+	return (std::sscanf(header, 
 		"bytes=" LC_INTMAX_SF "-" LC_INTMAX_SF, 
 		&rheader.bstart_1, &rheader.bend_1) > 0 ? true : false);
-#else
-#	warning [libcommon] utility::http_translate_range_header implementation not exist 
-#endif // LIBCOMMON_USE_SSPRINTF_TRANSLATOR
 	return false;
 }
 
@@ -172,6 +171,36 @@ std::string http_normalize_uri(std::string const & uri)
 #endif // WIN32
 	}
 	return n_uri;
+}
+
+std::string http_get_gmt_time_string() 
+{
+	static const std::size_t gmt_time_len = 1024*2;	
+	char gmt_time[gmt_time_len]; std::memset(gmt_time, '\0', gmt_time_len);
+ 	std::time_t const curtime = std::time(NULL);
+
+	return (std::strftime(gmt_time, 
+		gmt_time_len, "%a, %d %b %Y %H:%M:%S GMT", 
+		std::gmtime(&curtime)) == 0) ? std::string() : gmt_time;
+}
+
+std::string http_etag(boost::int64_t file_size, std::time_t const & last_write_time) 
+{
+	static const std::size_t etag_len = 1024*2;	
+	char etag[etag_len]; std::memset(etag, '\0', etag_len);
+	return (std::snprintf(etag, etag_len, "\"%lx.%" LC_INTMAX_SF "\"", 
+			(unsigned long) last_write_time, file_size) > 0)
+		? std::string() : etag;
+}
+
+std::string http_etag(std::string const & file_path)
+{
+	boost::system::error_code e;	
+	boost::int64_t const s = boost::filesystem::file_size(file_path, e);	
+	std::time_t const t = boost::filesystem::last_write_time(file_path, e);
+	if (e)
+		return std::string();
+	return http_etag(s, t);
 }
 
 } // namespace utility

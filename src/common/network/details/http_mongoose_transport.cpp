@@ -150,7 +150,8 @@ http_mongoose_transport::http_mongoose_transport(transport_config const & config
 		lock_(), 
 		mg_handle_(NULL), 
 		config_(config), 
-		http_context_()
+		http_context_(),
+		stop_(true)
 {
 	BOOST_ASSERT(config_.context != NULL);
 }
@@ -189,19 +190,21 @@ void http_mongoose_transport::establish_connection()
 	http_transport_event_handler_ptr far_ev_handler = 
 			transport_context_cast<http_transport_event_handler>(config_.context);
 	http_context_ = far_ev_handler;
+	stop_ = false;
 	BOOST_ASSERT(http_context_ != NULL);
 }
 	
 bool http_mongoose_transport::is_connected() const 
 {
 	boost::lock_guard<boost::mutex> guard(lock_);	
-	return (mg_handle_ != NULL);
+	return (!stop_);
 }
 	
 void http_mongoose_transport::stop_connection() 
 {
 	boost::lock_guard<boost::mutex> guard(lock_);	
 	if (mg_handle_) {
+		stop_ = true;
 		mg_stop(mg_handle_); mg_handle_ = NULL;	
 		waiter_.notify_all();
 	}
@@ -222,7 +225,9 @@ void * http_mongoose_transport::dispatch_http_message(
 	STD_EXCEPTION_HANDLE_START
 	
 	utility::range_header rheader;
-
+	
+	if (!is_connected()) return NULL;
+	
 	switch (event) 
 	{	
 		case MG_NEW_REQUEST :

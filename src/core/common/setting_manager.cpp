@@ -31,8 +31,8 @@ ADD_KEY_TYPE(tc_port_start, "", "", true)
 ADD_KEY_TYPE(tc_port_end, "", "", true)
 
 // torrent core keys, with some defaults values
-ADD_KEY_TYPE(hc_max_sync_timeout, "120", "", false)
-ADD_KEY_TYPE(hc_max_allowed_size_for_reply, "1500000", "", false)
+ADD_KEY_TYPE(cores_sync_timeout, "260", "", false)
+ADD_KEY_TYPE(max_size_for_reply, "102400", "", false)
 ADD_KEY_TYPE(tc_max_alert_wait_time, "15", "", false)
 ADD_KEY_TYPE(tc_max_partial_download_size, "5242880", "", false)
 ADD_KEY_TYPE(tc_root, "", "doc_root", false)
@@ -158,8 +158,8 @@ void setting_manager::init_keys_storage()
 	key_storage_->reg<key_doc_root>("doc_root");
 	key_storage_->reg<key_server_addr>("server_addr");
 	key_storage_->reg<key_server_port>("server_port");
-	key_storage_->reg<key_hc_max_sync_timeout>("hc_max_sync_timeout");
-	key_storage_->reg<key_hc_max_allowed_size_for_reply>("hc_max_allowed_size_for_reply");
+	key_storage_->reg<key_cores_sync_timeout>("cores_sync_timeout");
+	key_storage_->reg<key_max_size_for_reply>("max_size_for_reply");
 
 	// torrent core settings 
 	key_storage_->reg<key_tc_port_start>("tc_port_start");

@@ -7,6 +7,7 @@
 #include "http_request.hpp"        
 #include "http_request_parser.hpp" 
 
+#include <ctime>
 #include <boost/cstdint.hpp>
 
 #define LC_INTMAX_SF				"%Ld"
@@ -14,11 +15,14 @@
 
 namespace utility {
 
+/**
+ * Range header as data struct representation.
+ */
 struct range_header 
 {
 	enum { 
-		all = -2, 
-		bad = -1 
+		all = -2, 		// For start means 0 for end means file size
+		bad = -1 		// This value set when parsing failed(not valid requst)
 	};
 	
 	boost::int64_t bstart_1;
@@ -27,6 +31,10 @@ struct range_header
 	boost::int64_t bstart_2;
 	boost::int64_t bend_2;
 };
+
+/**
+ * http helper functions
+ */
 
 bool url_decode(std::string const & in, std::string & out);
 
@@ -42,6 +50,12 @@ std::string http_normalize_uri(std::string const & uri);
 
 static inline std::string http_normalize_uri_c(char const * uri) 
 	{ return http_normalize_uri(std::string(uri)); } 
+
+std::string http_get_gmt_time_string(); 
+
+std::string http_etag(std::string const & file_path);
+
+std::string http_etag(boost::int64_t file_size, std::time_t const & last_write_time);
 
 } // namespace utility
 

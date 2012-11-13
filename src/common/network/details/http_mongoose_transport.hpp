@@ -38,6 +38,7 @@ private :
 	struct mg_context * mg_handle_;
 	transport_config mutable config_;
 	http_transport_event_handler_ptr http_context_;
+	bool stop_;
 
 };
 
