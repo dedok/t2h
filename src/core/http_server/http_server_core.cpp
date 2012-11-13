@@ -55,9 +55,9 @@ inline static void add_etag_date_headers(std::string & out, details::hc_file_inf
 	std::string const gtm_time = utility::http_get_gmt_time_string(),
 		etag = utility::http_etag(fi->file_size, std::time(NULL));
 	if (!gtm_time.empty())
-		out += "Date: " + gtm_time;
+		out += "Date: " + gtm_time + "\r\n";
 	if (!etag.empty())
-		out += "Etag: " + etag;
+		out += "Etag: " + etag + "\r\n";
 }
 
 /**
@@ -191,8 +191,6 @@ void http_server_core::on_get_partial_content_headers(
 	http_d.reply_header += "\r\nContent-Length: " + boost::lexical_cast<std::string>(content_size);
 	http_d.reply_header += "\r\n\r\n";
 	
-	std::cout << "Reply : " << http_d.reply_header << std::endl;
-
 	http_d.op_status = common::http_transport_event_handler::ok;
 }	
 	
