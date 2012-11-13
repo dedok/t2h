@@ -3,6 +3,7 @@
 #include "torrent_core_utility.hpp"
 
 #include <sstream>
+#include <iostream>
 #include <algorithm>
 #include <boost/filesystem/path.hpp>
 
@@ -64,7 +65,6 @@ static void file_info_clear_priority(file_info & finfo, libtorrent::torrent_hand
 
 static inline int file_info_get_download_offset(file_info const & info, int max_partial_download_size) 
 {		
-	int size = info.block_size;
 	if (max_partial_download_size > info.size)
 		return info.pieces;
 	
@@ -93,7 +93,7 @@ file_info file_info_add(file_info::list_type & flist,
 
 	int const pieces_range_first = ti.map_file(file_index, 0, 0).piece;
 	int const pieces_range_last = ti.map_file(file_index, (std::max)(size_type(fe.size) - 1, size_type(0)), 0).piece;
-	int const block_size = handle.status().block_size;
+	int const block_size = handle.get_torrent_info().piece_length();
 	
 	/* initialize file information */
 	info.file_index = file_index;
@@ -194,7 +194,6 @@ boost::tuple<bool, file_info>
 			++first->pieces_download_count;
 			if (first->total_pieces_download_count < first->pieces) 
 				++first->total_pieces_download_count;
-
 			if (first->pieces_download_count > first->pieces_download_offset || 
 				first->total_pieces_download_count == first->pieces) 
 			{	
@@ -346,4 +345,3 @@ std::string torrent_info_to_json(
 #if defined(WIN32)
 #	pragma warning(pop)
 #endif
-

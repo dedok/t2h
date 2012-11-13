@@ -83,7 +83,7 @@ void dispatch_text_command(char const * ibuf, std::size_t ibuf_size, bool & exit
 int main(int argc, char ** argv) 
 {
 	sig_state.sig_exit = false;
-	std::cin.get();
+	
 	try 
 	{
 #if defined(UNIX) || defined(__APPLE__)

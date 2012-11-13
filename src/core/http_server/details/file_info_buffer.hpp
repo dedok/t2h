@@ -17,7 +17,7 @@ namespace t2h_core { namespace details {
  */
 struct hc_file_info : boost::noncopyable {
 	hc_file_info() 
-		: file_path(""), file_size(0), avaliable_bytes(0), waiter_lock(), waiter() 
+		: file_path(""), file_size(0), avaliable_bytes(0)
 	{ 
 	}
 
@@ -25,17 +25,13 @@ struct hc_file_info : boost::noncopyable {
 		std::string const & file_path_, boost::int64_t file_size_, boost::int64_t avaliable_bytes_) :
 		file_path(file_path_), 
 		file_size(file_size_), 
-		avaliable_bytes(avaliable_bytes_), 
-		waiter_lock(), 
-		waiter() 
+		avaliable_bytes(avaliable_bytes_)
 	{ 
 	}
 			
 	std::string file_path;						// Path to file(this use as key to find hc_file_info) 
 	boost::int64_t file_size;					// File size(real)
 	boost::int64_t avaliable_bytes;				// Current file_size
-	boost::mutex mutable waiter_lock;			// Waiter for wait_avaliable_bytes(notified via add/update)
-	boost::condition_variable mutable waiter;	// Waiter locker
 };
 
 typedef boost::shared_ptr<hc_file_info> hc_file_info_ptr;
@@ -80,6 +76,8 @@ public :
 
 private :
 	boost::mutex mutable lock_;
+	boost::condition_variable waiter_;	
+	
 	infos_type infos_;
 	struct {
 		std::string mutable recv_name;

@@ -1,16 +1,35 @@
+torrent to http (t2h) release note
+
+*-----------------------------------------------------*
 version 1.4.1.2
 
 libcommon
-	--added new http transport based on mongoose;
+	--added new http transport implementation based on libmongoose(embedded by me in t2h);
 	--fixed hang connection in http transport;
 	--added uri specs validator(for wrong slashes);
+	--fixed infinity loop in common::notification_unit::execution_loop;
+	--performance tuning of notification_model;
+	--fixed hang in t2h_core::details::file_info_buffer(buffer for files information)::wait_avaliable_bytes;
 	
 http_core
 	--update Partial-Content handling, buffered sending of http body;
+	--added workaraund for vlc web-straming;
 	--added more strong file information sync with torrent_core;
 	--add Date/ETag headers to Partial-Content reply;
-	--
+	--fixed crash under Windwos in file_info::on_add_file;
+	--performance tuning;
+	--added workaraund for libtorrent(1.6.3)
+	  issue: pieces migth not write to file at the momemt of event came from libtorrent session;
+	  
+torrent_core
+	--fixed wrong piece length calculation;
+	--fixed avaliable bytes calculation for on_progress notification(for case avaliable bytes > file size);
+	--performance tuning;
 
+settings manager
+	--update defaults values/keys;
+
+*-----------------------------------------------------*
 version 1.2.9.6
 
 libcommon
@@ -18,6 +37,7 @@ libcommon
 	--fixed crash inside notification_unit(notify_recv at std::list::erase call) under Windows;
 	--fixed crash inside systemlogger api;
 
+*-----------------------------------------------------*
 version 1.2.9.5
 
 libcommon
@@ -29,6 +49,7 @@ tests
 settings manager
 	--update default value for hc_max_sync_timeout(120 sec)
 
+*-----------------------------------------------------*
 version 1.2.9.2
 
 http core
@@ -58,7 +79,8 @@ tests
 	--add http request test;
 	--add http server test;
 	--add notification center test;
-	
+
+*-----------------------------------------------------*
 version 1.0.1.1
 
 http core 

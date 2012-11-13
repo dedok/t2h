@@ -1,5 +1,6 @@
 #include "http_server_core.hpp"
 
+#include "http_utility.hpp"
 #include "hc_event_source_adapter.hpp"
 #include "core_notification_center.hpp"
 
@@ -46,9 +47,12 @@ inline static void die(std::string const & message, int exit_code)
 
 static void sig_handler(int signo)
 {
+#if defined(__APPLE__)
 	if (signo != SIGINT) 
 		return;
-	
+#else
+	std::cin.get();
+#endif // _APPLE_
 	if (http_server) { 
 		http_server->stop_service();
 		http_server->wait_service();
@@ -114,9 +118,11 @@ public :
 		{
 			if (boost::filesystem::is_directory(*dir, ec))
 				continue;	
-			file_data fd = { dir->path().string(), boost::filesystem::file_size(*dir, ec) };
+			std::string const path = utility::http_normalize_uri(dir->path().string());
+			file_data fd = { path, boost::filesystem::file_size(*dir, ec) };
 			if (!ec) {
 				files_in_root_.push_back(fd);
+				std::cout << "traked file : " << fd.path << std::endl;
 				event_sender_.on_file_add(fd.path, fd.size);
 			} // if
 		} // for
@@ -124,6 +130,7 @@ public :
 	
 	void slow_files_info_update() 
 	{
+		Sleep(15000);
 		for (std::list<file_data>::iterator first = files_in_root_.begin(), last = files_in_root_.end();
 			first != last;
 			++first)
@@ -131,7 +138,11 @@ public :
 			boost::int64_t const offset = first->size / 30;
 			boost::int64_t cur_offset = offset;
 			while (cur_offset < first->size) {	
+#if defined(WIN32)
+				Sleep(1000);
+#else
 				sleep(1);
+#endif // WIN32
 				cur_offset += offset;
 				if (cur_offset > first->size)
 					cur_offset = first->size;
@@ -188,7 +199,7 @@ int main(int argc, char* argv[])
 #if defined(__APPLE__)
 	if (signal(SIGINT, sig_handler) == SIG_ERR) 
 	 	die("failed to add signal handler", 1);
-#endif
+#endif // __APPLE__
 	program_options po = get_options(argc, argv);
 	
 	LOG_INIT(log_settings)
@@ -218,8 +229,11 @@ int main(int argc, char* argv[])
 				cns.default_files_info_update();
 			break;
 		}
-
+#if defined(WIN32)
+		sig_handler(0);
+#else
 		http_server->wait_service();
+#endif //WIN32
 	} 
 	catch (std::exception const & expt) 
 	{

@@ -335,14 +335,17 @@ void sequential_torrent_controller::on_piece_finished(libtorrent::piece_finished
 
 	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(alert->handle.save_path());
 	if (!ex_info) {
-		TCORE_WARNING("get extended info failed, args '%s', '%i'", alert->handle.save_path().c_str(), alert->piece_index)
+		TCORE_WARNING("get extended info failed, args '%s', '%i'", 
+			alert->handle.save_path().c_str(), alert->piece_index)
 		torrent_remove(alert->handle);
 		return;
 	} // if
 
-	boost::tie(update_state, info) = details::file_info_update(ex_info->avaliables_files, alert->handle, alert->piece_index);
+	boost::tie(update_state, info) = 
+		details::file_info_update(ex_info->avaliables_files, alert->handle, alert->piece_index);
 	if (update_state)  
-		event_handler_->on_progress_update(info.path, info.avaliable_bytes);
+		event_handler_->on_progress_update(info.path, 
+			(info.avaliable_bytes > info.size) ? info.size : info.avaliable_bytes);
 }
 
 void sequential_torrent_controller::on_file_complete(libtorrent::file_completed_alert * alert)
@@ -350,7 +353,8 @@ void sequential_torrent_controller::on_file_complete(libtorrent::file_completed_
 	details::file_info info;
 	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(alert->handle.save_path());
 	if (!ex_info) {
-		TCORE_WARNING("get extended info failed, args '%s', '%i'", alert->handle.save_path().c_str(), alert->index)
+		TCORE_WARNING("get extended info failed, args '%s', '%i'", 
+			alert->handle.save_path().c_str(), alert->index)
 		torrent_remove(alert->handle);
 		return;
 	} // if

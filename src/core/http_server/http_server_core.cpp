@@ -36,8 +36,8 @@ inline static details::hsc_local_config hcs_from_setting_manager(setting_manager
 {
 	details::hsc_local_config const hcsc = { 
 		setting_manager->get_value<std::string>("doc_root"), 
-		setting_manager->get_value<size_t>("cores_sync_timeout"),
-		setting_manager->get_value<boost::int64_t>("max_size_for_reply")
+		320,
+		1024*1000
 	};
 	
 	boost::system::error_code error;
@@ -167,9 +167,10 @@ void http_server_core::on_get_partial_content_headers(
 	std::string const req_path = local_config_.doc_root + uri;
 	
 	if (!(fi = file_info_buffer_->get_info(req_path))) {
+		HCORE_WARNING("can not find path '%s' in buffer", req_path.c_str())
 		http_d.op_status = common::http_transport_event_handler::not_found;
 		return; 
-	}
+	} // if
 	// if client wish whole file the passed bytes_end == 0 
 	if (bytes_end == 0) 
 		bytes_end = fi->file_size - 1;
@@ -177,6 +178,16 @@ void http_server_core::on_get_partial_content_headers(
 	boost::int64_t content_size = 1 * ((bytes_end - bytes_start) + 1);
 	content_size = (content_size > fi->file_size ? fi->file_size : content_size);
 	std::string const gmt_time = utility::http_get_gmt_time_string();
+	
+	if (!file_info_buffer_->wait_avaliable_bytes(
+			fi, 
+			1024*1000, 
+			360)) 
+	{
+		HCORE_WARNING("sync with file system failed, timeout expired, for path '%s'", req_path.c_str())
+		http_d.op_status = common::http_transport_event_handler::io_error;
+		return;
+	} // if	
 	
 	/*  NOTE : Prepare Etag, Date, Last-Modified headers. Must be in UTC, according to 
 	 	http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.*/
@@ -233,59 +244,60 @@ bool http_server_core::on_get_content_body(
 	std::string const req_path = local_config_.doc_root + uri;
 	std::ios::openmode const open_mode = std::ios::in | std::ios::binary;
 	
-	if (cur_state_ == base_service::service_stoped)  
+	http_d.last_readed = 0;
+	
+	if (cur_state_ == base_service::service_stoped) 
 		return false;
 
 	if (!(fi = file_info_buffer_->get_info(req_path))) {
-		HCORE_WARNING("can not find item by path '%s'", req_path.c_str());
 		http_d.op_status = common::http_transport_event_handler::not_found;
 		return false;
 	} // if
 
-	// if client wish whole file the bytes_end var will == 0 
+	// if client wish whole file the bytes_end var will equal to 0 
 	if (bytes_end == 0) 
-		bytes_end = fi->file_size - 1;	
+		bytes_end = fi->file_size;	
 	
-	boost::int64_t read_offset = local_config_.max_read_offset;
+	boost::int64_t read_offset = 1 * (bytes_end - bytes_start) + 1;
+	if (1024*1000 <= read_offset)
+		read_offset = 1024*1000;
+	if (http_d.seek_offset_pos + read_offset > fi->file_size)
+		read_offset = fi->file_size;
+
 	if (!file_info_buffer_->wait_avaliable_bytes(
-			fi, http_d.seek_offset_pos + read_offset, 
-			local_config_.fs_cores_sync_timeout)) 
+			fi, 
+			http_d.seek_offset_pos + read_offset + 100, 
+			360)) 
 	{
-		HCORE_WARNING("sync with file system failed, timeout expired, for path '%s'", req_path.c_str())
 		http_d.op_status = common::http_transport_event_handler::io_error;
 		return false;
 	} // if	
-
-	bool end = false;
+	
+	bool has_next_data_block = true;
 	io::file_descriptor_source file_handle(req_path, open_mode);
 	if (file_handle.is_open()) {
-		if (http_d.io_buffer.empty())
+		if (http_d.io_buffer.size() < read_offset)
 			http_d.io_buffer.resize(read_offset + 1);
-		if (http_d.seek_offset_pos > bytes_end) { 
-			end = true; 
-			http_d.seek_offset_pos = 1 * (bytes_end - (1 * (bytes_start - http_d.seek_offset_pos))); 
-		} else if (http_d.seek_offset_pos == bytes_end) 
-			return false;	
 			
-		if (io::seek(file_handle, http_d.seek_offset_pos, BOOST_IOS::beg) < 0) { 
-			HCORE_WARNING("seek file to pos '%i' failed for path '%s'", 
-				http_d.seek_offset_pos, req_path.c_str())
+		if (http_d.seek_offset_pos >= bytes_end) { 
+			has_next_data_block = false; 
+			http_d.seek_offset_pos = 1 * (bytes_end - (1 * (bytes_start - http_d.seek_offset_pos))); 
+		} // if 
+			
+		if (io::seek(file_handle, http_d.seek_offset_pos, BOOST_IOS::beg) < 0) 
 			return false;
-		}
-		else if ((http_d.last_readed =
+		
+		if ((http_d.last_readed =
 			io::read(file_handle, &http_d.io_buffer.at(0), read_offset)) <= 0) 
 		{
 			return false;
-		}
-
-		if (end || http_d.last_readed < local_config_.max_read_offset) 
-			return false;
+		} // if
 
 		http_d.seek_offset_pos += read_offset;
-		return true;
+		return has_next_data_block;
 	} // if
-
-	HCORE_WARNING("open file failed, path '%s'", req_path.c_str())
+	
+	http_d.op_status = common::http_transport_event_handler::io_error;
 	return false;
 }	
 	
@@ -293,6 +305,7 @@ void http_server_core::error(
 	common::http_transport_event_handler::operation_status status, char const * uri) 
 {
 	HCORE_WARNING("got error from http transport, status '%i', uri '%s'", (int)status, uri);
+	// TODO impl this
 }
 
 /**

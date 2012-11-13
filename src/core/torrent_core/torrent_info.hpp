@@ -46,8 +46,8 @@ struct file_info {
 	int pieces;										// Pieces number in file
 	int total_pieces_download_count;				// Cound of downloaded pieces
 	int pieces_download_count;						// Count of downloaded pieces(not total)
-	int pieces_download_offset;						// 
-	int pieces_download_offset_min;					//
+	int pieces_download_offset;						// Pices offset for current torrent file(size)
+	int pieces_download_offset_min;					// Same as pieces_download_offset_min(low bound)
 	boost::int64_t avaliable_bytes;					// Bytes which was downloaded and saved to the HDD(eg current size)
 	int pieces_range_first;							// File piece range start offset
 	int pieces_range_last;							// File piece range end offset 

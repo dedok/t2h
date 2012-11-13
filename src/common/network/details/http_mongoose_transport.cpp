@@ -28,13 +28,16 @@ static inline bool mon_is_range_request(
 {
 	BOOST_ASSERT(ri != NULL);
 
-	if (strcmp(ri->http_version, "1.1") != 0 && strcmp(ri->request_method, "GET") != 0)
+	if (strcmp(ri->http_version, "1.1") != 0)
+		return false;
+		
+	if (strcmp(ri->request_method, "GET") != 0)
 		return false;
 
 	char const * range_header = mg_get_header(conn, "Range");
 	if (range_header) 
 		return utility::http_translate_range_header(rheader, range_header);
-	
+		
 	char const * accept_header = mg_get_header(conn, "Accept"); 
 	if (accept_header) 
 		return utility::http_translate_accept_header(rheader, range_header); 
@@ -68,7 +71,7 @@ static void * mongoose_completion_routine(enum mg_event event, struct mg_connect
 }
 
 /* mics helpers */
-static void * http_stok_reply(
+static void * http_stock_reply(
 	struct mg_connection * conn, 
 	http_transport_event_handler::operation_status status, 
 	http_transport_event_handler_ptr far_handler,
@@ -105,34 +108,45 @@ static void * far_handler_on_range_request(
 	
 	http_transport_event_handler::http_data pcd;
 	std::string const uri = utility::http_normalize_uri_c(ri->uri);
-	far_handler->on_get_partial_content_headers(pcd, rheader.bstart_1, rheader.bend_1, uri.c_str());
-	if (pcd.op_status != http_transport_event_handler::ok) 
-		return http_stok_reply(conn, pcd.op_status, far_handler, ri);
 
+	far_handler->on_get_partial_content_headers(pcd, rheader.bstart_1, rheader.bend_1, uri.c_str());
+	if (pcd.op_status != http_transport_event_handler::ok)  
+		return http_stock_reply(conn, pcd.op_status, far_handler, ri);
+	
 	if (mg_write(conn, pcd.reply_header.c_str(), pcd.reply_header.size()) > 0) {
 		bool has_data = true;
 		pcd.seek_offset_pos = rheader.bstart_1;
-		for (boost::int64_t bytes_writed = 0;;) {
-			has_data = 
-				far_handler->on_get_content_body(pcd, rheader.bstart_1, rheader.bend_1, bytes_writed, uri.c_str());
+		for (boost::int64_t bytes_writed = 0;;) 
+		{
+			has_data = far_handler->on_get_content_body(pcd, 
+					rheader.bstart_1, 
+					rheader.bend_1, 
+					bytes_writed, 
+					uri.c_str());
+					
+			if (pcd.op_status != http_transport_event_handler::ok) 
+				return http_stock_reply(conn, pcd.op_status, far_handler, ri);
+			
 			if ((bytes_writed = mg_write(conn, &pcd.io_buffer.at(0), pcd.last_readed)) <= 0) {
-				LC_WARNING("writing body data failed, for uri '%s'", uri.c_str())
 				far_handler->error(http_transport_event_handler::write_op_error, uri.c_str());
 				break;
 			} // if
-			if (!has_data)
+			
+			if (!has_data) 
 				break;
 		} // read & send loop
 		return NOT_NULL;
 	}
+	
 	LC_WARNING("writing header data failed, for uri '%s'", uri.c_str())
-	return NULL;
+	return NOT_NULL;
 }
 
 static void * far_handler_on_head_request(
 	transport_context_ptr far_handler, struct mg_connection * conn, struct mg_request_info const * ri) 
 {
 	BOOST_ASSERT(ri != NULL);
+	// TODO impl this
 	return NULL;
 }
 
@@ -140,6 +154,7 @@ static void * far_handler_on_content_request(
 	transport_context_ptr far_handler, struct mg_connection * conn, struct mg_request_info const * ri)
 {
 	BOOST_ASSERT(ri != NULL);
+	// TODO impl this
 	return 	NULL;
 }
 
@@ -233,7 +248,7 @@ void * http_mongoose_transport::dispatch_http_message(
 	
 	switch (event) 
 	{	
-		case MG_NEW_REQUEST :
+		case MG_NEW_REQUEST : 
 			if (mon_is_range_request(conn, ri, rheader)) 
 				return far_handler_on_range_request(http_context_, conn, ri, rheader);
 			else if(mon_is_head_request(conn, ri))
@@ -241,11 +256,10 @@ void * http_mongoose_transport::dispatch_http_message(
 			else if (mon_is_content_requst(conn, ri))
 				return far_handler_on_content_request(http_context_, conn, ri);
 			break;
-
+		
 		case MG_HTTP_ERROR :
-			LC_WARNING("error detected, code '%i', for uri '%s'", (long) ri->ev_data, ri->uri)
 			return NULL;
-
+			
 		case MG_REQUEST_COMPLETE :
 			return NULL;
 
@@ -254,7 +268,6 @@ void * http_mongoose_transport::dispatch_http_message(
 	} // switch
 	
 	STD_EXCEPTION_HANDLE_END
-	
 	return NULL;
 }
 
