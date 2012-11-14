@@ -130,7 +130,11 @@ public :
 	
 	void slow_files_info_update() 
 	{
+#if defined(WIN32)
 		Sleep(15000);
+#else
+		sleep(15);
+#endif // WIN32
 		for (std::list<file_data>::iterator first = files_in_root_.begin(), last = files_in_root_.end();
 			first != last;
 			++first)
