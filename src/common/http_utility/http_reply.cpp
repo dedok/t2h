@@ -4,6 +4,11 @@
 
 #include <boost/bind.hpp>
 
+#if defined(WIN32)
+#	pragma warning(push)
+#	pragma warning(disable : 4101)
+#endif // WIN32
+
 /**
  * Private hidden http_reply helpers
  */
@@ -177,4 +182,8 @@ void http_reply::add_header_directly(std::string const & name, std::string const
 }
 
 } // namesapce utility
+
+#if defined(WIN32)
+#	pragma warning(pop)
+#endif // WIN32
 
