@@ -22,7 +22,8 @@ public :
 		ok = 0x0,
 		io_error = 0x2,	
 		not_found = 0x1,
-		write_op_error = 0x3,
+		bad_request = 0x3,
+		write_op_error = 0x4,
 		unknown = write_op_error + 0x1
 	};
 

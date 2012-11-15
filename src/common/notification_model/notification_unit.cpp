@@ -105,7 +105,7 @@ void notification_unit::execution_loop()
 		has_pending_notifications = copy_pending_notifications()) 
 	{
 		{ // stop_work_ lock zone
-		boost::lock_guard<boost::mutex> guard(pn_lock_);
+		boost::lock_guard<boost::mutex> stop_guard(pn_lock_);
 		if (stop_work_) break;
 		} // stop_work_ lock zone ned
 		if (has_pending_notifications) 

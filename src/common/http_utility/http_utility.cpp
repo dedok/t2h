@@ -131,25 +131,43 @@ bool http_translate_range_header(range_header & rheader, header_list_type const 
 		} else delim_pos = end;
 		if (state) 
 			return http_range_header_value_parser(rheader, header.value, start + 1, delim_pos, false);
-	} else {
-		boost::tie(state, header) = http_get_header(headers, "Accept");
-		if (state) {
-			// TODO fix this
-			rheader.bstart_1 = rheader.bend_1 = range_header::all;
-			return true;
-		}
-	} // if
+	} 
 
 	return false;
 }
 
-bool http_translate_range_header(range_header & rheader, char const * header) 
+static bool http_translate_range_header_(range_header & rheader, std::string const & header) 
+{	
+	bool state = true;
+	std::string::size_type const end = header.size();
+	std::string::size_type start = std::string::npos, delim_pos = std::string::npos;
+	
+	if ((start = header.find_first_of("=")) == std::string::npos)
+		return false;
+
+	if ((delim_pos = header.find_first_of(",")) != std::string::npos) { 
+		if (delim_pos + 1 == end)
+			return false;
+		state = http_range_header_value_parser(rheader, header, delim_pos + 1, end, true);
+		delim_pos = delim_pos;
+	} 
+	else 
+		delim_pos = end;
+
+	if (state)
+		state = http_range_header_value_parser(rheader, header, start + 1, delim_pos, false);
+	
+	return state;
+}
+
+bool http_translate_range_header(range_header & rheader, std::string const & header) 
 {
-	rheader.bstart_1 = rheader.bend_1 = rheader.bstart_2 = rheader.bend_1 = 0;
-	return (std::sscanf(header, 
-		"bytes=" LC_INTMAX_SF "-" LC_INTMAX_SF, 
+	rheader.bstart_1 = rheader.bend_1 = rheader.bstart_2 = rheader.bend_1 = range_header::bad;
+#if defined(LC_USE_CF_UNSAFE_FUNCTIONS)
+	return (std::sscanf(header.c_str(), "bytes=" LC_INTMAX_SF "-" LC_INTMAX_SF, 
 		&rheader.bstart_1, &rheader.bend_1) > 0 ? true : false);
-	return false;
+#endif
+	return http_translate_range_header_(rheader, header);
 }
 
 bool http_translate_accept_header(range_header & rheader, char const * header) 

@@ -172,7 +172,7 @@ void http_server_core::on_get_partial_content_headers(
 		return; 
 	} // if
 	// if client wish whole file the passed bytes_end == 0 
-	if (bytes_end == 0) 
+	if (bytes_end == -1) 
 		bytes_end = fi->file_size - 1;
 	
 	boost::int64_t content_size = 1 * ((bytes_end - bytes_start) + 1);
@@ -207,23 +207,65 @@ void http_server_core::on_get_partial_content_headers(
 	
 void http_server_core::on_get_content_headers(http_data & http_d, char const * uri) 
 {
-
-}
-
-void http_server_core::on_get_head_headers(http_data & http_d, char const * uri) 
-{
-	/* Create http HEAD reply 
-	 */
-#if 0
+	/*	Create 200 http header and send this header to client before body.
+	 */	
 	details::hc_file_info_ptr fi;
 	std::string const req_path = local_config_.doc_root + uri;
 	
 	if (!(fi = file_info_buffer_->get_info(req_path))) {
-		HCORE_WARNING("preparinh http header failed, for '%s', file not exist", req_path.c_str)
+		HCORE_WARNING("can not find path '%s' in buffer", req_path.c_str())
 		http_d.op_status = common::http_transport_event_handler::not_found;
 		return; 
-	}
-#endif
+	} // if
+	
+	boost::int64_t content_size = fi->file_size;
+	std::string const gmt_time = utility::http_get_gmt_time_string();
+	
+	if (!file_info_buffer_->wait_avaliable_bytes(
+			fi, 
+			1024*1000, 
+			360)) 
+	{
+		HCORE_WARNING("sync with file system failed, timeout expired, for path '%s'", req_path.c_str())
+		http_d.op_status = common::http_transport_event_handler::io_error;
+		return;
+	} // if	
+	
+	/*  NOTE : Prepare Etag, Date, Last-Modified headers. Must be in UTC, according to 
+	 	http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.*/
+	http_d.reply_header = "HTTP/1.1 200 Ok\r\n";
+	add_etag_date_headers(http_d.reply_header, fi);
+	http_d.reply_header += "Content-Type: application/octet-stream\r\n";
+	http_d.reply_header += "Content-Length: " + boost::lexical_cast<std::string>(content_size);
+	http_d.reply_header += "\r\n\r\n";
+	
+	http_d.op_status = common::http_transport_event_handler::ok;
+}
+
+void http_server_core::on_get_head_headers(http_data & http_d, char const * uri) 
+{
+	details::hc_file_info_ptr fi;
+	std::string const req_path = local_config_.doc_root + uri;
+	
+	if (!(fi = file_info_buffer_->get_info(req_path))) {
+		HCORE_WARNING("can not find path '%s' in buffer", req_path.c_str())
+		http_d.op_status = common::http_transport_event_handler::not_found;
+		return; 
+	} // if
+	
+	boost::int64_t content_size = fi->file_size;
+	std::string const gmt_time = utility::http_get_gmt_time_string();
+	
+	/*  NOTE : Prepare Etag, Date, Last-Modified headers. Must be in UTC, according to 
+	 	http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.*/
+	http_d.reply_header = "HTTP/1.1 200 Ok\r\n";
+	add_etag_date_headers(http_d.reply_header, fi);
+	http_d.reply_header += "Accept-Ranges: bytes\r\n";
+	http_d.reply_header += "Content-Type: application/octet-stream\r\n";
+	http_d.reply_header += "Content-Length: " + boost::lexical_cast<std::string>(content_size);
+	http_d.reply_header += "\r\n\r\n";
+	
+	http_d.op_status = common::http_transport_event_handler::ok;
 }
 	
 /* Operations with content data */
@@ -245,60 +287,60 @@ bool http_server_core::on_get_content_body(
 	std::ios::openmode const open_mode = std::ios::in | std::ios::binary;
 	
 	http_d.last_readed = 0;
+	bool has_next_data_block = true;
+	boost::int64_t wait_bytes_pos = 0;
 	
-	if (cur_state_ == base_service::service_stoped) 
+	if (cur_state_ == base_service::service_stoped)  
 		return false;
 
 	if (!(fi = file_info_buffer_->get_info(req_path))) {
 		http_d.op_status = common::http_transport_event_handler::not_found;
 		return false;
 	} // if
+	
+	io::file_descriptor_source file_handle(req_path, open_mode);
+	if (!file_handle.is_open()) {
+		http_d.op_status = common::http_transport_event_handler::io_error;
+		return false;
+	} 
 
-	// if client wish whole file the bytes_end var will equal to 0 
-	if (bytes_end == 0) 
+	// if client wish whole file the bytes_end var will equal to -1 
+	if (bytes_end == -1) 
 		bytes_end = fi->file_size;	
 	
 	boost::int64_t read_offset = 1 * (bytes_end - bytes_start) + 1;
 	if (1024*1000 <= read_offset)
 		read_offset = 1024*1000;
-	if (http_d.seek_offset_pos + read_offset > fi->file_size)
-		read_offset = fi->file_size;
+	
+	if (http_d.seek_offset_pos + read_offset >= fi->file_size) { 
+		has_next_data_block = false;
+		wait_bytes_pos = fi->file_size;
+	}
+	else
+		wait_bytes_pos = http_d.seek_offset_pos + read_offset + 100;
 
-	if (!file_info_buffer_->wait_avaliable_bytes(
-			fi, 
-			http_d.seek_offset_pos + read_offset + 100, 
-			360)) 
-	{
+	if (!file_info_buffer_->wait_avaliable_bytes(fi, wait_bytes_pos, 360)) {
 		http_d.op_status = common::http_transport_event_handler::io_error;
 		return false;
 	} // if	
-	
-	bool has_next_data_block = true;
-	io::file_descriptor_source file_handle(req_path, open_mode);
-	if (file_handle.is_open()) {
-		if (http_d.io_buffer.size() < read_offset)
-			http_d.io_buffer.resize(read_offset + 1);
-			
-		if (http_d.seek_offset_pos >= bytes_end) { 
-			has_next_data_block = false; 
-			http_d.seek_offset_pos = 1 * (bytes_end - (1 * (bytes_start - http_d.seek_offset_pos))); 
-		} // if 
-			
-		if (io::seek(file_handle, http_d.seek_offset_pos, BOOST_IOS::beg) < 0) 
-			return false;
 		
-		if ((http_d.last_readed =
-			io::read(file_handle, &http_d.io_buffer.at(0), read_offset)) <= 0) 
-		{
-			return false;
-		} // if
-
-		http_d.seek_offset_pos += read_offset;
-		return has_next_data_block;
-	} // if
+	if (static_cast<int64_t>(http_d.io_buffer.size()) < read_offset)
+		http_d.io_buffer.resize(read_offset + 1);
 	
-	http_d.op_status = common::http_transport_event_handler::io_error;
-	return false;
+	if (io::seek(file_handle, http_d.seek_offset_pos, BOOST_IOS::beg) < 0) { 
+		http_d.op_status = common::http_transport_event_handler::io_error;
+		return false;
+	}
+		
+	if ((http_d.last_readed =
+		io::read(file_handle, &http_d.io_buffer.at(0), read_offset)) <= 0) 
+	{
+		http_d.op_status = common::http_transport_event_handler::io_error;
+		return false;
+	} // if
+		
+	(has_next_data_block) ? http_d.seek_offset_pos += http_d.last_readed : http_d.seek_offset_pos = fi->file_size;
+	return has_next_data_block;
 }	
 	
 void http_server_core::error(

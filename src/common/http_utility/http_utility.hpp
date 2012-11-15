@@ -21,8 +21,8 @@ namespace utility {
 struct range_header 
 {
 	enum { 
-		all = -2, 		// For start means 0 for end means file size
-		bad = -1 		// This value set when parsing failed(not valid requst)
+		all = -1, 		// For start means 0 for end means file size
+		bad = -2 		// This value set when parsing failed(not valid requst)
 	};
 	
 	boost::int64_t bstart_1;
@@ -42,7 +42,10 @@ boost::tuple<bool, http_header> http_get_header(std::string const & name);
 
 bool http_translate_range_header(range_header & rheader, header_list_type const & headers);
 
-bool http_translate_range_header(range_header & rheader, char const * range_header);
+bool http_translate_range_header(range_header & rheader, std::string const & range_header);
+
+inline bool http_translate_range_header_c(range_header & rheader, std::string const & range_header) 
+	{ return http_translate_range_header(rheader, range_header); }
 
 bool http_translate_accept_header(range_header & rheader, char const * range_header);
 

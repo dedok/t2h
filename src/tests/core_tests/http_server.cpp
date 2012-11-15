@@ -118,8 +118,12 @@ public :
 		{
 			if (boost::filesystem::is_directory(*dir, ec))
 				continue;	
+#if defined(WIN32)
 			std::string const path = utility::http_normalize_uri(dir->path().string());
 			file_data fd = { path, boost::filesystem::file_size(*dir, ec) };
+#else
+			file_data fd = { dir->path().string(), boost::filesystem::file_size(*dir, ec) };
+#endif // WIN32
 			if (!ec) {
 				files_in_root_.push_back(fd);
 				std::cout << "traked file : " << fd.path << std::endl;
@@ -150,6 +154,7 @@ public :
 				cur_offset += offset;
 				if (cur_offset > first->size)
 					cur_offset = first->size;
+				std::cout << "Current file updated on : " << cur_offset << std::endl;
 				event_sender_.on_progress_update(first->path, cur_offset);
 			} // while
 			event_sender_.on_file_complete(first->path, first->size);
