@@ -18,6 +18,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+// #define MG_ENABLE_REQ_LOGGING
+
 #if defined(_WIN32)
 #define _CRT_SECURE_NO_WARNINGS // Disable deprecation warning in VS2005
 #else
@@ -4060,6 +4062,10 @@ static void handle_request(struct mg_connection *conn) {
                                 get_remote_ip(conn), ri->uri);
 
   DEBUG_TRACE(("%s", ri->uri));
+#if defined(MG_ENABLE_REQ_LOGGING)
+  conn->request_info.ev_data = (void*)conn->buf;
+  call_user(conn, MG_EVENT_LOG);
+#endif
   if (!check_authorization(conn, path)) {
     send_authorization_request(conn);
 #if defined(USE_WEBSOCKET)
@@ -4639,7 +4645,6 @@ static void process_new_connection(struct mg_connection *conn) {
   const char *cl;
 
   keep_alive_enabled = !strcmp(conn->ctx->config[ENABLE_KEEP_ALIVE], "yes");
-
   do {
     reset_per_request_attributes(conn);
     conn->request_len = read_request(NULL, conn, conn->buf, conn->buf_size,

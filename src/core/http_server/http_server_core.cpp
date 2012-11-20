@@ -30,6 +30,10 @@ inline static common::transport_config from_setting_manager(setting_manager_ptr 
 		setting_manager->get_value<std::size_t>("workers"),
 		common::http_transport_event_handler_ptr()
 	};
+	
+	if (config.max_threads == 0)
+		throw common::transport_exception("need more workers for http server(> 0)");
+
 	return config;
 }
 
@@ -37,18 +41,21 @@ inline static details::hsc_local_config hcs_from_setting_manager(setting_manager
 {
 	details::hsc_local_config const hcsc = { 
 		setting_manager->get_value<std::string>("doc_root"),
-		true, 
-		320,
-		1024*1000
+		true,
+		setting_manager->get_value<boost::int64_t>("hc_max_chunk_size"),
+		setting_manager->get_value<std::size_t>("cores_sync_timeout")
 	};
-	
+
 	boost::system::error_code error;
 	if (!boost::filesystem::exists(hcsc.doc_root, error) || 
 		!boost::filesystem::is_directory(hcsc.doc_root, error)) 
 	{
 		throw common::transport_exception("invalid settings doc_root not exist or not directory");
 	}
-	
+
+	if (hcsc.chunked_ostream && hcsc.max_chunk_size < 1000)
+		throw common::transport_exception("chunked ostream is enable but max_chunk_size value low for correct work");
+
 	return hcsc;
 } 
 
@@ -96,7 +103,7 @@ bool http_server_core::launch_service()
 	
 		cur_state_ = base_service::service_running;
 	} 
-	catch (common::transport_exception const & expt) 
+	catch (std::exception const & expt) 
 	{
 		HCORE_ERROR("transport init/run failed, with message '%s'", expt.what())
 		return false;
@@ -110,6 +117,7 @@ void http_server_core::stop_service()
 	{
 		if (cur_state_ == base_service::service_running) {
 			cur_state_ = base_service::service_stoped;
+			file_info_buffer_->stop_graceful();
 			transport_->stop_connection();	
 		}
 	}

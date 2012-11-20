@@ -32,6 +32,9 @@ struct hc_file_info : boost::noncopyable {
 	std::string file_path;						// Path to file(this use as key to find hc_file_info) 
 	boost::int64_t file_size;					// File size(real)
 	boost::int64_t avaliable_bytes;				// Current file_size
+	boost::mutex mutable waiter_locker;			// Exclusive waiter for current hc_file_info
+	boost::condition_variable waiter;			// Exclusive waiter lock object for current hc_file_info
+
 };
 
 typedef boost::shared_ptr<hc_file_info> hc_file_info_ptr;
@@ -73,10 +76,24 @@ public :
 		boost::int64_t file_size, 
 		boost::int64_t avaliable_bytes) 
 		{ update_info(file_path, avaliable_bytes); }
+	
+	inline void stop_graceful() 
+		{ close(true); }
+	inline void stop_force() 
+		{ close(false); }
 
 private :
+	inline void notify_waiter(hc_file_info_ptr hfip) 
+	{ 
+		boost::mutex::scoped_lock guard(hfip->waiter_locker);
+		guard.unlock();
+		hfip->waiter.notify_one();
+	}
+
+	void stop(bool graceful);
+	
+	bool volatile mutable is_stoped_;
 	boost::mutex mutable lock_;
-	boost::condition_variable waiter_;	
 	
 	infos_type infos_;
 	struct {

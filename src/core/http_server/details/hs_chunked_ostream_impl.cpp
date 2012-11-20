@@ -49,9 +49,12 @@ bool hs_chunked_ostream_impl::write_content_impl(http_data & hd)
 			read_offset = 1 * ((hd.read_end - seek_pos)) + 1;
 			bwait = hd.read_end + 1 > hd.fi->file_size ? hd.fi->file_size : hd.read_end + 1;
 			eof = true;
-		} else
+		} else {
+			if ((seek_pos + read_offset) == hd.read_end)
+				eof = true;
 			bwait = seek_pos + read_offset;
-		
+		}
+			
 		if (!hd.fi_buffer->wait_avaliable_bytes(hd.fi, bwait, params_.cores_sync_timeout)) {
 			HCORE_WARNING("sync with file system failed, timeout expired, for path '%s'", hd.fi->file_path.c_str())
 			return false;
@@ -81,7 +84,10 @@ bool hs_chunked_ostream_impl::write_content_impl(http_data & hd)
 			HCORE_WARNING("failed to write data for '%s'", hd.fi->file_path.c_str())
 			return false;
 		}
-		
+#if defined(T2H_DEEP_DEBUG)
+		HCORE_TRACE("with file '%s', writed to ostream '%i', seep pos '%i', read_offset '%i', read end '%i', wait '%i'", 
+			hd.fi->file_path.c_str(), readed, seek_pos, read_offset, hd.read_end, bwait)
+#endif // T2H_DEEP_DEBUG
 		if (eof)  
 			return true;
 	

@@ -31,10 +31,11 @@ ADD_KEY_TYPE(tc_port_start, "", "", true)
 ADD_KEY_TYPE(tc_port_end, "", "", true)
 
 // torrent core keys, with some defaults values
-ADD_KEY_TYPE(cores_sync_timeout, "260", "", false)
-ADD_KEY_TYPE(max_size_for_reply, "102400", "", false)
+ADD_KEY_TYPE(cores_sync_timeout, "360", "", false)
+ADD_KEY_TYPE(hc_chunked, "true", "", false)
+ADD_KEY_TYPE(hc_max_chunk_size, "102400", "", false)
 ADD_KEY_TYPE(tc_max_alert_wait_time, "10", "", false)
-ADD_KEY_TYPE(tc_max_partial_download_size, "5242880", "", false)
+ADD_KEY_TYPE(tc_max_partial_download_size, "2242880", "", false)
 ADD_KEY_TYPE(tc_root, "", "doc_root", false)
 ADD_KEY_TYPE(tc_futures_timeout, "10", "", false)
 ADD_KEY_TYPE(tc_partial_files_download, "true", "", false)
@@ -159,7 +160,8 @@ void setting_manager::init_keys_storage()
 	key_storage_->reg<key_server_addr>("server_addr");
 	key_storage_->reg<key_server_port>("server_port");
 	key_storage_->reg<key_cores_sync_timeout>("cores_sync_timeout");
-	key_storage_->reg<key_max_size_for_reply>("max_size_for_reply");
+	key_storage_->reg<key_hc_max_chunk_size>("hc_max_chunk_size");
+	key_storage_->reg<key_hc_chunked>("hc_chunked");
 
 	// torrent core settings 
 	key_storage_->reg<key_tc_port_start>("tc_port_start");

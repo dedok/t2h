@@ -47,6 +47,7 @@ inline static void die(std::string const & message, int exit_code)
 
 static void sig_handler(int signo)
 {
+	std::cout << "closing..." << std::endl;
 #if defined(__APPLE__)
 	if (signo != SIGINT) 
 		return;
@@ -120,47 +121,23 @@ public :
 				continue;	
 #if defined(WIN32)
 			std::string const path = utility::http_normalize_uri(dir->path().string());
-			file_data fd = { path, boost::filesystem::file_size(*dir, ec) };
+			file_data fd = { path, boost::filesystem::file_size(*dir, ec), false, 0 };
 #else
-			file_data fd = { dir->path().string(), boost::filesystem::file_size(*dir, ec) };
+			file_data fd = { dir->path().string(), boost::filesystem::file_size(*dir, ec), false, 0 };
 #endif // WIN32
 			if (!ec) {
 				files_in_root_.push_back(fd);
+#if defined(ENABLE_STDOUT_TRACE)
 				std::cout << "traked file : " << fd.path << std::endl;
+#endif // ENABLE_STDOUT_TRACE
 				event_sender_.on_file_add(fd.path, fd.size);
 			} // if
 		} // for
 	}
-	
-	void slow_files_info_update() 
-	{
-#if defined(WIN32)
-		Sleep(15000);
-#else
-		sleep(15);
-#endif // WIN32
-		for (std::list<file_data>::iterator first = files_in_root_.begin(), last = files_in_root_.end();
-			first != last;
-			++first)
-		{
-			boost::int64_t const offset = first->size / 30;
-			boost::int64_t cur_offset = offset;
-			while (cur_offset < first->size) {	
-#if defined(WIN32)
-				Sleep(1000);
-#else
-				sleep(1);
-#endif // WIN32
-				cur_offset += offset;
-				if (cur_offset > first->size)
-					cur_offset = first->size;
-				std::cout << "Current file updated on : " << cur_offset << std::endl;
-				event_sender_.on_progress_update(first->path, cur_offset);
-			} // while
-			event_sender_.on_file_complete(first->path, first->size);
-		} // for	
-	}
 
+	inline void slow_files_info_update() 
+		{ files_info_update(50); }
+	
 	void default_files_info_update() 
 	{
 		for (std::list<file_data>::iterator first = files_in_root_.begin(), last = files_in_root_.end();
@@ -171,28 +148,59 @@ public :
 		} // for	
 	}
 
-	void fast_files_info_update() 
+	inline void fast_files_info_update() 
+		{ files_info_update(4); }
+	
+	void files_info_update(int c) 
 	{
-		for (std::list<file_data>::iterator first = files_in_root_.begin(), last = files_in_root_.end();
-			first != last;
-			++first)
+		for (bool done = true;;) 
 		{
-			boost::int64_t const offset = first->size / 4;
-			boost::int64_t cur_offset = offset;
-			while (cur_offset < first->size) {	
-				cur_offset += offset;
-				if (cur_offset > first->size)
-					cur_offset = first->size;
-				event_sender_.on_progress_update(first->path, cur_offset);
-			} // while
-			event_sender_.on_file_complete(first->path, first->size);
-		} // for	
+#if defined(WIN32)
+			Sleep(1000);
+#else
+			sleep(1);
+#endif // WIN32
+			done = true;
+			for (std::list<file_data>::iterator first = files_in_root_.begin(), last = files_in_root_.end();
+				first != last;
+				++first)
+			{
+				if (first->update_done) 
+					continue;
+				
+				boost::int64_t const offset = (first->size <= 0) ? first->size : first->size / c;
+				first->cur_offset += offset;
+				if (first->cur_offset >= first->size) 
+				{
+					first->cur_offset = first->size;
+					first->update_done = true;
+#if defined(ENABLE_STDOUT_TRACE)
+					std::cout << "File completed : " << first->path << ", available bytes : " << first->size << std::endl;
+#endif // ENABLE_STDOUT
+					event_sender_.on_file_complete(first->path, first->size);
+				} else {
+#if defined(ENABLE_STDOUT_TRACE)
+					std::cout << "File updated : " << first->path << ", avaliable bytes : " << first->cur_offset << std::endl;
+#endif // ENABLE_STDOUT
+					event_sender_.on_progress_update(first->path, first->cur_offset);
+				}
+
+				if (!first->update_done)
+					done = false;
+			} // for
+
+			if (done) 
+				break;
+		} // for
+
 	}
 
 private :
 	struct file_data {
 		std::string path;
 		boost::int64_t size;
+		bool update_done;
+		boost::int64_t cur_offset;
 	};
 
 	std::list<file_data> files_in_root_; 

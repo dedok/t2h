@@ -159,34 +159,50 @@ void * http_mongoose_transport::dispatch_http_message(
 	utility::range_header rheader;	
 	base_transport_ostream_ptr socket_ostream(new details::mongoose_socket_ostream(conn));
 	std::string const uri = utility::http_normalize_uri_c(ri->uri);
-
 	switch (event) 
 	{	
 		/*  From the client came new request, first detect what type of the request, 
 		 	second call subroutines for action. */
 		case MG_NEW_REQUEST :
+#if defined(T2H_DEEP_DEBUG)
+			LC_TRACE("new request came from '%i', method '%s', uri '%s'", 
+				ri->remote_ip, ri->request_method, ri->uri)
+#endif // T2H_DEEP_DEBUG
 			if (mon_is_range_request(conn, ri, rheader)) 
 				http_context_->on_partial_content_request(socket_ostream, uri , rheader);
 			if (mon_is_head_request(conn, ri))
 				http_context_->on_head_request(socket_ostream, uri);
 			if (mon_is_content_requst(conn, ri))
 				http_context_->on_content_request(socket_ostream, uri);
+#if defined(T2H_DEEP_DEBUG)
+			LC_TRACE("reply was sended for '%i', method '%s', uri '%s'", 
+				ri->remote_ip, ri->request_method, ri->uri)
+#endif // T2H_DEEP_DEBUG
 			return NOT_NULL;
 		
 		/* Was error on client request/reply */
 		case MG_HTTP_ERROR :
+			LC_WARNING("transport error for '%i', with uri '%s', with error message '%s'", 
+				ri->remote_ip, ri->uri, (char *)ri->ev_data)
 			return NULL;
 		
 		/* Reply was sended to client */
 		case MG_REQUEST_COMPLETE :
+#if defined(T2H_DEEP_DEBUG)
+			LC_TRACE("reply was sended for '%i', method '%s', uri '%s'", 
+				ri->remote_ip, ri->request_method, ri->uri)
+#endif // T2H_DEEP_DEBUG
 			return NULL ;
+		
+		case MG_EVENT_LOG :
+			return NOT_NULL;
 
 		default : 
 			return NULL;
 	} // switch
 	
 	STD_EXCEPTION_HANDLE_END
-
+	LC_WARNING("unexpected exit")
 	return NULL;
 }
 

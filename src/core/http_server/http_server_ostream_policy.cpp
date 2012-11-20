@@ -33,7 +33,7 @@ bool http_server_ostream_policy::perform(http_core_reply & reply, http_data & hd
 	if (base_params_.reset_stream_at_end_of_io)
 		ostream_impl_.reset();
 
-	return false;
+	return state;
 }
 
 } } // namespace t2h_core, details
