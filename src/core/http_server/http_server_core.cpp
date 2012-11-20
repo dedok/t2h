@@ -1,8 +1,9 @@
 #include "http_server_core.hpp"
 
-#include "http_utility.hpp"
+#include "replies_types.hpp"
 #include "transport_types.hpp"
-#include "http_server_core_config.hpp"
+#include "http_server_macroses.hpp"
+#include "hs_chunked_ostream_impl.hpp"
 
 #include <ctime>
 
@@ -35,7 +36,8 @@ inline static common::transport_config from_setting_manager(setting_manager_ptr 
 inline static details::hsc_local_config hcs_from_setting_manager(setting_manager_ptr setting_manager) 
 {
 	details::hsc_local_config const hcsc = { 
-		setting_manager->get_value<std::string>("doc_root"), 
+		setting_manager->get_value<std::string>("doc_root"),
+		true, 
 		320,
 		1024*1000
 	};
@@ -49,16 +51,6 @@ inline static details::hsc_local_config hcs_from_setting_manager(setting_manager
 	
 	return hcsc;
 } 
-
-inline static void add_etag_date_headers(std::string & out, details::hc_file_info_ptr const fi) 
-{
-	std::string const gtm_time = utility::http_get_gmt_time_string(),
-		etag = utility::http_etag(fi->file_size, std::time(NULL));
-	if (!gtm_time.empty())
-		out += "Date: " + gtm_time + "\r\n";
-	if (!etag.empty())
-		out += "Etag: " + etag + "\r\n";
-}
 
 /**
  * Public http_server_core api
@@ -98,7 +90,7 @@ bool http_server_core::launch_service()
 
 		transport_.reset(new common::http_mongoose_transport(tr_config));
 		BOOST_ASSERT(transport_ != NULL);
-
+		
 		transport_->initialize();	
 		transport_->establish_connection();
 	
@@ -155,204 +147,81 @@ common::base_service::service_state http_server_core::get_service_state() const
  * Inherited http_server_core api
  */
 
-void http_server_core::on_get_partial_content_headers(
-		common::http_transport_event_handler::http_data & http_d,
-		boost::int64_t bytes_start, 
-		boost::int64_t bytes_end, 
-		char const * uri) 
-{
-	/*	Create 206(Partial-Content) http header and send this header to client before body.
-	 */	
-	details::hc_file_info_ptr fi;
+void http_server_core::on_partial_content_request(
+	common::base_transport_ostream_ptr ostream, std::string const & uri, utility::range_header const & range) 
+{	
+	boost::int64_t start = range.bstart_1, end = range.bend_1;
 	std::string const req_path = local_config_.doc_root + uri;
+	details::hc_file_info_ptr fi = file_info_buffer_->get_info(req_path);
 	
-	if (!(fi = file_info_buffer_->get_info(req_path))) {
+	if (!fi) {
 		HCORE_WARNING("can not find path '%s' in buffer", req_path.c_str())
-		http_d.op_status = common::http_transport_event_handler::not_found;
-		return; 
-	} // if
-	// if client wish whole file the passed bytes_end == 0 
-	if (bytes_end == -1) 
-		bytes_end = fi->file_size - 1;
-	
-	boost::int64_t content_size = 1 * ((bytes_end - bytes_start) + 1);
-	content_size = (content_size > fi->file_size ? fi->file_size : content_size);
-	std::string const gmt_time = utility::http_get_gmt_time_string();
-	
-	if (!file_info_buffer_->wait_avaliable_bytes(
-			fi, 
-			1024*1000, 
-			360)) 
-	{
-		HCORE_WARNING("sync with file system failed, timeout expired, for path '%s'", req_path.c_str())
-		http_d.op_status = common::http_transport_event_handler::io_error;
 		return;
-	} // if	
+	}
 	
-	/*  NOTE : Prepare Etag, Date, Last-Modified headers. Must be in UTC, according to 
-	 	http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.*/
-	http_d.reply_header = "HTTP/1.1 206 Partial-Content\r\n";
-	add_etag_date_headers(http_d.reply_header, fi);
-	http_d.reply_header +=	
-		"Content-Type: application/octet-stream\r\n"
-		"Accept-Ranges: bytes\r\n"	
-		"Content-Range: ";
-	http_d.reply_header += "bytes " + boost::lexical_cast<std::string>(bytes_start) + "-" +
-		boost::lexical_cast<std::string>(bytes_end) + "/" +  boost::lexical_cast<std::string>(fi->file_size);
-	http_d.reply_header += "\r\nContent-Length: " + boost::lexical_cast<std::string>(content_size);
-	http_d.reply_header += "\r\n\r\n";
-	
-	http_d.op_status = common::http_transport_event_handler::ok;
-}	
-	
-void http_server_core::on_get_content_headers(http_data & http_d, char const * uri) 
+	if (range.bstart_1 == utility::range_header::all)
+		start = 0;
+	if (range.bend_1 == utility::range_header::all)
+		end = fi->file_size;
+
+	details::partial_content_reply pcr;
+	details::http_data hdata = { fi, file_info_buffer_, start, end };
+	details::http_server_ostream_policy_ptr ostream_policy = get_ostream_policy(ostream);
+	if (!ostream_policy->perform(pcr, hdata))
+		HCORE_WARNING("send partial content to the client failed")
+}
+
+void http_server_core::on_head_request(common::base_transport_ostream_ptr ostream, std::string const & uri) 
 {
-	/*	Create 200 http header and send this header to client before body.
-	 */	
-	details::hc_file_info_ptr fi;
 	std::string const req_path = local_config_.doc_root + uri;
-	
-	if (!(fi = file_info_buffer_->get_info(req_path))) {
+	details::hc_file_info_ptr fi = file_info_buffer_->get_info(req_path);
+
+	if (!fi) {
 		HCORE_WARNING("can not find path '%s' in buffer", req_path.c_str())
-		http_d.op_status = common::http_transport_event_handler::not_found;
-		return; 
-	} // if
-	
-	boost::int64_t content_size = fi->file_size;
-	std::string const gmt_time = utility::http_get_gmt_time_string();
-	
-	if (!file_info_buffer_->wait_avaliable_bytes(
-			fi, 
-			1024*1000, 
-			360)) 
-	{
-		HCORE_WARNING("sync with file system failed, timeout expired, for path '%s'", req_path.c_str())
-		http_d.op_status = common::http_transport_event_handler::io_error;
 		return;
-	} // if	
+	}
 	
-	/*  NOTE : Prepare Etag, Date, Last-Modified headers. Must be in UTC, according to 
-	 	http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.*/
-	http_d.reply_header = "HTTP/1.1 200 Ok\r\n";
-	add_etag_date_headers(http_d.reply_header, fi);
-	http_d.reply_header += "Content-Type: application/octet-stream\r\n";
-	http_d.reply_header += "Content-Length: " + boost::lexical_cast<std::string>(content_size);
-	http_d.reply_header += "\r\n\r\n";
-	
-	http_d.op_status = common::http_transport_event_handler::ok;
+	details::head_reply hr;
+	details::http_data hdata = { fi, file_info_buffer_, 0, fi->file_size };
+	details::http_server_ostream_policy_ptr ostream_policy = get_ostream_policy(ostream);	
+	if (!ostream_policy->perform(hr, hdata))
+		HCORE_WARNING("send reply to the client failed")
 }
 
-void http_server_core::on_get_head_headers(http_data & http_d, char const * uri) 
+void http_server_core::on_content_request(common::base_transport_ostream_ptr ostream, std::string const & uri) 
 {
-	details::hc_file_info_ptr fi;
 	std::string const req_path = local_config_.doc_root + uri;
-	
-	if (!(fi = file_info_buffer_->get_info(req_path))) {
+	details::hc_file_info_ptr fi = file_info_buffer_->get_info(req_path);
+
+	if (!fi) {
 		HCORE_WARNING("can not find path '%s' in buffer", req_path.c_str())
-		http_d.op_status = common::http_transport_event_handler::not_found;
-		return; 
-	} // if
+		return;
+	}
 	
-	boost::int64_t content_size = fi->file_size;
-	std::string const gmt_time = utility::http_get_gmt_time_string();
-	
-	/*  NOTE : Prepare Etag, Date, Last-Modified headers. Must be in UTC, according to 
-	 	http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.*/
-	http_d.reply_header = "HTTP/1.1 200 Ok\r\n";
-	add_etag_date_headers(http_d.reply_header, fi);
-	http_d.reply_header += "Accept-Ranges: bytes\r\n";
-	http_d.reply_header += "Content-Type: application/octet-stream\r\n";
-	http_d.reply_header += "Content-Length: " + boost::lexical_cast<std::string>(content_size);
-	http_d.reply_header += "\r\n\r\n";
-	
-	http_d.op_status = common::http_transport_event_handler::ok;
+	details::send_content_reply scr;
+	details::http_data hdata = { fi, file_info_buffer_, 0, fi->file_size };
+	details::http_server_ostream_policy_ptr ostream_policy = get_ostream_policy(ostream);
+	if (!ostream_policy->perform(scr, hdata))
+		HCORE_WARNING("send reply to the client failed")
 }
 	
-/* Operations with content data */
-bool http_server_core::on_get_content_body(
-		common::http_transport_event_handler::http_data & http_d, 
-		boost::int64_t bytes_start, 
-		boost::int64_t bytes_end, 
-		boost::int64_t bytes_writed,
-		char const * uri) 
-{
-	/*  First we must ensure what we have file info in buffer. 
-	 	Because real file size could be less then bytes_end(at moment of call), second 
-		what we do is sync with torrent_core via blocking call 'wait_avaliable_bytes'.
-		If bytes are avaliable then just send block to clien otherwise error.*/
-	namespace io = boost::iostreams;
-	
-	details::hc_file_info_ptr fi;
-	std::string const req_path = local_config_.doc_root + uri;
-	std::ios::openmode const open_mode = std::ios::in | std::ios::binary;
-	
-	http_d.last_readed = 0;
-	bool has_next_data_block = true;
-	boost::int64_t wait_bytes_pos = 0;
-	
-	if (cur_state_ == base_service::service_stoped)  
-		return false;
-
-	if (!(fi = file_info_buffer_->get_info(req_path))) {
-		http_d.op_status = common::http_transport_event_handler::not_found;
-		return false;
-	} // if
-	
-	io::file_descriptor_source file_handle(req_path, open_mode);
-	if (!file_handle.is_open()) {
-		http_d.op_status = common::http_transport_event_handler::io_error;
-		return false;
-	} 
-
-	// if client wish whole file the bytes_end var will equal to -1 
-	if (bytes_end == -1) 
-		bytes_end = fi->file_size;	
-	
-	boost::int64_t read_offset = 1 * (bytes_end - bytes_start) + 1;
-	if (1024*1000 <= read_offset)
-		read_offset = 1024*1000;
-	
-	if (http_d.seek_offset_pos + read_offset >= fi->file_size) { 
-		has_next_data_block = false;
-		wait_bytes_pos = fi->file_size;
-	}
-	else
-		wait_bytes_pos = http_d.seek_offset_pos + read_offset + 100;
-
-	if (!file_info_buffer_->wait_avaliable_bytes(fi, wait_bytes_pos, 360)) {
-		http_d.op_status = common::http_transport_event_handler::io_error;
-		return false;
-	} // if	
-		
-	if (static_cast<int64_t>(http_d.io_buffer.size()) < read_offset)
-		http_d.io_buffer.resize(read_offset + 1);
-	
-	if (io::seek(file_handle, http_d.seek_offset_pos, BOOST_IOS::beg) < 0) { 
-		http_d.op_status = common::http_transport_event_handler::io_error;
-		return false;
-	}
-		
-	if ((http_d.last_readed =
-		io::read(file_handle, &http_d.io_buffer.at(0), read_offset)) <= 0) 
-	{
-		http_d.op_status = common::http_transport_event_handler::io_error;
-		return false;
-	} // if
-		
-	(has_next_data_block) ? http_d.seek_offset_pos += http_d.last_readed : http_d.seek_offset_pos = fi->file_size;
-	return has_next_data_block;
-}	
-	
-void http_server_core::error(
-	common::http_transport_event_handler::operation_status status, char const * uri) 
-{
-	HCORE_WARNING("got error from http transport, status '%i', uri '%s'", (int)status, uri);
-	// TODO impl this
-}
-
 /**
  * Private http_server_core api
  */
+
+details::http_server_ostream_policy_ptr http_server_core::get_ostream_policy(common::base_transport_ostream_ptr tostream) 
+{
+	details::http_server_ostream_policy_ptr ostream_policy;
+	if (local_config_.chunked_ostream) {
+		details::hs_chunked_ostream_params hcsp = 
+			{ local_config_.max_chunk_size, local_config_.cores_sync_timeout };
+		details::http_server_ostream_policy_params hsopp = { true };
+		ostream_policy.reset(new details::hs_chunked_ostream_impl(hsopp, hcsp));
+		ostream_policy->set_ostream(tostream);
+		BOOST_ASSERT(ostream_policy != NULL);
+	}
+	return ostream_policy;
+}
 
 } // namespace t2h_core
 

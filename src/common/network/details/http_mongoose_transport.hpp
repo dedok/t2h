@@ -3,6 +3,7 @@
 
 #include "base_transport.hpp"
 #include "http_transport_context.hpp"
+#include "http_mongoose_socket_ostream.hpp"
 
 #include <boost/thread.hpp>
 

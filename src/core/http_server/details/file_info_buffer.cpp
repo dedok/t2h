@@ -1,6 +1,6 @@
 #include "file_info_buffer.hpp"
 
-#include "http_server_core_config.hpp"
+#include "http_server_macroses.hpp"
 #include "core_notification_center.hpp"
 #include "file_info_buffer_realtime_updater.hpp"
 

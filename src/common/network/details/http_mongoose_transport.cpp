@@ -22,7 +22,6 @@ namespace common { namespace details {
  * Hidden private http_mongoose_transport api
  */
 
-/* mongoose helpers */
 static inline bool mon_is_range_request(
 	struct mg_connection * conn, struct mg_request_info const * ri, utility::range_header & rheader) 
 {
@@ -37,15 +36,14 @@ static inline bool mon_is_range_request(
 	char const * range_header = mg_get_header(conn, "Range");
 	if (range_header) 
 		return utility::http_translate_range_header_c(rheader, range_header);
-		
 	return false;
 }
 
 static inline bool mon_is_head_request(struct mg_connection * conn, struct mg_request_info const * ri) 
 {
 	BOOST_ASSERT(ri != NULL);
-	if ((strcmp(ri->http_version, "1.1") != 0 || (strcmp(ri->http_version, "1.0") == 0))) 
-		if (strcmp(ri->request_method, "HEAD") == 0)
+	if ((strcmp(ri->http_version, "1.1") == 0 || (strcmp(ri->http_version, "1.0") == 0))) 
+		if (strcmp(ri->request_method, "HEAD") == 0) 
 			return true;
 	return false;
 }
@@ -54,164 +52,21 @@ static inline bool mon_is_content_requst(struct mg_connection * conn, struct mg_
 {
 	BOOST_ASSERT(ri != NULL);
  	if ((strcmp(ri->http_version, "1.1") == 0 || strcmp(ri->http_version, "1.0") == 0))
-		if ((strcmp(ri->request_method, "GET") == 0  || strcmp(ri->request_method, "POST") == 0))
+		if ((strcmp(ri->request_method, "GET") == 0  || strcmp(ri->request_method, "POST") == 0))  
 			return true;
 	return false;
 }
 
-static void * mongoose_completion_routine(enum mg_event event, struct mg_connection * conn) 
+static void * redirect_to_http_mongoose_transport_dispatcher(enum mg_event event, struct mg_connection * conn) 
 {
+	/*  Redirect all events from mongoose to http_mongoose_transport object for handling by
+	 	calling http_mongoose_transport::dispatch_http_message */
 	struct mg_request_info const * ri = mg_get_request_info(conn);
 	http_mongoose_transport * this_ = static_cast<http_mongoose_transport *>(ri->user_data);
 	if (!this_) 
 		return NULL;
-	return this_->dispatch_http_message(event, conn, ri);
+	return (!this_->is_connected()) ? NULL : this_->dispatch_http_message(event, conn, ri);
 }
-
-/* mics helpers */
-static void * http_stock_reply(
-	struct mg_connection * conn, 
-	http_transport_event_handler::operation_status status, 
-	http_transport_event_handler_ptr far_handler,
-	struct mg_request_info const * ri)	
-{
-	using namespace utility;
-
-	std::string reply;
-	std::string const uri = utility::http_normalize_uri_c(ri->uri);
-	
-	switch (status) {
-		case http_transport_event_handler::io_error: case http_transport_event_handler::write_op_error :
-			reply = stock_replies::cast_to_string(http_reply::internal_server_error);
-		break;
-		case http_transport_event_handler::not_found :
-			reply = stock_replies::cast_to_string(http_reply::not_found);
-		break;
-		case http_transport_event_handler::bad_request :
-			reply = stock_replies::cast_to_string(http_reply::bad_request);
-		break;
-	}
-
-	mg_write(conn, reply.c_str(), reply.size());
-	far_handler->error(status, uri.c_str());
-
-	return NOT_NULL;
-}
-
-/* Far handler routines(aka http_transport_event_handler) */
-static void * far_handler_on_range_request(
-	http_transport_event_handler_ptr far_handler, 
-	struct mg_connection * conn, 
-	struct mg_request_info const * ri, 
-	utility::range_header const & rheader) 
-{
-	BOOST_ASSERT(ri != NULL);
-	
-	http_transport_event_handler::http_data pcd;
-	std::string const uri = utility::http_normalize_uri_c(ri->uri);
-
-	far_handler->on_get_partial_content_headers(pcd, rheader.bstart_1, rheader.bend_1, uri.c_str());
-	if (pcd.op_status != http_transport_event_handler::ok)  
-		return http_stock_reply(conn, pcd.op_status, far_handler, ri);
-	
-	if (mg_write(conn, pcd.reply_header.c_str(), pcd.reply_header.size()) > 0) {
-		bool has_data = true;
-		pcd.seek_offset_pos = rheader.bstart_1;
-		for (boost::int64_t bytes_writed = 0;;) 
-		{
-			has_data = far_handler->on_get_content_body(pcd, 
-					rheader.bstart_1, 
-					rheader.bend_1, 
-					bytes_writed, 
-					uri.c_str());
-					
-			if (pcd.op_status != http_transport_event_handler::ok) { 
-				far_handler->error(pcd.op_status, uri.c_str());
-				break;
-			} // if
-		
-			if ((bytes_writed = mg_write(conn, &pcd.io_buffer.at(0), pcd.last_readed)) <= 0) {
-				far_handler->error(http_transport_event_handler::write_op_error, uri.c_str());
-				break;
-			} // if
-			
-			if (!has_data) 
-				break;
-		} // read & send loop
-		return NOT_NULL;
-	} // if
-	
-	LC_WARNING("writing header data failed, for uri '%s'", uri.c_str())
-	return NOT_NULL;
-}
-
-static void * far_handler_on_head_request(
-	http_transport_event_handler_ptr far_handler, struct mg_connection * conn, struct mg_request_info const * ri) 
-{
-	BOOST_ASSERT(ri != NULL);
-	
-	http_transport_event_handler::http_data hd;
-	std::string const uri = utility::http_normalize_uri_c(ri->uri);
-
-	far_handler->on_get_head_headers(hd, uri.c_str());
-	if (hd.op_status != http_transport_event_handler::ok)
-		return http_stock_reply(conn, hd.op_status, far_handler, ri);
-	
-	if (mg_write(conn, hd.reply_header.c_str(), hd.reply_header.size()) <= 0) 
-		far_handler->error(http_transport_event_handler::write_op_error, uri.c_str());
-
-	return NOT_NULL;
-}
-
-static void * far_handler_on_content_request(
-	http_transport_event_handler_ptr far_handler, struct mg_connection * conn, struct mg_request_info const * ri)
-{
-	BOOST_ASSERT(ri != NULL);
-	
-	http_transport_event_handler::http_data hd;
-	std::string const uri = utility::http_normalize_uri_c(ri->uri);
-	
-	far_handler->on_get_content_headers(hd, uri.c_str());
-	if (hd.op_status != http_transport_event_handler::ok)
-		return http_stock_reply(conn, hd.op_status, far_handler, ri);
-
-	if (mg_write(conn, hd.reply_header.c_str(), hd.reply_header.size()) > 0) {
-		bool has_data = true;
-		hd.seek_offset_pos = 0;
-		for (boost::int64_t bytes_writed = 0;;) 
-		{
-			has_data = far_handler->on_get_content_body(hd, 
-					0, /* from 0 pos */
-					-1, /* means to whole file */ 
-					bytes_writed, 
-					uri.c_str());
-					
-			if (hd.op_status != http_transport_event_handler::ok) { 
-				far_handler->error(hd.op_status, uri.c_str());
-				break;
-			}
-
-			if ((bytes_writed = mg_write(conn, &hd.io_buffer.at(0), hd.last_readed)) <= 0) {
-				far_handler->error(http_transport_event_handler::write_op_error, uri.c_str());
-				break;
-			} // if
-			
-			if (bytes_writed != hd.last_readed) {
-				far_handler->error(http_transport_event_handler::write_op_error, uri.c_str());
-				break;
-			} // if
-
-			if (!has_data) 
-				break;
-		} // read & send loop
-		
-		return NOT_NULL;
-	} // if
-	
-	LC_WARNING("writing header data failed, for uri '%s'", uri.c_str())
-	return NOT_NULL;
-}
-
 
 /**
  * Public http_mongoose_transport api
@@ -245,25 +100,26 @@ void http_mongoose_transport::establish_connection()
 	if (mg_handle_)
 		throw transport_exception("this transport already in use");
 	
-	const char * options[] = {
-		"document_root", config_.doc_root.c_str(),
-		"listening_ports", config_.port.c_str(),
-		"enable_directory_listing", "no",
-		"num_threads", "6",
-		NULL
+	const char * mongoose_options[] = {
+		"document_root", config_.doc_root.c_str(),		// doc root
+		"listening_ports", config_.port.c_str(),		// avaliavle ports
+		"enable_directory_listing", "no",				// off directory listing
+		"num_threads", "6",								// number of wrokers
+		NULL											// options end
 	};
 
-	mg_handle_ = mg_start(&mongoose_completion_routine, static_cast<void*>(this), options);
-	if (!mg_start)
+	mg_handle_ = mg_start(&redirect_to_http_mongoose_transport_dispatcher, 
+						static_cast<void*>(this), mongoose_options);
+	if (!mg_start) 
 		throw transport_exception("can not start mongoose");
 
 	if (!config_.context)
 		throw transport_exception("http_*_transport::context not valid or ill configurated");
-	http_transport_event_handler_ptr far_ev_handler = 
-			transport_context_cast<http_transport_event_handler>(config_.context);
-	http_context_ = far_ev_handler;
+	
+	http_context_ = 
+			transport_context_cast<http_transport_event_handler>(config_.context);	
+	
 	stop_ = false;
-	BOOST_ASSERT(http_context_ != NULL);
 }
 	
 bool http_mongoose_transport::is_connected() const 
@@ -274,6 +130,8 @@ bool http_mongoose_transport::is_connected() const
 	
 void http_mongoose_transport::stop_connection() 
 {
+	/*  Before we can drop wait function we must secure the mongoose stopped his work,
+	 	otherwise UB */
 	boost::lock_guard<boost::mutex> guard(lock_);	
 	if (mg_handle_) {
 		stop_ = true;
@@ -288,40 +146,47 @@ void http_mongoose_transport::wait()
 		boost::unique_lock<boost::mutex> locker(waiter_lock_);
 		waiter_.wait(locker);
 		if (!mg_handle_) return;
-	} // loop
+	} // wait loop
 }
 	
 void * http_mongoose_transport::dispatch_http_message(
 	enum mg_event event, struct mg_connection * conn, struct mg_request_info const * ri) 
 {
+	/*  Because are we have not sure about each the abstract context call, 
+	 	we must prevent any chance to lose exception from context functions */
 	STD_EXCEPTION_HANDLE_START
-	
-	utility::range_header rheader;
-	
-	if (!is_connected()) return NULL;
-	
+
+	utility::range_header rheader;	
+	base_transport_ostream_ptr socket_ostream(new details::mongoose_socket_ostream(conn));
+	std::string const uri = utility::http_normalize_uri_c(ri->uri);
+
 	switch (event) 
 	{	
-		case MG_NEW_REQUEST : 
+		/*  From the client came new request, first detect what type of the request, 
+		 	second call subroutines for action. */
+		case MG_NEW_REQUEST :
 			if (mon_is_range_request(conn, ri, rheader)) 
-				return far_handler_on_range_request(http_context_, conn, ri, rheader);
+				http_context_->on_partial_content_request(socket_ostream, uri , rheader);
 			if (mon_is_head_request(conn, ri))
-				return far_handler_on_head_request(http_context_, conn, ri);
+				http_context_->on_head_request(socket_ostream, uri);
 			if (mon_is_content_requst(conn, ri))
-				return far_handler_on_content_request(http_context_, conn, ri);
-			return http_stock_reply(conn, http_transport_event_handler::bad_request, http_context_, ri);
+				http_context_->on_content_request(socket_ostream, uri);
+			return NOT_NULL;
 		
+		/* Was error on client request/reply */
 		case MG_HTTP_ERROR :
 			return NULL;
-			
+		
+		/* Reply was sended to client */
 		case MG_REQUEST_COMPLETE :
 			return NULL ;
 
 		default : 
-			break;
+			return NULL;
 	} // switch
 	
 	STD_EXCEPTION_HANDLE_END
+
 	return NULL;
 }
 

@@ -4,6 +4,15 @@ set(T2H_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/http_server_core_config.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/details/file_info_buffer.hpp	
 	${CMAKE_CURRENT_SOURCE_DIR}/details/file_info_buffer_realtime_updater.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/replies/head_reply.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/hs_chunked_ostream_impl.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/http_core_reply.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/replies/partial_content_reply.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/replies/replies_types.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/replies/send_content_reply.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/http_server_macroses.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/http_server_ostream_policy.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/http_server_utility.hpp
 	PARENT_SCOPE
 	)
 
@@ -12,6 +21,11 @@ set(T2H_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/http_server_core.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/details/file_info_buffer.cpp	
 	${CMAKE_CURRENT_SOURCE_DIR}/details/file_info_buffer_realtime_updater.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/hs_chunked_ostream_impl.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/replies/head_reply.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/replies/partial_content_reply.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/replies/send_content_reply.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/http_server_ostream_policy.cpp
 	PARENT_SCOPE
 	)
 

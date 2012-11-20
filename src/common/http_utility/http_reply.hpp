@@ -2,6 +2,7 @@
 #define HTTP_SERVER_REPLY_HPP_INCLUDED
 
 #include "http_header.hpp"
+#include "base_transport_ostream.hpp"
 
 #include <boost/cstdint.hpp>
 #include <boost/noncopyable.hpp>
@@ -54,13 +55,13 @@ public :
 		service_unavailable = 503
 	};
 	
-	http_reply(buffer_type & buffer);
+	http_reply();
 	virtual ~http_reply();
 	
 	/**
 	 *
 	 */
-	virtual bool do_formatting_reply() 
+	virtual bool send_reply() 
 		{ return false; }
 	
 	virtual bool stock_reply(status_type status);
@@ -89,7 +90,7 @@ private :
 	void add_header_directly(std::string const & name, std::string const & value);
 	void add_header_directly(http_header const & header);
 
-	buffer_type & buf_ref_;
+	buffer_type buf_ref_;
 
 };
 

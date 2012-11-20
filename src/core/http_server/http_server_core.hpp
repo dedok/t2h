@@ -1,11 +1,12 @@
 #ifndef HTTP_SERVER_CORE_HPP_INCLUDED
 #define HTTP_SERVER_CORE_HPP_INCLUDED
 
+#include "http_utility.hpp"
 #include "base_service.hpp"
 #include "base_transport.hpp"
 #include "setting_manager.hpp"
 #include "transport_types.hpp"
-#include "file_info_buffer.hpp"
+#include "http_server_ostream_policy.hpp"
 
 #include <boost/enable_shared_from_this.hpp>
 
@@ -18,14 +19,15 @@ namespace details {
  */
 struct hsc_local_config {
 	std::string doc_root;								// document root(doc_root + decoded_uri)
-	std::size_t fs_cores_sync_timeout;					// filesystem cores timeout, in secs 
-	boost::int64_t max_read_offset;						// max readed offset per transport IO
+	bool chunked_ostream;								// on/off chunked ostream 
+	boost::int64_t max_chunk_size;						// max readed offset per transport IO
+	std::size_t cores_sync_timeout;						// filesystem cores timeout, in secs
 };
 
 } // namespace details
 
 /**
- *
+ * http server for connect torrent_core to http server
  */
 class http_server_core : 
 	public common::base_service, 
@@ -49,27 +51,15 @@ public :
  	inline boost::shared_ptr<http_server_core> shared_this()
 	 { return shared_from_this(); }
 
-	/* Over HTTP headers operations */
-	virtual void on_get_partial_content_headers(
-		common::http_transport_event_handler::http_data & http_d, 
-		boost::int64_t bytes_start, 
-		boost::int64_t bytes_end, 
-		char const * uri);	
-	virtual void on_get_content_headers(common::http_transport_event_handler::http_data & http_d, char const * uri);
-	virtual void on_get_head_headers(common::http_transport_event_handler::http_data & http_d, char const * uri);
-	
-	/* Operations with content data */
-	virtual bool on_get_content_body(
-			common::http_transport_event_handler::http_data & http_d, 
-			boost::int64_t bytes_start, 
-			boost::int64_t bytes_end, 
-			boost::int64_t bytes_writed,
-			char const * uri);	
-	
-	/* Informers/Heplers */
-	virtual void error(common::http_transport_event_handler::operation_status status, char const * uri);
+	/* Over HTTP headers operations. Inherited for common::http_transport_event_handler */
+	virtual void on_partial_content_request(
+		common::base_transport_ostream_ptr ostream, std::string const & uri, utility::range_header const & range);
+	virtual void on_head_request(common::base_transport_ostream_ptr ostream, std::string const & uri);
+	virtual void on_content_request(common::base_transport_ostream_ptr ostream, std::string const & uri);
 
 private :
+	details::http_server_ostream_policy_ptr get_ostream_policy(common::base_transport_ostream_ptr tostream);
+
 	common::base_transport_ptr transport_;
 	setting_manager_ptr setting_manager_;
 	common::base_service::service_state volatile mutable cur_state_;

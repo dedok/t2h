@@ -18,8 +18,8 @@ namespace utility {
 /**
  * Public http_reply api
  */
-http_reply::http_reply(http_reply::buffer_type & buffer) 
-	: buf_ref_(buffer), 
+http_reply::http_reply() 
+	: buf_ref_(), 
 	enable_buf_realocation_(true)
 {
 	if (!buf_ref_.empty())
