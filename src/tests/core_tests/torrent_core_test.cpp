@@ -1,7 +1,6 @@
 #include "syslogger.hpp"
 #include "torrent_core.hpp"
 #include "sequential_torrent_controller.hpp"
-#include "http_transport_ev_handler.hpp"
 
 #include <iostream>
 #include <boost/filesystem.hpp>

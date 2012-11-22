@@ -70,6 +70,7 @@ private :
 	void not_dispatched_alert_came(libtorrent::alert * alert);
 	void on_torrent_status_changes(details::torrent_ex_info_ptr ex_info);
 	void on_torrent_status_failure(details::torrent_ex_info_ptr ex_info);
+	void on_tracker_error(libtorrent::tracker_error_alert * alert);
 
 	/** Others funtions */	
 	void setup_torrent(libtorrent::torrent_handle & handle);

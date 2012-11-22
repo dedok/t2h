@@ -246,7 +246,6 @@ std::string torrent_core::start_torrent_download(torrent_core::size_type torrent
 	if (ex_info) {
 		libtorrent::torrent_info const & info = ex_info->handle.get_torrent_info();
 		if (info.num_files() > file_id && file_id >= 0) {
-			details::file_info_set_pieces_priority(ex_info->avaliables_files, ex_info->handle, file_id, true);
 			ex_info->handle.file_priority(file_id, details::file_info::normal_prior);
 			ex_info->handle.force_reannounce();	
 			core_session_->post_torrent_updates();
@@ -400,15 +399,28 @@ void torrent_core::setup_core_session()
 {
 	using libtorrent::session_settings;
 	
+	TCORE_TRACE("default setup of libtorrent session")
+
 	session_settings settings;	
 	
 	settings.user_agent = service_name();
 	settings.choking_algorithm = session_settings::auto_expand_choker;
 	settings.disk_cache_algorithm = session_settings::avoid_readback;
 	settings.volatile_read_cache = false;
+ 	settings.allowed_fast_set_size = 1000; // 1000 pieces without choking
+	settings.allow_multiple_connections_per_ip = true;
+	settings.prioritize_partial_pieces = true; //TODO: might not be good, we'll see!
+	settings.seeding_piece_quota = 20;
+	settings.strict_end_game_mode = false;
+#if !defined(TORRENT_NO_DEPRECATE)
+	settings.auto_upload_slots = false;
+#endif //TORRENT_NO_DEPRECATE
+	settings.announce_to_all_trackers = true;
+	settings.min_announce_interval = 15;
+	settings.local_service_announce_interval = 10;
 
 	params_.controller->on_setup_core_session(settings);
-	core_session_->set_settings(settings);
+	core_session_->set_settings(settings);	
 }
 
 bool torrent_core::init_torrent_core_settings() 

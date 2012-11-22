@@ -130,22 +130,24 @@ void sequential_torrent_controller::dispatch_alert(libtorrent::alert * alert)
 	
 	if (torrent_paused_alert * paused = alert_cast<torrent_paused_alert>(alert))  
 		on_pause(paused);
-	else if (metadata_received_alert * mra = alert_cast<metadata_received_alert>(alert))
+	if (metadata_received_alert * mra = alert_cast<metadata_received_alert>(alert))
 		on_metadata_recv(mra);
-	else if (file_completed_alert * file_completed = alert_cast<file_completed_alert>(alert)) 
+	if (file_completed_alert * file_completed = alert_cast<file_completed_alert>(alert)) 
 		on_file_complete(file_completed);
-	else if (add_torrent_alert * add_alert = alert_cast<add_torrent_alert>(alert)) 
+	if (add_torrent_alert * add_alert = alert_cast<add_torrent_alert>(alert)) 
 		on_add_torrent(add_alert);
-	else if (torrent_finished_alert * tor_finised_alert = alert_cast<torrent_finished_alert>(alert)) 
+	if (torrent_finished_alert * tor_finised_alert = alert_cast<torrent_finished_alert>(alert)) 
 		on_finished(tor_finised_alert);
-	else if (piece_finished_alert * piece_fin_alert = alert_cast<piece_finished_alert>(alert)) 
+	if (piece_finished_alert * piece_fin_alert = alert_cast<piece_finished_alert>(alert)) 
 		on_piece_finished(piece_fin_alert);
-	else if (state_changed_alert * state_ched_alert = alert_cast<state_changed_alert>(alert))  
+	if (state_changed_alert * state_ched_alert = alert_cast<state_changed_alert>(alert))  
 		on_state_change(state_ched_alert);
-	else if (torrent_deleted_alert * deleted_alert = alert_cast<torrent_deleted_alert>(alert)) 
+	if (torrent_deleted_alert * deleted_alert = alert_cast<torrent_deleted_alert>(alert)) 
 		on_deleted(deleted_alert);
-	else if (state_update_alert * state_alert = alert_cast<state_update_alert>(alert)) 
+	if (state_update_alert * state_alert = alert_cast<state_update_alert>(alert)) 
 		on_update(state_alert);
+	if (tracker_error_alert * te_alert = alert_cast<tracker_error_alert>(alert))
+		on_tracker_error(te_alert);
 }
 
 void sequential_torrent_controller::setup_torrent(libtorrent::torrent_handle & handle) 
@@ -157,17 +159,27 @@ void sequential_torrent_controller::setup_torrent(libtorrent::torrent_handle & h
 	}
 
 	handle.set_max_connections(settings_.max_connections_per_torrent);
-	handle.set_max_uploads(settings_.max_uploads); 
+	// disabling settings.auto_upload_slots and setting max_uploads to INT_MAX
+	// turns all choking off
+	handle.set_max_uploads(settings_.max_uploads); 	
+	// set to no limits
 	handle.set_upload_limit(settings_.upload_limit); 
 	handle.set_download_limit(settings_.download_limit); 
-	handle.set_sequential_download(settings_.sequential_download); 
-#if  !defined(TORRENT_DISABLE_RESOLVE_COUNTRIES)
+	handle.set_sequential_download(settings_.sequential_download);
+
+#if !defined(TORRENT_NO_DEPRECATE)
+	handle.set_local_upload_rate_limit(settings_.upload_limit);
+	handle.set_local_download_rate_limit(settings_.download_limit);
+#endif // TORRENT_NO_DEPRECATE
+
+#if !defined(TORRENT_DISABLE_RESOLVE_COUNTRIES)
 	handle.resolve_countries(settings_.resolve_countries); 
 #endif
 }
 
 void sequential_torrent_controller::update_settings() 
 {
+	/* Just get all settings from the settings manager */
 	settings_.max_partial_download_size = setting_manager_->get_value<int>("tc_max_partial_download_size");
 	settings_.tc_root = setting_manager_->get_value<std::string>("tc_root");
 	settings_.auto_error_resolving = setting_manager_->get_value<bool>("tc_auto_error_resolving");
@@ -243,14 +255,14 @@ void sequential_torrent_controller::on_add_torrent(libtorrent::add_torrent_alert
 		first != ti.end_files(); 
 		++first, ++index) 
 	{
-		details::file_info const fi = 
+		details::file_info_ptr fi = 
 			details::file_info_add(ex_info->avaliables_files, 
 				ti.files().at(first), 
 				ti, 
 				handle, 
 				index,
 				settings_.max_partial_download_size);
-		event_handler_->on_file_add(fi.path, fi.size);
+		event_handler_->on_file_add(fi->path, fi->size);
 	} // for
 	
 	details::scoped_future_release future_release(ex_info->future);	
@@ -278,7 +290,7 @@ void sequential_torrent_controller::on_pause(libtorrent::torrent_paused_alert * 
 		first != last; 
 		++first) 
 	{
-		event_handler_->on_pause(first->path);
+		event_handler_->on_pause((*first)->path);
 	}
 }
 
@@ -305,7 +317,7 @@ void sequential_torrent_controller::on_update(libtorrent::state_update_alert * a
 		}
 		// TODO improve auto resolving logic
 		if (settings_.auto_error_resolving && 
-			(utility::get_current_time() >= ex_info->last_resolve_checkout || ex_info->resolver)) 
+			(utility::get_current_time() >= ex_info->last_resolve_checkout)) 
 		{
 			if (!ex_info->resolver)
 				ex_info->last_resolve_checkout = 
@@ -329,9 +341,8 @@ void sequential_torrent_controller::on_torrent_status_changes(details::torrent_e
 
 void sequential_torrent_controller::on_piece_finished(libtorrent::piece_finished_alert * alert) 
 {
-	// TODO may be ib case of failure better way it resresh torrent not remove?
-	details::file_info info;	
-	bool update_state = false;
+	// TODO may be in case of failure better way it resresh torrent not remove?
+	details::file_info_ptr info;
 
 	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(alert->handle.save_path());
 	if (!ex_info) {
@@ -340,17 +351,16 @@ void sequential_torrent_controller::on_piece_finished(libtorrent::piece_finished
 		torrent_remove(alert->handle);
 		return;
 	} // if
-
-	boost::tie(update_state, info) = 
-		details::file_info_update(ex_info->avaliables_files, alert->handle, alert->piece_index);
-	if (update_state)  
-		event_handler_->on_progress_update(info.path, 
-			(info.avaliable_bytes > info.size) ? info.size : info.avaliable_bytes);
+	
+	info = details::file_info_update(ex_info->avaliables_files, alert->handle, alert->piece_index);
+	if (info)  
+		event_handler_->on_progress_update(info->path, 
+			(info->avaliable_bytes > info->size) ? info->size : info->avaliable_bytes);
 }
 
 void sequential_torrent_controller::on_file_complete(libtorrent::file_completed_alert * alert)
 {
-	details::file_info info;
+	details::file_info_ptr info;
 	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(alert->handle.save_path());
 	if (!ex_info) {
 		TCORE_WARNING("get extended info failed, args '%s', '%i'", 
@@ -360,29 +370,42 @@ void sequential_torrent_controller::on_file_complete(libtorrent::file_completed_
 	} // if
 
 	// add update file_info
-	if (details::file_info_search_by_index(ex_info->avaliables_files, alert->index, info))  
-		event_handler_->on_file_complete(info.path, info.size);
+	info = details::file_info_search_by_index(ex_info->avaliables_files, alert->index);
+	if (info) { 
+		event_handler_->on_file_complete(info->path, info->size);
+		details::file_info_reinit(info);
+	}
+	else
+		TCORE_WARNING("cannot get file by index '%i', set complete state failed", alert->index)
 }
 
 void sequential_torrent_controller::on_deleted(libtorrent::torrent_deleted_alert * alert) 
 {
-	torrent_remove(alert->handle);
-}
-
-void sequential_torrent_controller::torrent_remove(libtorrent::torrent_handle & handle)
-{
 	using details::file_info;
-	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(handle.save_path());
+	
+	details::torrent_ex_info_ptr ex_info = shared_buffer_ref_->get(alert->handle.save_path());
 	if (ex_info) {
 		for (file_info::list_type::const_iterator first = ex_info->avaliables_files.begin(), 
 				last = ex_info->avaliables_files.end();
 			first != last; 
 			++first) 
 		{
-			event_handler_->on_file_remove(first->path);
+			event_handler_->on_file_remove((*first)->path);
 		} // for
-		shared_buffer_ref_->remove(handle.save_path());
+		shared_buffer_ref_->remove(alert->handle.save_path());
 	} // if
+}
+
+void sequential_torrent_controller::on_tracker_error(libtorrent::tracker_error_alert * alert) 
+{
+	TCORE_WARNING("time '%i', status '%i', error '%i', msg '%s'", 
+		alert->times_in_row, alert->status_code, alert->error.value(), alert->msg.c_str())
+	alert->handle.clear_error();
+	alert->handle.force_reannounce();
+}
+
+void sequential_torrent_controller::torrent_remove(libtorrent::torrent_handle & handle)
+{
 	session_ref_->remove_torrent(handle);
 }
 

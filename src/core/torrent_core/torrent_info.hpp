@@ -33,42 +33,55 @@ struct file_info {
 	/**
 	 *	list of files for each torrent
 	 */
-	typedef std::list<file_info> list_type;
+	typedef boost::shared_ptr<file_info> ptr_type;
+	typedef std::list<ptr_type> list_type;
 	
 	/**
-	 * pieces and files priority states
+	 * pieces and files priority types for details see 
 	 */
 	static int const off_prior = 0;
 	static int const normal_prior = 1;
 	static int const max_prior = 5;	
 	static int const over_max_prior = 7;
 	
+	/**
+	 * recheck_av states
+	 */
+	static int const off_recheck = -1;
+	static int const recheck_limit = 5;
+
 	int pieces;										// Pieces number in file
-	int total_pieces_download_count;				// Cound of downloaded pieces
-	int pieces_download_count;						// Count of downloaded pieces(not total)
-	int pieces_download_offset;						// Pices offset for current torrent file(size)
-	int pieces_download_offset_min;					// Same as pieces_download_offset_min(low bound)
-	boost::int64_t avaliable_bytes;					// Bytes which was downloaded and saved to the HDD(eg current size)
+	int total_pieces_download_count;				// Count of downloaded pieces
+	int pieces_download_count;						// Chocked count of downloaded pieces(not total)
+	boost::int64_t avaliable_bytes;					// Seq. bytes which was downloaded and saved to the HDD(eg current size)
 	int pieces_range_first;							// File piece range start offset
 	int pieces_range_last;							// File piece range end offset 
 	std::string path;								// Path to file(UTF8)
 	boost::int64_t size;							// Size of file(eg real/expected file size)
 	std::size_t block_size;							// Size of each pices(exclude last one)
 	int file_index;									// File index, could be very useful in need to get some extended info from libtorrent::torrent_info::file_at
+	int chocked_range;								// Chocked range of pieces download. Need to detect range for do a update avaliable_bytes 
+	std::vector<int> av_pieces;						// Pieces set INT_MAX means piece not downloaded yet 
+	std::size_t last_av_pos;						// Last position of av_pieces set 
+	std::size_t end_av_pos;							// Last position + chocked_range -1 of av_pieces set
+	std::size_t last_av_pieces_pos;					// Last position of pieces
+	int recheck_av;									// set to off_recheck then sequential_download complete, else updater check current seq. each call
 };
+
+typedef file_info::ptr_type file_info_ptr;
 
 /**
  * Public file_info api
  */
 
-file_info file_info_add(file_info::list_type & flist, 
+file_info_ptr file_info_add(file_info::list_type & flist, 
 						libtorrent::file_entry const & fe, 
 						libtorrent::torrent_info const & ti,
 						libtorrent::torrent_handle const & handle,
 						int file_index,
 						int max_partial_download_size); 
 
-file_info file_info_add_by_index(file_info::list_type & flist, 
+file_info_ptr file_info_add_by_index(file_info::list_type & flist, 
 								libtorrent::torrent_info const & info, 
 								int file_index,
 								int max_partial_download_size); 
@@ -77,23 +90,24 @@ void file_info_remove(file_info::list_type & flist, std::string const & path);
 void file_info_remove(file_info::list_type & flist, int piece); 
 void file_info_reset(file_info::list_type & flist); 
 
-bool file_info_bin_search(file_info::list_type const & flist, int piece, file_info & info); 
-bool file_info_search(file_info::list_type const & flist, std::string const path, file_info & info); 
-bool file_info_search_by_index(file_info::list_type const & flist, int index, file_info & info);
+file_info_ptr file_info_bin_search(file_info::list_type const & flist, int piece); 
+file_info_ptr file_info_search(file_info::list_type const & flist, std::string const path); 
+file_info_ptr file_info_search_by_index(file_info::list_type const & flist, int index);
 
 void file_info_set_pieces_priority(file_info::list_type & flist, 
 									libtorrent::torrent_handle & handle, 
-									int index, 
-									bool clear_priority_first = false);
+									int file_index, 
+									int priority);
 
-boost::tuple<bool, file_info> 
-	file_info_update(file_info::list_type & flist, libtorrent::torrent_handle & handle, int piece); 
+file_info_ptr file_info_update(file_info::list_type & flist, libtorrent::torrent_handle & handle, int piece); 
+
+void file_info_reinit(file_info_ptr fi);
 
 /**
  * Torrent extended informantion & functionality
  */
 
-struct torrent_ex_info {	
+struct torrent_ex_info {
 	typedef boost::shared_ptr<torrent_ex_info> ptr_type;
 	typedef boost::intrusive_ptr<libtorrent::torrent_info> torrent_info_ptr;
 
