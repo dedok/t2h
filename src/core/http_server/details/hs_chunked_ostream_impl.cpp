@@ -6,6 +6,8 @@
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp> 
 
+//#define T2H_DEEP_DEBUG
+
 namespace t2h_core { namespace details {
 
 /**
@@ -56,7 +58,7 @@ bool hs_chunked_ostream_impl::write_content_impl(http_data & hd)
 		}
 			
 		if (!hd.fi_buffer->wait_avaliable_bytes(hd.fi, bwait, params_.cores_sync_timeout)) {
-			HCORE_WARNING("sync with file system failed, timeout expired, for path '%s'", hd.fi->file_path.c_str())
+			
 			return false;
 		} // if	
 		
@@ -85,7 +87,7 @@ bool hs_chunked_ostream_impl::write_content_impl(http_data & hd)
 			return false;
 		}
 #if defined(T2H_DEEP_DEBUG)
-		HCORE_TRACE("with file '%s', writed to ostream '%i', seep pos '%i', read_offset '%i', read end '%i', wait '%i'", 
+		HCORE_TRACE("with file '%s', writed to ostream '%i', seek pos '%i', read_offset '%i', read end '%i', wait '%i'", 
 			hd.fi->file_path.c_str(), readed, seek_pos, read_offset, hd.read_end, bwait)
 #endif // T2H_DEEP_DEBUG
 		if (eof)  

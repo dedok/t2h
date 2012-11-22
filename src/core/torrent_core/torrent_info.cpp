@@ -250,7 +250,7 @@ file_info_ptr file_info_update(file_info::list_type & flist, libtorrent::torrent
 #if defined(T2H_DEEP_DEBUG)
 						TCORE_TRACE("set maximum prior for pieces from '%i to '%i'", first->last_av_pos, first->end_av_pos)
 #endif // T2H_DEEP_DEBUG
-						for (int piece_inx = first->last_av_pos; piece_inx != first->end_av_pos; ++piece_inx)
+						for (std::size_t piece_inx = first->last_av_pos; piece_inx != first->end_av_pos; ++piece_inx)
 							handle.piece_priority(piece_inx, file_info::max_prior);
 						break;
 					}

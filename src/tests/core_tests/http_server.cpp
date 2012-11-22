@@ -75,7 +75,7 @@ static inline program_options get_options(int argc, char ** argv)
 		desc.add_options()
 		    ("help", "produce help message")
 			    ("with-config", po::value<std::string>(&options.config_path), "config path")
-				("update-state", po::value<int>(&options.update_state), "update state 1 - slow, 2 - fast, other numbers - default")
+				("update-state", po::value<int>(&options.update_state), "update state 1 - slow, 2 - fast, 3 - very slow other numbers - default")
 				;
 
 		po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -137,6 +137,9 @@ public :
 
 	inline void slow_files_info_update() 
 		{ files_info_update(50); }
+
+	inline void very_slow_files_info_update() 
+		{ files_info_update(0); }
 	
 	void default_files_info_update() 
 	{
@@ -168,7 +171,12 @@ public :
 				if (first->update_done) 
 					continue;
 				
-				boost::int64_t const offset = (first->size <= 0) ? first->size : first->size / c;
+				boost::int64_t offset = 0;
+				if (c == 0)	
+					offset = 1;
+				else
+					offset = (first->size <= 0) ? first->size : first->size / c;
+
 				first->cur_offset += offset;
 				if (first->cur_offset >= first->size) 
 				{
@@ -237,14 +245,19 @@ int main(int argc, char* argv[])
 			case 1 :
 				std::cout << "Slow files update enable." << std::endl;
 				cns.slow_files_info_update();
-			break;
+				break;
 			case 2 : 
 				std::cout << "Fast files update enable." << std::endl;
 				cns.fast_files_info_update();
+				break;
+			case 3 :
+				std::cout << "Very slow files update enable." << std::endl;
+				cns.very_slow_files_info_update();
+				break;
 			default :
 				std::cout << "Default files update enable." << std::endl;
 				cns.default_files_info_update();
-			break;
+				break;
 		}
 #if defined(WIN32)
 		sig_handler(0);

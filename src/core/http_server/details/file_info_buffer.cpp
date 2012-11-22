@@ -8,6 +8,7 @@
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+//#define T2H_DEEP_DEBUG
 #define HCORE_FIB_UPDATER_NAME "hcore_notification_recv";
 
 namespace t2h_core { namespace details {
@@ -159,7 +160,7 @@ void file_info_buffer::stop(bool graceful)
 		boost::mutex::scoped_lock waiter_guard(first->second->waiter_locker);
 		waiter_guard.unlock();
 #if defined (T2H_DEEP_DEBUG)
-	HCORE_TRACE("notifi about stoping of '%s'", first->second->file_path)
+	HCORE_TRACE("notify about stoping of '%s'", first->second->file_path)
 #endif // T2H_DEEP_DEBUG
 		first->second->waiter.notify_one();
 	}

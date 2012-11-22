@@ -10,6 +10,8 @@
 #define STD_EXCEPTION_HANDLE_START try {
 #define STD_EXCEPTION_HANDLE_END } catch (std::exception const & extp) { }
 
+#define T2H_DEEP_DEBUG
+
 #if defined(WIN32)
 #	pragma warning(push)
 #	pragma warning(disable : 4101)
