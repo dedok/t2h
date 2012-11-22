@@ -1,10 +1,30 @@
 torrent to http (t2h) release note
 
 *-----------------------------------------------------*
+version 1.4.4.3
+
+libcommon
+	--Improve network;	
+
+http_core
+	--Improve transport write implementation;
+	--Fixed crash in mongoose transport implementation;
+	--Fix hang in file_info::wait_avaliable_bytes;
+
+torrent_core
+	--Improve hang_download error resolver;
+	--Improve sequential downloading via libtorren;
+	--Improve data sharing via t2h_core::details::file_info and t2h_core::details::torrent_info_ex;
+	--Add more tracing with T2H_DEEP_DEBUG key;
+
+settings manager
+	--update defaults values/keys;
+
+*-----------------------------------------------------*
 version 1.4.1.2
 
 libcommon
-	--added new http transport implementation based on libmongoose(embedded by me in t2h);
+	--added new http transport implementation based on libmongoose(embedded in common/network/details);
 	--fixed hang connection in http transport;
 	--added uri specs validator(for wrong slashes);
 	--fixed infinity loop in common::notification_unit::execution_loop;
