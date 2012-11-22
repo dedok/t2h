@@ -87,8 +87,9 @@ static inline int file_info_get_download_offset(file_info_ptr const fi, int max_
  * Public file_info api
  */
 
-void file_info_trace_dump(file_info_ptr const fi) 
+static inline void file_info_trace_dump(file_info_ptr const fi) 
 {
+#if defined(T2H_DEEP_DEBUG)
 	TCORE_TRACE("\ntotal pieces '%i'\ntotal downloaded '%i'\npieces download count '%i'\n",
 		fi->pieces, fi->total_pieces_download_count, fi->pieces_download_count)
 	
@@ -100,6 +101,7 @@ void file_info_trace_dump(file_info_ptr const fi)
 	
 	TCORE_TRACE("\nblock size '%i'\nchocked range '%i'\n", 
 			fi->block_size, fi->chocked_range)
+#endif // T2H_DEEP_DEBUG
 }
 
 file_info_ptr file_info_add(file_info::list_type & flist, 
