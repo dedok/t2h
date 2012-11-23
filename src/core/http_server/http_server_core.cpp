@@ -174,9 +174,11 @@ void http_server_core::on_partial_content_request(
 
 	details::partial_content_reply pcr;
 	details::http_data hdata = { fi, file_info_buffer_, start, end };
-	details::http_server_ostream_policy_ptr ostream_policy = get_ostream_policy(ostream);
+	details::chunked_ostream_ptr ostream_policy = get_ostream_policy(ostream);
+	int const sid = file_info_buffer_->registr_subscriber(fi, ostream_policy);
 	if (!ostream_policy->perform(pcr, hdata))
 		HCORE_WARNING("send partial content to the client failed")
+	file_info_buffer_->unregistr_subscriber(fi, sid);
 }
 
 void http_server_core::on_head_request(common::base_transport_ostream_ptr ostream, std::string const & uri) 
@@ -191,9 +193,11 @@ void http_server_core::on_head_request(common::base_transport_ostream_ptr ostrea
 	
 	details::head_reply hr;
 	details::http_data hdata = { fi, file_info_buffer_, 0, fi->file_size };
-	details::http_server_ostream_policy_ptr ostream_policy = get_ostream_policy(ostream);	
+	details::chunked_ostream_ptr ostream_policy = get_ostream_policy(ostream);
+	int const sid = file_info_buffer_->registr_subscriber(fi, ostream_policy);
 	if (!ostream_policy->perform(hr, hdata))
 		HCORE_WARNING("send reply to the client failed")
+	file_info_buffer_->unregistr_subscriber(fi, sid);
 }
 
 void http_server_core::on_content_request(common::base_transport_ostream_ptr ostream, std::string const & uri) 
@@ -208,27 +212,28 @@ void http_server_core::on_content_request(common::base_transport_ostream_ptr ost
 	
 	details::send_content_reply scr;
 	details::http_data hdata = { fi, file_info_buffer_, 0, fi->file_size };
-	details::http_server_ostream_policy_ptr ostream_policy = get_ostream_policy(ostream);
+	details::chunked_ostream_ptr ostream_policy = get_ostream_policy(ostream);
+	int const sid = file_info_buffer_->registr_subscriber(fi, ostream_policy);
 	if (!ostream_policy->perform(scr, hdata))
 		HCORE_WARNING("send reply to the client failed")
+	file_info_buffer_->unregistr_subscriber(fi, sid);
 }
 	
 /**
  * Private http_server_core api
  */
 
-details::http_server_ostream_policy_ptr http_server_core::get_ostream_policy(common::base_transport_ostream_ptr tostream) 
+details::chunked_ostream_ptr http_server_core::get_ostream_policy(common::base_transport_ostream_ptr tostream) 
 {
-	details::http_server_ostream_policy_ptr ostream_policy;
-	if (local_config_.chunked_ostream) {
-		details::hs_chunked_ostream_params hcsp = 
-			{ local_config_.max_chunk_size, local_config_.cores_sync_timeout };
-		details::http_server_ostream_policy_params hsopp = { true };
-		ostream_policy.reset(new details::hs_chunked_ostream_impl(hsopp, hcsp));
-		ostream_policy->set_ostream(tostream);
-		BOOST_ASSERT(ostream_policy != NULL);
-	}
-	return ostream_policy;
+	details::hs_chunked_ostream_params const hcsp = 
+		{ local_config_.max_chunk_size, local_config_.cores_sync_timeout };
+	details::http_server_ostream_policy_params const hsopp = { true };
+	
+	details::chunked_ostream_ptr ostream_impl;
+	ostream_impl.reset(new details::hs_chunked_ostream_impl(hsopp, hcsp));
+	ostream_impl->set_ostream(tostream);
+	
+	return ostream_impl;
 }
 
 } // namespace t2h_core

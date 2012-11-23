@@ -9,11 +9,18 @@
 
 namespace t2h_core { namespace details {
 
+/**
+ *
+ */
 struct http_server_ostream_policy_params {
 	bool reset_stream_at_end_of_io;
 };
 
-class http_server_ostream_policy : boost::noncopyable {
+/**
+ *
+ */
+class http_server_ostream_policy : private boost::noncopyable 
+{
 public :
 	explicit http_server_ostream_policy(http_server_ostream_policy_params const & params);
 	virtual ~http_server_ostream_policy();
@@ -28,9 +35,9 @@ public :
 
 protected :
 	virtual bool write_content_impl(http_data & hd) = 0;
+	common::base_transport_ostream_ptr ostream_impl_;
 
 private :
-	common::base_transport_ostream_ptr ostream_impl_;
 	http_server_ostream_policy_params mutable base_params_;
 
 };

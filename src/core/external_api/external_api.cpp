@@ -318,3 +318,4 @@ T2H_STD_API t2h_stop_download(t2h_handle_t handle, T2H_SIZE_TYPE torrent_id)
 #undef T2H_PASSED_HANDLES_CHECK
 #undef T2H_RETURN_IF
 #undef T2H_SHARED_EXPORT_FUNCDNAME
+

@@ -4,7 +4,7 @@
 #include "core_notification_center.hpp"
 #include "file_info_buffer_realtime_updater.hpp"
 
-#include <boost/thread.hpp>
+#include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
@@ -14,7 +14,7 @@
 namespace t2h_core { namespace details {
 
 /**
- * Public api
+ * Public file_info_buffer api
  */
 
 file_info_buffer_ptr shared_file_info_buffer() 
@@ -23,9 +23,6 @@ file_info_buffer_ptr shared_file_info_buffer()
 	return fibp;
 }
 
-/**
- * Public file_info_buffer api
- */
 
 file_info_buffer::file_info_buffer() 
 	: is_stoped_(false), lock_(), infos_(), updater_()
@@ -40,75 +37,55 @@ file_info_buffer::~file_info_buffer()
 	stop_force();
 }
 
-bool file_info_buffer::wait_avaliable_bytes(
-		std::string const & file_path, boost::int64_t avaliable_bytes, std::size_t secs) 
+int file_info_buffer::registr_subscriber(hc_file_info_ptr fi, async_file_info_subscriber_ptr subscriber) 
 {
-	/* */
-	using boost::posix_time::seconds;
-	
-	hc_file_info_ptr finfo;
-	
-	if ((finfo = get_info(file_path))) {
-		boost::mutex::scoped_lock guard(finfo->waiter_locker);
-		for (;;) 
-		{
-			if (is_stoped_)
-				return false;
-			
-			if (finfo->avaliable_bytes >= avaliable_bytes) {
-#if defined(T2H_DEEP_DEBUG)
-				HCORE_TRACE("wait bytes for path '%s' finished", finfo->file_path.c_str())
-#endif // T2H_DEEP_DEBUG
-				return true;
-			}	
-			boost::system_time timeout = boost::get_system_time() + seconds(secs);
-			if (!finfo->waiter.timed_wait(guard, timeout)) {
-				HCORE_WARNING("wait bytes for path '%s' failed", finfo->file_path.c_str())
-				return false;
-			}
-		} // wait loop
-	} // state
-	HCORE_WARNING("finfo not valid for path '%s' or buffer was stoped", file_path.c_str())
-	return false;
+	BOOST_ASSERT(fi != NULL);
+	// Registr new subscriber and send notification about bytes avaliable
+	boost::lock_guard<boost::mutex> guard(lock_);
+	fi->subscribers.push_back(subscriber);
+	subscriber->on_bytes_avaliable_change(fi->avaliable_bytes);
+	return fi->subscribers.size();
+}
+
+void file_info_buffer::unregistr_subscriber(hc_file_info_ptr fi, int sid) 
+{
+	BOOST_ASSERT(fi != NULL);
+	boost::lock_guard<boost::mutex> guard(lock_);
+	if (sid > fi->subscribers.size())
+		fi->subscribers.erase(fi->subscribers.begin() + sid);
+}
+
+void file_info_buffer::unregistr_subscriber(hc_file_info_ptr fi, async_file_info_subscriber_ptr subscriber) 
+{
+	BOOST_ASSERT(fi != NULL);
+	boost::lock_guard<boost::mutex> guard(lock_);
+	std::vector<async_file_info_subscriber_ptr>::iterator first = fi->subscribers.begin(), 
+		last = fi->subscribers.end();
+	for (;
+		first != last; 
+		++first) 
+	{
+		if ((*first) == subscriber) {
+			(*first)->on_break();
+			fi->subscribers.erase(first);
+			break;
+		}
+	} // for
 }
 
 void file_info_buffer::remove_info(std::string const & path) 
 {
-	boost::mutex::scoped_lock guard(lock_);
+	boost::lock_guard<boost::mutex> guard(lock_);
+
 	if (is_stoped_)
 		return;
 
 	infos_type::iterator found = infos_.find(path);
-	if (found != infos_.end()) {
-#if defined(T2H_DEEP_DEBUG)
-		HCORE_TRACE("removing file info entry '%s'", found->second->file_path.c_str())
-#endif // T2H_DEEP_DEBUG
-		notify_waiter(found->second);
+	if (found != infos_.end()) 
 		infos_.erase(found); 
-	}
-}
-
-void file_info_buffer::update_info(hc_file_info_ptr info) 
-{
-	BOOST_ASSERT(info != NULL);
-	boost::mutex::scoped_lock guard(lock_);
 	
-	if (is_stoped_)
-		return;
-
-	infos_type::iterator found = infos_.find(info->file_path);
-	if (found == infos_.end()) {
-		HCORE_WARNING("update info failed, item not found", info->file_path.c_str())
-		return;
-	}
-#if defined(T2H_DEEP_DEBUG)
-	HCORE_TRACE("updating existing file info entry '%s', bytes avaliable '"SL_SSIZE_T"'", 
-		info->file_path.c_str(), info->avaliable_bytes)
-#endif // T2H_DEEP_DEBUG
-	found->second->file_size = info->file_size;
-	found->second->avaliable_bytes = info->avaliable_bytes;
-	hc_file_info_ptr mutable_copy = found->second;	
-	notify_waiter(found->second);
+	std::for_each(found->second->subscribers.begin(), found->second->subscribers.end(), 
+		boost::bind(&async_file_info_subscriber::on_break, _1));
 }
 
 void file_info_buffer::update_info(std::string const & file_path, boost::int64_t avaliable_bytes) 
@@ -123,23 +100,21 @@ void file_info_buffer::update_info(std::string const & file_path, boost::int64_t
 		HCORE_WARNING("update info failed, item not found", file_path.c_str())
 		return;
 	}
-#if defined(T2H_DEEP_DEBUG)
-	HCORE_TRACE("updating existing item '%s', bytes avaliable '"SL_SSIZE_T"'", 
-		found->second->file_path.c_str(), avaliable_bytes)
-#endif // T2H_DEEP_DEBUG
 	found->second->avaliable_bytes = avaliable_bytes;
-	notify_waiter(found->second);
+	
+	std::for_each(found->second->subscribers.begin(), found->second->subscribers.end(), 
+		boost::bind(&async_file_info_subscriber::on_bytes_avaliable_change, _1, avaliable_bytes));
 }
 	
 hc_file_info_ptr file_info_buffer::get_info(std::string const & path) const 
 {
 	boost::mutex::scoped_lock guard(lock_);
-	if (!is_stoped_) {
-		infos_type::const_iterator found = infos_.find(path);
-		if (found != infos_.end())
-			return found->second;
-	}
-	return hc_file_info_ptr();
+	
+	if (is_stoped_) 
+		return hc_file_info_ptr();
+
+	infos_type::const_iterator found = infos_.find(path);
+	return (found != infos_.end()) ? found->second : hc_file_info_ptr();
 }
 
 /**
@@ -157,12 +132,8 @@ void file_info_buffer::stop(bool graceful)
 		first != last; 
 		++first) 
 	{
-		boost::mutex::scoped_lock waiter_guard(first->second->waiter_locker);
-		waiter_guard.unlock();
-#if defined (T2H_DEEP_DEBUG)
-	HCORE_TRACE("notify about stoping of '%s'", first->second->file_path)
-#endif // T2H_DEEP_DEBUG
-		first->second->waiter.notify_one();
+		hc_file_info_notify_subscribers(first->second, 
+			boost::bind(&async_file_info_subscriber::on_break, _1));
 	}
 	infos_.clear();
 	is_stoped_ = false;
