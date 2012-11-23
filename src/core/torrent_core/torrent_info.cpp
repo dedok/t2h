@@ -77,7 +77,7 @@ static void file_info_clear_priority(file_info_ptr const fi, libtorrent::torrent
 static inline int file_info_get_download_offset(file_info_ptr const fi, int max_partial_download_size) 
 {			
 		int const dow_offset = max_partial_download_size / fi->block_size;
-		if (dow_offset == 1) return 10; 
+		if (dow_offset < 10) return 10; 
 		return (max_partial_download_size >= fi->size || dow_offset >= fi->pieces) ?
 				fi->pieces : dow_offset;
 }
