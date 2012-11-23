@@ -6,7 +6,7 @@
 #include <boost/iostreams/device/file.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp> 
 
-//#define T2H_DEEP_DEBUG
+#define T2H_DEEP_DEBUG
 
 namespace t2h_core { namespace details {
 
@@ -56,11 +56,15 @@ bool hs_chunked_ostream_impl::write_content_impl(http_data & hd)
 				eof = true;
 			bwait = seek_pos + read_offset;
 		}
-			
+		
 		if (!hd.fi_buffer->wait_avaliable_bytes(hd.fi, bwait, params_.cores_sync_timeout)) {
-			
+			HCORE_WARNING("waiting fot bytes failed, '%s'", hd.fi->file_path.c_str())
 			return false;
 		} // if	
+		
+		std::cout << "read_offset : " << read_offset 
+			<< " seek_pos : " << seek_pos << " readed : " << readed << " bwait : " << bwait
+			<< std::endl;
 		
 		{ // start file io scope	
 		io::file_descriptor_source file_handle(hd.fi->file_path, open_mode);

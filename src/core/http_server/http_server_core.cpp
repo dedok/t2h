@@ -15,6 +15,8 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 
+//#define T2H_DEEP_DEBUG
+
 namespace t2h_core {
 
 /**
@@ -172,6 +174,11 @@ void http_server_core::on_partial_content_request(
 	if (range.bend_1 == utility::range_header::all)
 		end = fi->file_size;
 
+#if defined(T2H_DEEP_DEBUG)
+	HCORE_TRACE("range request perform : uri '%s', start range '%i', end range '%i', file size '%i'", 
+		uri.c_str(), start, end, fi->file_size)
+#endif // T2H_DEEP_DEBUG
+	
 	details::partial_content_reply pcr;
 	details::http_data hdata = { fi, file_info_buffer_, start, end };
 	details::http_server_ostream_policy_ptr ostream_policy = get_ostream_policy(ostream);
@@ -189,6 +196,10 @@ void http_server_core::on_head_request(common::base_transport_ostream_ptr ostrea
 		return;
 	}
 	
+#if defined(T2H_DEEP_DEBUG)
+	HCORE_TRACE("head request perform : uri '%s'", uri.c_str())
+#endif // T2H_DEEP_DEBUG
+	
 	details::head_reply hr;
 	details::http_data hdata = { fi, file_info_buffer_, 0, fi->file_size };
 	details::http_server_ostream_policy_ptr ostream_policy = get_ostream_policy(ostream);	
@@ -205,6 +216,10 @@ void http_server_core::on_content_request(common::base_transport_ostream_ptr ost
 		HCORE_WARNING("can not find path '%s' in buffer", req_path.c_str())
 		return;
 	}
+
+#if defined(T2H_DEEP_DEBUG)
+	HCORE_TRACE("content request perform : uri '%s'", uri.c_str())
+#endif // T2H_DEEP_DEBUG
 	
 	details::send_content_reply scr;
 	details::http_data hdata = { fi, file_info_buffer_, 0, fi->file_size };

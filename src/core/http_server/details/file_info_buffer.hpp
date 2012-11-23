@@ -16,16 +16,13 @@ namespace t2h_core { namespace details {
  * syncing/getting information about files(real-time)
  */
 struct hc_file_info : boost::noncopyable {
-	hc_file_info() 
-		: file_path(""), file_size(0), avaliable_bytes(0)
-	{ 
-	}
-
-	hc_file_info(
+	explicit hc_file_info(
 		std::string const & file_path_, boost::int64_t file_size_, boost::int64_t avaliable_bytes_) :
 		file_path(file_path_), 
 		file_size(file_size_), 
-		avaliable_bytes(avaliable_bytes_)
+		avaliable_bytes(avaliable_bytes_),
+		waiter_locker(),
+		waiter()
 	{ 
 	}
 			
@@ -66,7 +63,11 @@ public :
 		std::string const & file_path, 
 		boost::int64_t file_size, 
 		boost::int64_t avaliable_bytes) 
-	{ infos_[file_path].reset(new hc_file_info(file_path, file_size, avaliable_bytes)); }
+	{ 
+		boost::lock_guard<boost::mutex> guard(lock_);
+		if (!is_stoped_) 
+			infos_[file_path].reset(new hc_file_info(file_path, file_size, avaliable_bytes)); 
+	}
 
 	inline void on_file_remove(std::string const & file_path) 
 		{ remove_info(file_path); }	
@@ -78,9 +79,9 @@ public :
 		{ update_info(file_path, avaliable_bytes); }
 	
 	inline void stop_graceful() 
-		{ close(true); }
+		{ stop(true); }
 	inline void stop_force() 
-		{ close(false); }
+		{ stop(false); }
 
 private :
 	inline void notify_waiter(hc_file_info_ptr hfip) 

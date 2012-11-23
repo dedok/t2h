@@ -21,7 +21,7 @@
 #	define SL_PTRDIFF_T				"%d"
 #endif
 
-#define SYS_LOGGER_MAX_MESSAGE_SIZE 256 * sizeof(char)
+#define SYS_LOGGER_MAX_MESSAGE_SIZE 4096 * sizeof(char)
 
 #define TEMPLATE_SYS_LOG_NOTIFY_(log_type, ...)						\
 do {																\

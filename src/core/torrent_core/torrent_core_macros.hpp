@@ -25,6 +25,7 @@ do {																											\
 	delete vat_; vat_ = NULL;																					\
 } while(0); 
 
+
 #if defined (T2H_DEBUG)
 #	define TCORE_TRACE(...) \
 		TCORE_LOG_GENERIC(LOG_TRACE, __VA_ARGS__)

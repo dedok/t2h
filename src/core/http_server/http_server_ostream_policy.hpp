@@ -28,9 +28,10 @@ public :
 
 protected :
 	virtual bool write_content_impl(http_data & hd) = 0;
-
-private :
+	
 	common::base_transport_ostream_ptr ostream_impl_;
+	
+private :
 	http_server_ostream_policy_params mutable base_params_;
 
 };
