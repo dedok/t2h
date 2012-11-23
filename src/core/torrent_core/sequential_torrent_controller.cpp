@@ -11,6 +11,8 @@
 #include <libtorrent/create_torrent.hpp>
 #include <libtorrent/extensions/metadata_transfer.hpp>
 
+//#define T2H_DEEP_DEBUG
+
 namespace t2h_core {
 
 /**
@@ -307,7 +309,7 @@ void sequential_torrent_controller::on_update(libtorrent::state_update_alert * a
 		it != last;
 		++it) 
 	{
-#if defined(T2H_DEBUG) && defined(T2H_DEEP_DEBUG)
+#if defined(T2H_DEEP_DEBUG)
 		details::log_state_update_alerts(*it);
 #endif
 		if (!(ex_info = shared_buffer_ref_->get(it->handle.save_path()))) {
@@ -401,7 +403,8 @@ void sequential_torrent_controller::on_tracker_error(libtorrent::tracker_error_a
 	TCORE_WARNING("time '%i', status '%i', error '%i', msg '%s'", 
 		alert->times_in_row, alert->status_code, alert->error.value(), alert->msg.c_str())
 	alert->handle.clear_error();
-	alert->handle.force_reannounce();
+	if (alert->status_code != 200 || alert->error.value() > 0) 
+		alert->handle.force_reannounce();
 }
 
 void sequential_torrent_controller::torrent_remove(libtorrent::torrent_handle & handle)

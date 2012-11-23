@@ -13,6 +13,8 @@ set(T2H_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/http_server_macroses.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/http_server_ostream_policy.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/details/http_server_utility.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/base_chunked_ostream.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/details/async_file_info_subscriber.hpp
 	PARENT_SCOPE
 	)
 

@@ -77,9 +77,9 @@ static void file_info_clear_priority(file_info_ptr const fi, libtorrent::torrent
 static inline int file_info_get_download_offset(file_info_ptr const fi, int max_partial_download_size) 
 {			
 	int const dow_offset = max_partial_download_size / fi->block_size;
-	if (dow_offset < 9) return 10; 
-	return (max_partial_download_size >= fi->size || dow_offset >= fi->pieces) ?
-		fi->pieces : dow_offset;
+	if (dow_offset < 10) return 10; 
+		return (max_partial_download_size >= fi->size || dow_offset >= fi->pieces) ?
+			fi->pieces : dow_offset;
 }
 
 /**
@@ -269,14 +269,11 @@ file_info_ptr file_info_update(file_info::list_type & flist, libtorrent::torrent
 #endif // T2H_DEEP_DEBUG
 					++first->recheck_av;
 				}
-
-				boost::int64_t const curr_av_bytes = first->last_av_pos * first->block_size;
-				if (curr_av_bytes > first->avaliable_bytes)
-#if defined(T2H_DEEP_DEBUG)
-					TCORE_TRACE("seq. avaliable bytes '%i'", curr_av_bytes)
-#endif // T2H_DEEP_DEBUG
-					first->avaliable_bytes = curr_av_bytes;
-				return first;
+				boost::int64_t const curr_avb = first->last_av_pos * first->block_size;
+				if (first->avaliable_bytes < curr_avb) {
+					first->avaliable_bytes = curr_avb;
+					return first;
+				}
 			} // if
 #if defined(T2H_DEEP_DEBUG) 
 			file_info_trace_dump(first);

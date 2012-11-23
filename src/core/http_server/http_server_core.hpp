@@ -6,6 +6,7 @@
 #include "base_transport.hpp"
 #include "setting_manager.hpp"
 #include "transport_types.hpp"
+#include "base_chunked_ostream.hpp"
 #include "http_server_ostream_policy.hpp"
 
 #include <boost/enable_shared_from_this.hpp>
@@ -58,7 +59,7 @@ public :
 	virtual void on_content_request(common::base_transport_ostream_ptr ostream, std::string const & uri);
 
 private :
-	details::http_server_ostream_policy_ptr get_ostream_policy(common::base_transport_ostream_ptr tostream);
+	details::chunked_ostream_ptr get_ostream_policy(common::base_transport_ostream_ptr tostream);
 
 	common::base_transport_ptr transport_;
 	setting_manager_ptr setting_manager_;
