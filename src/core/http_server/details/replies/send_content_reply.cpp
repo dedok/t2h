@@ -25,12 +25,13 @@ boost::tuple<std::string, bool> send_content_reply::get_reply_headers(http_data 
 	
 	/*  NOTE : Prepare Etag, Date, Last-Modified headers. Must be in UTC, according to 
 	 	http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.3.*/
-	std::string reply_headers = "HTTP/1.1 200 Ok\r\n";
+	std::string reply_headers = "HTTP/1.1 200 OK\r\n";
 	add_etag_date_headers(reply_headers, hd.fi);
-	reply_headers += "Content-Type: application/octet-stream\r\n";
+	reply_headers += "Content-Type: application/octet-stream\r\n";	
+	reply_headers += "Accept-Ranges: bytes\r\n";
 	reply_headers += "Content-Length: " + boost::lexical_cast<std::string>(hd.fi->file_size);
 	reply_headers += "\r\n\r\n";
-
+	
 	return boost::make_tuple(reply_headers, true);
 }
 

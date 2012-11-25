@@ -23,19 +23,19 @@ namespace t2h_core {
 namespace t2h_core_details {
 
 // http server keys, with some defaults values
-ADD_KEY_TYPE(workers, "4", "", false)
+ADD_KEY_TYPE(workers, "20", "", false)
 ADD_KEY_TYPE(doc_root, "", "", true)
 ADD_KEY_TYPE(server_addr, "", "", true)
-ADD_KEY_TYPE(server_port, "80", "", false)
+ADD_KEY_TYPE(server_port, "8080", "", false)
 ADD_KEY_TYPE(tc_port_start, "", "", true)
 ADD_KEY_TYPE(tc_port_end, "", "", true)
 
 // torrent core keys, with some defaults values
 ADD_KEY_TYPE(cores_sync_timeout, "360", "", false)
 ADD_KEY_TYPE(hc_chunked, "true", "", false)
-ADD_KEY_TYPE(hc_max_chunk_size, "102400", "", false)
+ADD_KEY_TYPE(hc_max_chunk_size, "1024000", "", false)
 ADD_KEY_TYPE(tc_max_alert_wait_time, "15", "", false)
-ADD_KEY_TYPE(tc_max_partial_download_size, "2242880", "", false)
+ADD_KEY_TYPE(tc_max_partial_download_size, "22242880", "", false)
 ADD_KEY_TYPE(tc_root, "", "doc_root", false)
 ADD_KEY_TYPE(tc_futures_timeout, "10", "", false)
 ADD_KEY_TYPE(tc_partial_files_download, "true", "", false)

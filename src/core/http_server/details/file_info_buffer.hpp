@@ -98,11 +98,6 @@ public :
 		boost::int64_t avaliable_bytes) 
 		{ update_info(file_path, avaliable_bytes); }
 	
-	inline void stop_graceful() 
-		{ stop(true); }
-	inline void stop_force() 
-		{ stop(false); }
-
 private :
 	void stop(bool graceful);
 		

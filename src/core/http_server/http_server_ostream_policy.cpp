@@ -25,7 +25,7 @@ bool http_server_ostream_policy::perform(http_core_reply & reply, http_data & hd
 	if (ostream_impl_) {
 		boost::tie(reply_headers, is_need_perform_content) = reply.get_reply_headers(hd);	
 		state = (ostream_impl_->write(reply_headers.c_str(), reply_headers.size()) > 0);
-		
+
 		if (is_need_perform_content && state)  
 			state = write_content_impl(hd);
 	} // if

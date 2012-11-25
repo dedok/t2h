@@ -23,6 +23,10 @@ public :
 	/* */
 	http_transport_event_handler() : transport_context(context_type) { }
 	virtual ~http_transport_event_handler() { }
+	
+	/**
+	 *
+	 */
 
 	/* Over HTTP headers operations */
 	virtual void on_partial_content_request(
